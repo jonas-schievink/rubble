@@ -1,0 +1,36 @@
+[package]
+authors = ["Jonas Schievink <jonasschievink@gmail.com>"]
+categories = ["embedded", "no-std"]
+description = "nRF51 BLE demo"
+keywords = ["arm", "cortex-m", "template"]
+license = "MIT OR Apache-2.0"
+name = "nrf51-ble-demo"
+version = "0.1.0"
+
+[dependencies]
+cortex-m = "0.4.0"
+cortex-m-semihosting = "0.2.0"
+cortex-m-rtfm = "0.3.1"
+embedded-hal = "0.1.2"
+nrf51 = "0.4.0"
+nrf51-hal = "0.4.2"
+nb = "0.1.1"
+fpa = "0.1.0"
+byteorder = { version = "1.2.1", default-features = false }
+
+[dependencies.cortex-m-rt]
+version = "0.3.12"
+# Comment for the panic example.
+features = ["abort-on-panic"]
+
+# disable both incremental compilation and parallel codegen to reduce the chances of running into
+# rust-lang/rust#47074
+[profile.dev]
+codegen-units = 1
+incremental = false
+
+[profile.release]
+codegen-units = 1
+incremental = false
+debug = true
+#lto = true
