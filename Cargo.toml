@@ -3,7 +3,7 @@ authors = ["Jonas Schievink <jonasschievink@gmail.com>"]
 categories = ["embedded", "no-std"]
 description = "nRF51 BLE demo"
 keywords = ["arm", "cortex-m", "template"]
-license = "MIT OR Apache-2.0"
+license = "CC-0"
 name = "nrf51-ble-demo"
 version = "0.1.0"
 
