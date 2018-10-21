@@ -1,5 +1,3 @@
-#![feature(used, proc_macro)]
-#![feature(duration_extras)]    // subsec_micros
 #![no_std]
 
 extern crate nb;
@@ -12,13 +10,15 @@ extern crate cortex_m_semihosting;
 extern crate cortex_m_rtfm as rtfm;
 extern crate fpa;
 extern crate byteorder;
+extern crate panic_halt;
 
 pub mod ble;
 mod temp;
 mod radio;
 
-use ble::link::{MAX_PDU_SIZE, LinkLayer, AddressKind, DeviceAddress};
+use ble::link::{LinkLayer, AddressKind, DeviceAddress};
 use ble::link::ad_structure::{AdStructure, Flags};
+pub use ble::link::MAX_PDU_SIZE;
 
 use temp::Temp;
 use radio::{BleRadio, Baseband};
@@ -41,8 +41,8 @@ app! {
         static TIMER: Timer;
         static TEMP: Temp;
         static LED: PIN1<Output<OpenDrain>>;    // low = on, high = off
-        static BLE_TX_BUF: radio::PacketBuffer = [0; MAX_PDU_SIZE + 1];
-        static BLE_RX_BUF: radio::PacketBuffer = [0; MAX_PDU_SIZE + 1];
+        static BLE_TX_BUF: ::radio::PacketBuffer = [0; ::MAX_PDU_SIZE + 1];
+        static BLE_RX_BUF: ::radio::PacketBuffer = [0; ::MAX_PDU_SIZE + 1];
         static BASEBAND: Baseband;
         static BLE_TIMER: nrf51::TIMER1;
     },

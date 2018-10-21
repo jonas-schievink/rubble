@@ -17,11 +17,10 @@ nrf51-hal = "0.4.2"
 nb = "0.1.1"
 fpa = "0.1.0"
 byteorder = { version = "1.2.1", default-features = false }
+panic-halt = "0.2.0"
 
 [dependencies.cortex-m-rt]
-version = "0.3.12"
-# Comment for the panic example.
-features = ["abort-on-panic"]
+version = "0.4"
 
 # disable both incremental compilation and parallel codegen to reduce the chances of running into
 # rust-lang/rust#47074
