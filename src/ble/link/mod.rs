@@ -186,10 +186,13 @@ enum State {
         channel: AdvertisingChannelIndex,
     },
     /// Device is listening for advertising packets, but doesn't want to actively connect (yet).
+    #[allow(unused)]
     Scanning,
     /// Device wants to connect to a specific device.
+    #[allow(unused)]
     Initiating,
     /// Connected with other device.
+    #[allow(unused)]
     Connection,
 }
 
