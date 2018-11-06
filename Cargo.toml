@@ -22,14 +22,8 @@ panic-halt = "0.2.0"
 [dependencies.cortex-m-rt]
 version = "0.4"
 
-# disable both incremental compilation and parallel codegen to reduce the chances of running into
-# rust-lang/rust#47074
 [profile.dev]
-codegen-units = 1
-incremental = false
+opt-level = "s"
 
 [profile.release]
-codegen-units = 1
-incremental = false
-debug = true
-#lto = true
+opt-level = "s"
