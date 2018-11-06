@@ -11,6 +11,7 @@ version = "0.1.0"
 cortex-m = "0.4.0"
 cortex-m-semihosting = "0.2.0"
 cortex-m-rtfm = "0.3.1"
+cortex-m-rt = "0.4"
 embedded-hal = "0.1.2"
 nrf51 = "0.4.0"
 nrf51-hal = "0.4.2"
@@ -18,9 +19,6 @@ nb = "0.1.1"
 fpa = "0.1.0"
 byteorder = { version = "1.2.1", default-features = false }
 panic-halt = "0.2.0"
-
-[dependencies.cortex-m-rt]
-version = "0.4"
 
 [profile.dev]
 opt-level = "s"
