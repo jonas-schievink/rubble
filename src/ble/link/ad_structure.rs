@@ -21,6 +21,25 @@ pub enum AdStructure<'a> {
     /// Must not be used in scan response data.
     Flags(Flags),
 
+    /// List of 16-bit service UUIDs.
+    ///
+    /// Only one UUID size class is allowed in a single packet.
+    ServiceUuids16 {
+        /// Whether this is an incomplete (`true`) or complete (`false`) list of
+        /// UUIDs.
+        incomplete: bool,
+        /// The list of service UUIDs to send.
+        uuids: &'a [u16],
+    },
+
+    /// Service data with 16-bit service UUID.
+    ServiceData16 {
+        /// The 16-bit service UUID.
+        uuid: u16,
+        /// The associated service data. May be empty.
+        data: &'a [u8],
+    },
+
     /// Sets the full (unabbreviated) device name.
     ///
     /// This will be shown to the user when this device is found.
@@ -37,8 +56,11 @@ impl<'a> AdStructure<'a> {
     // GAP Data Type Values.
     // https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
     const TYPE_FLAGS: u8 = 0x01;
+    const TYPE_INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS: u8 = 0x02;
+    const TYPE_COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS: u8 = 0x03;
     const TYPE_SHORTENED_LOCAL_NAME: u8 = 0x08;
     const TYPE_COMPLETE_LOCAL_NAME: u8 = 0x09;
+    const TYPE_SERVICE_DATA_16BIT_UUID: u8 = 0x16;
 
     /// Lowers this AD structure into a Byte buffer.
     ///
@@ -57,6 +79,30 @@ impl<'a> AdStructure<'a> {
                 buf[2] = flags.to_u8();
                 1
             },
+            AdStructure::ServiceUuids16 { incomplete, uuids } => {
+                assert!(uuids.len() < 127);
+                buf[1] = if incomplete {
+                    Self::TYPE_INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
+                } else {
+                    Self::TYPE_COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
+                };
+
+                for (dst, &src) in buf[2..].chunks_mut(2).zip(uuids) {
+                    dst[0] = src as u8;
+                    dst[1] = (src >> 8) as u8;
+                }
+
+                uuids.len() as u8 * 2
+            }
+            AdStructure::ServiceData16 { uuid, data } => {
+                assert!(data.len() < 255);
+                buf[1] = Self::TYPE_SERVICE_DATA_16BIT_UUID;
+                buf[2] = uuid as u8;
+                buf[3] = (uuid >> 8) as u8;
+                buf[4..4+data.len()].copy_from_slice(data);
+
+                data.len() as u8 + 2
+            }
             AdStructure::CompleteLocalName(name) => {
                 assert!(name.len() < 255);
                 buf[1] = Self::TYPE_COMPLETE_LOCAL_NAME;
