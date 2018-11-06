@@ -1,5 +1,6 @@
 #![no_std]
 
+#[macro_use]
 extern crate nb;
 extern crate nrf51_hal;
 extern crate nrf51;
@@ -24,27 +25,22 @@ use temp::Temp;
 use radio::{BleRadio, Baseband};
 
 use cortex_m::asm;
+use cortex_m_semihosting::hio::hstderr;
 use rtfm::{app, Threshold};
-use nrf51_hal::timer::Timer;
-use nrf51_hal::prelude::*;
-use nrf51_hal::gpio::*;
-use nrf51_hal::gpio::gpio::PIN1;
 use byteorder::{ByteOrder, LittleEndian};
 
 use core::time::Duration;
+use core::fmt::Write;
 use core::u32;
 
 app! {
     device: nrf51,
 
     resources: {
-        static TIMER: Timer;
-        static TEMP: Temp;
-        static LED: PIN1<Output<OpenDrain>>;    // low = on, high = off
         static BLE_TX_BUF: ::radio::PacketBuffer = [0; ::MAX_PDU_SIZE + 1];
         static BLE_RX_BUF: ::radio::PacketBuffer = [0; ::MAX_PDU_SIZE + 1];
         static BASEBAND: Baseband;
-        static BLE_TIMER: nrf51::TIMER1;
+        static BLE_TIMER: nrf51::TIMER0;
     },
 
     init: {
@@ -52,7 +48,7 @@ app! {
     },
 
     idle: {
-        resources: [TIMER, LED, TEMP, BASEBAND],
+        resources: [BASEBAND],
     },
 
     tasks: {
@@ -61,7 +57,7 @@ app! {
             resources: [BASEBAND, BLE_TIMER],
         },
 
-        TIMER1: {
+        TIMER0: {
             path: radio_timer,
             resources: [BASEBAND, BLE_TIMER],
         }
@@ -77,17 +73,15 @@ fn init(p: init::Peripherals, res: init::Resources) -> init::LateResources {
     p.device.CLOCK.tasks_hfclkstart.write(|w| unsafe { w.bits(1) });
     while p.device.CLOCK.events_hfclkstarted.read().bits() == 0 {}
 
-    // TIMER1 cfg, 32 bit @ 1 MHz
+    // TIMER0 cfg, 32 bit @ 1 MHz
     // Mostly copied from the `nrf51-hal` crate.
-    p.device.TIMER1.bitmode.write(|w| w.bitmode()._32bit());
-    p.device.TIMER1.prescaler.write(|w| unsafe { w.prescaler().bits(4) });
-    p.device.TIMER1.intenset.write(|w| w.compare0().set());
-    p.device.TIMER1.shorts.write(|w| w
+    p.device.TIMER0.bitmode.write(|w| w.bitmode()._32bit());
+    p.device.TIMER0.prescaler.write(|w| unsafe { w.prescaler().bits(4) });
+    p.device.TIMER0.intenset.write(|w| w.compare0().set());
+    p.device.TIMER0.shorts.write(|w| w
         .compare0_clear().enabled()
         .compare0_stop().enabled()
     );
-    // Queue first baseband update
-    cfg_timer(&p.device.TIMER1, Some(Duration::from_millis(1)));
 
     let mut devaddr = [0u8; 6];
     let devaddr_lo = p.device.FICR.deviceaddr[0].read().bits();
@@ -102,22 +96,23 @@ fn init(p: init::Peripherals, res: init::Resources) -> init::LateResources {
     };
     let device_address = DeviceAddress::new(devaddr, devaddr_type);
 
-    let gpios = p.device.GPIO.split();
-    let mut led = gpios.pin1.into_open_drain_output();
-    led.set_high();     // initially off
-
     let mut ll = LinkLayer::new(device_address);
-    ll.start_advertise(Duration::from_millis(10), &[
+    ll.start_advertise(Duration::from_millis(100), &[
         AdStructure::Flags(Flags::discoverable()),
         AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS"),
     ]);
 
+    // Queue first baseband update
+    cfg_timer(&p.device.TIMER0, Some(Duration::from_millis(1)));
+
+    let mut temp = Temp::new(p.device.TEMP);
+    temp.start_measurement();
+    let temp = block!(temp.read()).unwrap();
+    writeln!(hstderr().unwrap(), "{}°C", temp).unwrap();
+
     init::LateResources {
-        TIMER: Timer::new(p.device.TIMER0),
-        TEMP: Temp::new(p.device.TEMP),
-        LED: led,
         BASEBAND: Baseband::new(BleRadio::new(p.device.RADIO, &p.device.FICR, res.BLE_TX_BUF), res.BLE_RX_BUF, ll),
-        BLE_TIMER: p.device.TIMER1,
+        BLE_TIMER: p.device.TIMER0,
     }
 }
 
@@ -133,18 +128,19 @@ fn radio(_t: &mut Threshold, mut res: RADIO::Resources) {
     }
 }
 
-fn radio_timer(_t: &mut Threshold, mut res: TIMER1::Resources) {
+fn radio_timer(_t: &mut Threshold, mut res: TIMER0::Resources) {
+    hstderr().unwrap().write_str("T").unwrap();
     let maybe_next_update = res.BASEBAND.update();
     cfg_timer(&res.BLE_TIMER, maybe_next_update);
 }
 
-/// Reconfigures TIMER1 to raise an interrupt after `duration` has elapsed.
+/// Reconfigures TIMER0 to raise an interrupt after `duration` has elapsed.
 ///
-/// TIMER1 is stopped if `duration` is `None`.
+/// TIMER0 is stopped if `duration` is `None`.
 ///
 /// Note that if the timer has already queued an interrupt, the task will still be run after the
 /// timer is stopped by this function.
-fn cfg_timer(t: &nrf51::TIMER1, duration: Option<Duration>) {
+fn cfg_timer(t: &nrf51::TIMER0, duration: Option<Duration>) {
     // Timer activation code is also copied from the `nrf51-hal` crate.
     if let Some(duration) = duration {
         assert!(duration.as_secs() < ((u32::MAX - duration.subsec_micros()) / 1_000_000) as u64);

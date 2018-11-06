@@ -7,8 +7,8 @@ pub struct Temp(TEMP);
 
 impl Temp {
     /// Creates a new `Temp`, taking ownership of the temperature sensor's register block.
-    pub fn new(register_block: TEMP) -> Self {
-        Temp(register_block)
+    pub fn new(raw: TEMP) -> Self {
+        Temp(raw)
     }
 
     /// Kicks off a temperature measurement.
