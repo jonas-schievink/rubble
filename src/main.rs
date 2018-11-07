@@ -14,6 +14,9 @@ extern crate byteorder;
 extern crate panic_halt;
 
 pub mod ble;
+
+#[macro_use]
+mod macros;
 mod temp;
 mod radio;
 
@@ -25,12 +28,10 @@ use temp::Temp;
 use radio::{BleRadio, Baseband};
 
 use cortex_m::asm;
-use cortex_m_semihosting::hio::hstderr;
 use rtfm::{app, Threshold};
 use byteorder::{ByteOrder, LittleEndian};
 
 use core::time::Duration;
-use core::fmt::Write;
 use core::u32;
 
 app! {
@@ -108,7 +109,7 @@ fn init(p: init::Peripherals, res: init::Resources) -> init::LateResources {
     let mut temp = Temp::new(p.device.TEMP);
     temp.start_measurement();
     let temp = block!(temp.read()).unwrap();
-    writeln!(hstderr().unwrap(), "{}°C", temp).unwrap();
+    heprintln!("{}°C", temp);
 
     init::LateResources {
         BASEBAND: Baseband::new(BleRadio::new(p.device.RADIO, &p.device.FICR, res.BLE_TX_BUF), res.BLE_RX_BUF, ll),
@@ -129,7 +130,7 @@ fn radio(_t: &mut Threshold, mut res: RADIO::Resources) {
 }
 
 fn radio_timer(_t: &mut Threshold, mut res: TIMER0::Resources) {
-    hstderr().unwrap().write_str("T").unwrap();
+    heprint!("T");
     let maybe_next_update = res.BASEBAND.update();
     cfg_timer(&res.BLE_TIMER, maybe_next_update);
 }
