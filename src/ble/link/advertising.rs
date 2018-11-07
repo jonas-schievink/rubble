@@ -12,7 +12,7 @@ use super::ad_structure::AdStructure;
 
 use byteorder::{ByteOrder, LittleEndian};
 
-/// Higher-level representation of the different kinds of advertising channel PDUs.
+/// Higher-level representation of an advertising channel PDU.
 pub enum StructuredPdu<'a> {
     /// Connectable undirected advertising event.
     AdvInd {

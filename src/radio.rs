@@ -30,11 +30,12 @@
 //!                  Address                             PDU
 //! ```
 //!
-//! If S0, Length, and S1 are present (= length > 0 bits), they are *always* one Byte in RAM. The
-//! least significant bits of the in-RAM Bytes will be sent/received over the air. This poses a
-//! problem, since the packet isn't actually sent as it is in memory. The stack works around this by
-//! only filling the `Payload` by itself and passing a `Header` struct to the `Transmitter`, which
-//! can then do whatever is necessary to encode the header so that it's sent correctly.
+//! If S0, Length, and S1 are present (= length > 0 bits), their sizes are *always* rounded up to
+//! whole Bytes in RAM. The least significant bits of the in-RAM Bytes will be sent/received over
+//! the air. This poses a problem, since the packet isn't actually sent as it is in memory. The
+//! stack works around this by only filling the `Payload` by itself and passing a `Header` struct to
+//! the `Transmitter`, which can then do whatever is necessary to encode the header so that it's
+//! sent correctly.
 //!
 //! In our case, this involves "splitting" the header into the `S0` field (everything preceding the
 //! length), the `Length` field, and the `S1` field (which just contains 2 unused bits, but they
