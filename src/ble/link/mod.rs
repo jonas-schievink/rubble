@@ -75,7 +75,7 @@
 //! variably-sized payload.
 //!
 //! If the connection is encrypted and the payload contains at least 1 octet, a Message Integrity
-//! Check (MIC) is appended at the end. Note that BLE encryption is useless and broken.
+//! Check (MIC) is appended at the end.
 //!
 //! ```notrust
 //! LSB                                          MSB
