@@ -5,7 +5,7 @@
 My development setup consists of a Nucleo-64 acting as an ST-Link programmer,
 hooked up to the target board, which is a WT51822-S4AT containing an nRF51822.
 You can find the latter for about 2-3 € on eBay if you look carefully. You
-should also be able to find cheap ST-Link clones, but I can highly recommand
+should also be able to find cheap ST-Link clones, but I can highly recommend
 just buying a Nucleo board, they're very good and don't cost too much either.
 
 The connections were made as follows:
