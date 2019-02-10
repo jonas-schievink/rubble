@@ -42,6 +42,7 @@
 //! must still be sent, of course).
 
 use ble::link::{MAX_PDU_SIZE, ADVERTISING_ADDRESS, CRC_PRESET, CRC_POLY, LinkLayer, Transmitter, RadioCmd, advertising, data};
+use ble::link::log::Logger;
 use ble::phy::{AdvertisingChannelIndex, DataChannelIndex};
 
 use nrf51::{FICR, RADIO};
@@ -229,14 +230,14 @@ impl Transmitter for BleRadio {
     }
 }
 
-pub struct Baseband {
+pub struct Baseband<L: Logger> {
     radio: BleRadio,
     rx_buf: &'static mut PacketBuffer,
-    ll: LinkLayer,
+    ll: LinkLayer<L>,
 }
 
-impl Baseband {
-    pub fn new(radio: BleRadio, rx_buf: &'static mut PacketBuffer, ll: LinkLayer) -> Self {
+impl<L: Logger> Baseband<L> {
+    pub fn new(radio: BleRadio, rx_buf: &'static mut PacketBuffer, ll: LinkLayer<L>) -> Self {
         Self { radio, rx_buf, ll }
     }
 

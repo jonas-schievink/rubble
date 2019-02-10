@@ -117,9 +117,12 @@
 pub mod ad_structure;
 pub mod advertising;
 pub mod data;
+#[macro_use]
+pub mod log;
 
 use self::ad_structure::AdStructure;
 use self::advertising::StructuredPdu;
+use self::log::{Logger, NoopLogger};
 
 use super::phy::{Radio, AdvertisingChannelIndex, DataChannelIndex};
 use super::crc::ble_crc24;
@@ -199,16 +202,25 @@ enum State {
 /// Implementation of the BLE Link-Layer logic.
 ///
 /// Users of this struct must provide a way to send and receive Link-Layer PDUs via a `Transmitter`.
-pub struct LinkLayer {
+pub struct LinkLayer<L: Logger> {
     dev_addr: DeviceAddress,
     state: State,
+    logger: L,
 }
 
-impl LinkLayer {
+impl LinkLayer<NoopLogger> {
     /// Creates a new Link-Layer in standby state (ie. not transmitting or listening for data).
     pub fn new(dev_addr: DeviceAddress) -> Self {
+        Self::with_logger(dev_addr, NoopLogger)
+    }
+}
+
+impl<L: Logger> LinkLayer<L> {
+    /// Creates a new Link-Layer with a custom logger.
+    pub fn with_logger(dev_addr: DeviceAddress, logger: L) -> Self {
         Self {
             dev_addr,
+            logger,
             state: State::Standby,
         }
     }
@@ -240,6 +252,7 @@ impl LinkLayer {
     /// The access address of the packet must be `ADVERTISING_ADDRESS`, the CRC checksum must be
     /// correct.
     pub fn process_adv_packet<T: Transmitter>(&mut self, tx: &mut T, header: advertising::Header, payload: &[u8]) -> Cmd {
+        trace!(self.logger, " ADV<- {:?}", header);
         let _ = (tx, header, payload);
 
         match self.state {
@@ -279,6 +292,7 @@ impl LinkLayer {
                 let payload_len = header.payload_length() as usize;
                 tx.tx_payload_buf()[..payload_len].copy_from_slice(&payload[..payload_len]);
                 tx.transmit_advertising(header, channel.into());
+                trace!(self.logger, " ADV-> {:?}", header);
 
                 Cmd {
                     radio: RadioCmd::ListenAdvertising {

@@ -35,13 +35,14 @@ use core::time::Duration;
 use core::u32;
 use core::fmt::Write;
 
+type Logger = serial::Tx<UART0>;
+
 #[app(device = nrf51)]
 const APP: () = {
     static mut BLE_TX_BUF: ::radio::PacketBuffer = [0; ::MAX_PDU_SIZE + 1];
     static mut BLE_RX_BUF: ::radio::PacketBuffer = [0; ::MAX_PDU_SIZE + 1];
-    static mut BASEBAND: Baseband = ();
+    static mut BASEBAND: Baseband<Logger> = ();
     static BLE_TIMER: nrf51::TIMER0 = ();
-    static mut SERIAL: serial::Tx<UART0> = ();
 
     #[init(resources = [BLE_TX_BUF, BLE_RX_BUF])]
     fn init() {
@@ -63,6 +64,19 @@ const APP: () = {
             .compare0_stop().enabled()
         );
 
+        let mut temp = Temp::new(device.TEMP);
+        temp.start_measurement();
+        let temp = block!(temp.read()).unwrap();
+
+        let mut serial = {
+            let pins = device.GPIO.split();
+            let rx = pins.pin1.downgrade();
+            let tx = pins.pin2.into_push_pull_output().downgrade();
+            Serial::uart0(device.UART0, tx, rx, BAUDRATEW::BAUD921600).split().0
+        };
+        writeln!(serial, "\n--- INIT ({}°C) ---", temp).unwrap();
+
+
         let mut devaddr = [0u8; 6];
         let devaddr_lo = device.FICR.deviceaddr[0].read().bits();
         let devaddr_hi = device.FICR.deviceaddr[1].read().bits() as u16;
@@ -76,7 +90,7 @@ const APP: () = {
         };
         let device_address = DeviceAddress::new(devaddr, devaddr_type);
 
-        let mut ll = LinkLayer::new(device_address);
+        let mut ll = LinkLayer::with_logger(device_address, serial);
         ll.start_advertise(Duration::from_millis(100), &[
             AdStructure::Flags(Flags::discoverable()),
             AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS"),
@@ -85,23 +99,8 @@ const APP: () = {
         // Queue first baseband update
         cfg_timer(&device.TIMER0, Some(Duration::from_millis(1)));
 
-        let mut temp = Temp::new(device.TEMP);
-        temp.start_measurement();
-        let temp = block!(temp.read()).unwrap();
-
-        // Set up ext. pins
-        let pins = device.GPIO.split();
-
-        let mut serial = {
-            let rx = pins.pin1.downgrade();
-            let tx = pins.pin2.into_push_pull_output().downgrade();
-            Serial::uart0(device.UART0, tx, rx, BAUDRATEW::BAUD921600).split().0
-        };
-        writeln!(serial, "\n--- INIT ({}°C) ---", temp).unwrap();
-
         BASEBAND = Baseband::new(BleRadio::new(device.RADIO, &device.FICR, resources.BLE_TX_BUF), resources.BLE_RX_BUF, ll);
         BLE_TIMER = device.TIMER0;
-        SERIAL = serial;
     }
 
     #[interrupt(resources = [BLE_TIMER, BASEBAND])]
@@ -116,7 +115,6 @@ const APP: () = {
         let maybe_next_update = resources.BASEBAND.update();
         cfg_timer(&resources.BLE_TIMER, maybe_next_update);
     }
-
 };
 
 /// Reconfigures TIMER0 to raise an interrupt after `duration` has elapsed.

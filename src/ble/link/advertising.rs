@@ -11,6 +11,7 @@ use super::DeviceAddress;
 use super::ad_structure::AdStructure;
 
 use byteorder::{ByteOrder, LittleEndian};
+use core::fmt;
 
 /// Higher-level representation of an advertising channel PDU.
 pub enum StructuredPdu<'a> {
@@ -220,10 +221,22 @@ impl Header {
     }
 }
 
+impl fmt::Debug for Header {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Header")
+            .field("PDU Type", &self.type_())
+            .field("TxAdd", &self.tx_add())
+            .field("RxAdd", &self.rx_add())
+            .field("len", &self.payload_length())
+            .finish()
+    }
+}
+
 enum_with_unknown! {
     /// 4-bit PDU type in `PduHeader`.
     ///
     /// `Adv*` type PDUs are sent while in Advertising state.
+    #[derive(Debug)]
     pub enum PduType(u8) {
         /// Connectable undirected advertising event.
         AdvInd = 0b0000,
