@@ -1,6 +1,6 @@
 //! Advertising Data / Extended Inquiry Response (EIR) data.
 //!
-//! Part of GAP.
+//! Part of GAP (Generic Access Profile).
 
 /// A list of AD structures can be sent along with an advertising packet or scan response.
 ///

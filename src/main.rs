@@ -15,9 +15,6 @@ extern crate byteorder;
 extern crate panic_halt;
 
 pub mod ble;
-
-#[macro_use]
-mod macros;
 mod temp;
 mod radio;
 
@@ -30,9 +27,13 @@ use radio::{BleRadio, Baseband};
 
 use rtfm::app;
 use byteorder::{ByteOrder, LittleEndian};
+use nrf51_hal::serial::{self, Serial, BAUDRATEW};
+use nrf51_hal::prelude::*;
+use nrf51::UART0;
 
 use core::time::Duration;
 use core::u32;
+use core::fmt::Write;
 
 #[app(device = nrf51)]
 const APP: () = {
@@ -40,6 +41,7 @@ const APP: () = {
     static mut BLE_RX_BUF: ::radio::PacketBuffer = [0; ::MAX_PDU_SIZE + 1];
     static mut BASEBAND: Baseband = ();
     static BLE_TIMER: nrf51::TIMER0 = ();
+    static mut SERIAL: serial::Tx<UART0> = ();
 
     #[init(resources = [BLE_TX_BUF, BLE_RX_BUF])]
     fn init() {
@@ -86,10 +88,21 @@ const APP: () = {
         let mut temp = Temp::new(device.TEMP);
         temp.start_measurement();
         let temp = block!(temp.read()).unwrap();
-        heprintln!("{}°C", temp);
+
+        // Set up ext. pins
+        let pins = device.GPIO.split();
+
+        let mut serial = {
+            let rx = pins.pin1.downgrade();
+            let tx = pins.pin2.into_push_pull_output().downgrade();
+            Serial::uart0(device.UART0, tx, rx, BAUDRATEW::BAUD115200).split().0
+        };
+        writeln!(serial, "--- INIT ---").unwrap();
+        writeln!(serial, "{}°C", temp).unwrap();
 
         BASEBAND = Baseband::new(BleRadio::new(device.RADIO, &device.FICR, resources.BLE_TX_BUF), resources.BLE_RX_BUF, ll);
         BLE_TIMER = device.TIMER0;
+        SERIAL = serial;
     }
 
     #[interrupt(resources = [BLE_TIMER, BASEBAND])]
@@ -101,7 +114,6 @@ const APP: () = {
 
     #[interrupt(resources = [BLE_TIMER, BASEBAND])]
     fn TIMER0() {
-        heprint!("T");
         let maybe_next_update = resources.BASEBAND.update();
         cfg_timer(&resources.BLE_TIMER, maybe_next_update);
     }
