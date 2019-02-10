@@ -97,7 +97,7 @@ const APP: () = {
             let tx = pins.pin2.into_push_pull_output().downgrade();
             Serial::uart0(device.UART0, tx, rx, BAUDRATEW::BAUD115200).split().0
         };
-        writeln!(serial, "--- INIT ---").unwrap();
+        writeln!(serial, "\n--- INIT ---").unwrap();
         writeln!(serial, "{}°C", temp).unwrap();
 
         BASEBAND = Baseband::new(BleRadio::new(device.RADIO, &device.FICR, resources.BLE_TX_BUF), resources.BLE_RX_BUF, ll);
