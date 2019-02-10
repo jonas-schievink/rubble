@@ -12,6 +12,7 @@
 ///
 /// From a very unrepresentative scan, most devices seem to include Flags and Manufacturer Data, and
 /// optionally a device name, of course.
+#[derive(Debug)]
 pub enum AdStructure<'a> {
     /// Device flags and baseband capabilities.
     ///
@@ -123,24 +124,26 @@ impl<'a> AdStructure<'a> {
     }
 }
 
-/// BR/EDR and LE compatibility flags.
-///
-/// This is mandatory for most devices and can only be omitted if all flags are 0.
-pub struct Flags(u8);
+bitflags! {
+    /// BR/EDR and LE compatibility flags.
+    ///
+    /// This is mandatory for most devices and can only be omitted if all flags are 0.
+    pub struct Flags: u8 {
+        const LE_LIMITED_DISCOVERABLE = 0b00000001;
+        const LE_GENERAL_DISCOVERABLE = 0b00000010;
+        const BR_EDR_NOT_SUPPORTED    = 0b00000100;
+        const SIMUL_LE_BR_CONTROLLER  = 0b00001000;
+        const SIMUL_LE_BR_HOST        = 0b00010000;
+    }
+}
 
 impl Flags {
-    const LE_LIMITED_DISCOVERABLE: u8 = 0b00000001;
-    const LE_GENERAL_DISCOVERABLE: u8 = 0b00000010;
-    const BR_EDR_NOT_SUPPORTED:    u8 = 0b00000100;
-    //const SIMUL_LE_BR_CONTROLLER:  u8 = 0b00001000;
-    //const SIMUL_LE_BR_HOST:        u8 = 0b00010000;
-
     /// Returns flags suitable for discoverable devices that want to establish a connection.
     ///
     /// The created `Flags` value specifies that this device is not BR/EDR (classic Bluetooth)
     /// capable and is in General Discoverable mode.
     pub fn discoverable() -> Flags {
-        Flags(Self::BR_EDR_NOT_SUPPORTED | Self::LE_GENERAL_DISCOVERABLE)
+        Self::BR_EDR_NOT_SUPPORTED | Self::LE_GENERAL_DISCOVERABLE
     }
 
     /// Returns flags suitable for non-connectable devices that just broadcast advertising packets.
@@ -148,18 +151,18 @@ impl Flags {
     /// Creates a `Flags` value that specifies that BR/EDR (classic Bluetooth) is not supported and
     /// that this device is not discoverable.
     pub fn broadcast() -> Flags {
-        Flags(Self::BR_EDR_NOT_SUPPORTED)
+        Self::BR_EDR_NOT_SUPPORTED
     }
 
     /// Returns the raw representation of the flags.
     pub fn to_u8(&self) -> u8 {
-        self.0
+        self.bits()
     }
 
     /// Returns a boolean indicating whether the device that sent this `Flags` value supports BR/EDR
     /// (aka "Classic Bluetooth").
     pub fn supports_classic_bluetooth(&self) -> bool {
-        self.0 & Self::BR_EDR_NOT_SUPPORTED == 0
+        self.contains(Self::BR_EDR_NOT_SUPPORTED)
     }
 
     /// Device operating in LE Limited Discoverable mode.
@@ -168,7 +171,7 @@ impl Flags {
     /// Note that "Broadcast Mode" still works with undiscoverable devices, since it doesn't need
     /// discovery or connections.
     pub fn le_limited_discoverable(&self) -> bool {
-        self.0 & Self::LE_LIMITED_DISCOVERABLE != 0
+        self.contains(Self::LE_LIMITED_DISCOVERABLE)
     }
 
     /// Device operating in LE General Discoverable mode.
@@ -177,7 +180,7 @@ impl Flags {
     /// Note that "Broadcast Mode" still works with undiscoverable devices, since it doesn't need
     /// discovery or connections.
     pub fn le_general_discoverable(&self) -> bool {
-        self.0 & Self::LE_GENERAL_DISCOVERABLE != 0
+        self.contains(Self::LE_GENERAL_DISCOVERABLE)
     }
 }
 

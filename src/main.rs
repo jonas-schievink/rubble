@@ -13,6 +13,8 @@ extern crate rtfm;
 extern crate fpa;
 extern crate byteorder;
 extern crate panic_halt;
+#[macro_use]
+extern crate bitflags;
 
 pub mod ble;
 mod temp;

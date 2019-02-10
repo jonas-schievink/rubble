@@ -230,6 +230,7 @@ impl<L: Logger> LinkLayer<L> {
     /// Note that advertisements will only be sent by calling `update`.
     pub fn start_advertise(&mut self, interval: Duration, data: &[AdStructure]) {
         assert!(data.len() <= 31);
+        debug!(self.logger, "start_advertise: {:?}", data);
 
         // TODO tear down existing connection?
 
@@ -295,6 +296,7 @@ impl<L: Logger> LinkLayer<L> {
                 trace!(self.logger, " ADV-> {:?}", header);
 
                 Cmd {
+                    // FIXME: don't need to listen if we're a nonconnectable beacon
                     radio: RadioCmd::ListenAdvertising {
                         channel,
                     },

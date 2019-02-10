@@ -14,7 +14,15 @@ impl Write for NoopLogger {
     }
 }
 
+// trace and debug are exactly the same right now
+
 macro_rules! trace {
+    ($logger:expr, $($t:tt)+) => {{
+        writeln!($logger, $($t)+).unwrap();
+    }};
+}
+
+macro_rules! debug {
     ($logger:expr, $($t:tt)+) => {{
         writeln!($logger, $($t)+).unwrap();
     }};
