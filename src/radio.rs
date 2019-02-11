@@ -97,24 +97,22 @@ impl BleRadio {
         radio.txpower.write(|w| w.txpower().pos4d_bm());
 
         unsafe {
-            radio.pcnf1.write(
-                |w| {
-                    w.maxlen()
-                        .bits(37) // no packet length limit
-                        .balen()
-                        .bits(3) // 3-Byte Base Address + 1-Byte Address Prefix
-                        .whiteen()
-                        .set_bit()
-                }, // Enable Data Whitening over PDU+CRC
-            );
-            radio.crccnf.write(
-                |w| {
-                    w.skipaddr()
-                        .set_bit() // skip address since only the S0, Length, S1 and Payload need CRC
-                        .len()
-                        .three()
-                }, // 3 Bytes = CRC24
-            );
+            radio.pcnf1.write(|w| {
+                // no packet length limit
+                w.maxlen()
+                    .bits(37)
+                    // 3-Byte Base Address + 1-Byte Address Prefix
+                    .balen()
+                    .bits(3)
+                    // Enable Data Whitening over PDU+CRC
+                    .whiteen()
+                    .set_bit()
+            });
+            radio.crccnf.write(|w| {
+                // skip address since only the S0, Length, S1 and Payload need CRC
+                // 3 Bytes = CRC24
+                w.skipaddr().set_bit().len().three()
+            });
             radio
                 .crcpoly
                 .write(|w| w.crcpoly().bits(CRC_POLY & 0xFFFFFF));
@@ -144,14 +142,12 @@ impl BleRadio {
         }*/
 
         // Configure shortcuts to simplify and speed up sending and receiving packets.
-        radio.shorts.write(
-            |w| {
-                w.ready_start()
-                    .enabled() // start transmission/recv immediately after ramp-up
-                    .end_disable()
-                    .enabled()
-            }, // disable radio when transmission/recv is done
-        );
+        radio.shorts.write(|w| {
+            // start transmission/recv immediately after ramp-up
+            // disable radio when transmission/recv is done
+            w.ready_start().enabled().end_disable().enabled()
+        });
+
         // We can now start the TXEN/RXEN tasks and the radio will do the rest and return to the
         // disabled state.
 
@@ -249,9 +245,12 @@ impl Transmitter for BleRadio {
         channel: AdvertisingChannelIndex,
     ) {
         let raw_header = header.to_u16();
-        self.tx_buf[0] = raw_header as u8; // S0     = 8 bits (LSB)
-        self.tx_buf[1] = header.payload_length(); // Length = 6 bits
-        self.tx_buf[2] = 0; // S1     = 2 unused bits = 0
+        // S0 = 8 bits (LSB)
+        self.tx_buf[0] = raw_header as u8;
+        // Length = 6 bits
+        self.tx_buf[1] = header.payload_length();
+        // S1 = 2 unused bits = 0
+        self.tx_buf[2] = 0;
 
         self.prepare_txrx_advertising(channel);
 

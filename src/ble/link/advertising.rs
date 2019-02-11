@@ -108,7 +108,8 @@ impl<'a> StructuredPdu<'a> {
                 }
 
                 assert!(data_buf.len() <= 31);
-                assert!(ad_size < 50); // 50 or something, not very important
+                // 50 or something, not very important
+                assert!(ad_size < 50);
                 header.set_payload_length(6 + ad_size as u8);
                 header.set_tx_add(advertiser_address.is_random());
                 header.set_rx_add(false);

@@ -265,7 +265,8 @@ impl<L: Logger> LinkLayer<L> {
             State::Advertising { channel, .. } => {
                 Cmd {
                     radio: RadioCmd::ListenAdvertising { channel },
-                    next_update: None, // no change
+                    // no change
+                    next_update: None,
                 }
             }
             State::Connection => unreachable!(),
@@ -458,7 +459,8 @@ pub struct RawTransmitter<R: Radio> {
     radio: R,
 }
 
-const PDU_START: usize = 5; // First 5 octets are Preamble and Access Address
+// First 5 octets are Preamble and Access Address
+const PDU_START: usize = 5;
 const HEADER_RANGE: Range<usize> = PDU_START..PDU_START + 2;
 const PAYLOAD_RANGE: Range<usize> = PDU_START + 2..PDU_START + MAX_PDU_SIZE;
 

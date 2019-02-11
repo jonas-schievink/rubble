@@ -79,8 +79,8 @@ const APP: () = {
         let mut serial = {
             let pins = device.GPIO.split();
             let rx = pins.pin1.downgrade();
-            let tx = pins.pin2.into_push_pull_output().downgrade();
-            Serial::uart0(device.UART0, tx, rx, BAUDRATEW::BAUD921600)
+            let tx = pins.pin9.into_push_pull_output().downgrade();
+            Serial::uart0(device.UART0, tx, rx, BAUDRATEW::BAUD230400)
                 .split()
                 .0
         };
@@ -151,12 +151,14 @@ fn cfg_timer(t: &nrf51::TIMER0, duration: Option<Duration>) {
         assert!(duration.as_secs() < ((u32::MAX - duration.subsec_micros()) / 1_000_000) as u64);
         let us = (duration.as_secs() as u32) * 1_000_000 + duration.subsec_micros();
         t.cc[0].write(|w| unsafe { w.bits(us) });
-        t.events_compare[0].reset(); // acknowledge last compare event (FIXME unnecessary?)
+        // acknowledge last compare event (FIXME unnecessary?)
+        t.events_compare[0].reset();
         t.tasks_clear.write(|w| unsafe { w.bits(1) });
         t.tasks_start.write(|w| unsafe { w.bits(1) });
     } else {
         t.tasks_stop.write(|w| unsafe { w.bits(1) });
         t.tasks_clear.write(|w| unsafe { w.bits(1) });
-        t.events_compare[0].reset(); // acknowledge last compare event (FIXME unnecessary?)
+        // acknowledge last compare event (FIXME unnecessary?)
+        t.events_compare[0].reset();
     }
 }
