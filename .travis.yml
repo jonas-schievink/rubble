@@ -1,0 +1,15 @@
+language: rust
+rust: nightly
+env: TARGET_BUILD=thumbv6m-none-eabi
+
+install:
+  - rustup target add $TARGET_BUILD
+  - rustup component add rustfmt
+
+script:
+  - cargo fmt --all -- --check
+  - cargo check --target $TARGET_BUILD
+
+notifications:
+  email:
+    on_success: never

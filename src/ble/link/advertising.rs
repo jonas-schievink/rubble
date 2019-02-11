@@ -7,8 +7,8 @@
 //! Note that while the types in here do not completely eliminate illegal values to be created, they
 //! do employ a range of sanity checks that prevent bogus packets from being sent by the stack.
 
-use super::DeviceAddress;
 use super::ad_structure::AdStructure;
+use super::DeviceAddress;
 
 use byteorder::{ByteOrder, LittleEndian};
 use core::fmt;
@@ -87,9 +87,18 @@ impl<'a> StructuredPdu<'a> {
         let mut header = Header::new(ty);
 
         match *self {
-            StructuredPdu::AdvInd { ref advertiser_address, advertiser_data } |
-            StructuredPdu::AdvNonconnInd { ref advertiser_address, advertiser_data } |
-            StructuredPdu::AdvScanInd { ref advertiser_address, advertiser_data } => {
+            StructuredPdu::AdvInd {
+                ref advertiser_address,
+                advertiser_data,
+            }
+            | StructuredPdu::AdvNonconnInd {
+                ref advertiser_address,
+                advertiser_data,
+            }
+            | StructuredPdu::AdvScanInd {
+                ref advertiser_address,
+                advertiser_data,
+            } => {
                 payload[0..6].copy_from_slice(advertiser_address.raw());
                 let data_buf = &mut payload[6..];
                 let mut ad_size = 0;
@@ -99,18 +108,22 @@ impl<'a> StructuredPdu<'a> {
                 }
 
                 assert!(data_buf.len() <= 31);
-                assert!(ad_size < 50);  // 50 or something, not very important
+                // 50 or something, not very important
+                assert!(ad_size < 50);
                 header.set_payload_length(6 + ad_size as u8);
                 header.set_tx_add(advertiser_address.is_random());
                 header.set_rx_add(false);
-            },
-            StructuredPdu::AdvDirectInd { ref advertiser_address, ref initiator_address } => {
+            }
+            StructuredPdu::AdvDirectInd {
+                ref advertiser_address,
+                ref initiator_address,
+            } => {
                 header.set_payload_length(6 + 6);
                 header.set_tx_add(advertiser_address.is_random());
                 header.set_rx_add(initiator_address.is_random());
                 payload[0..6].copy_from_slice(advertiser_address.raw());
                 payload[6..12].copy_from_slice(initiator_address.raw());
-            },
+            }
             StructuredPdu::ScanReq { .. } => unimplemented!(),
             StructuredPdu::ScanRsp { .. } => unimplemented!(),
             StructuredPdu::__Nonexhaustive => unreachable!(),

@@ -26,3 +26,4 @@ opt-level = "s"
 
 [profile.release]
 opt-level = "s"
+debug = true

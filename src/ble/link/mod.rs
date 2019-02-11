@@ -124,10 +124,10 @@ use self::ad_structure::AdStructure;
 use self::advertising::StructuredPdu;
 use self::log::{Logger, NoopLogger};
 
-use super::phy::{Radio, AdvertisingChannelIndex, DataChannelIndex};
 use super::crc::ble_crc24;
+use super::phy::{AdvertisingChannelIndex, DataChannelIndex, Radio};
 
-use byteorder::{LittleEndian, ByteOrder};
+use byteorder::{ByteOrder, LittleEndian};
 
 use core::ops::Range;
 use core::time::Duration;
@@ -164,7 +164,6 @@ pub const MAX_PDU_SIZE: usize = 39;
 
 /// Max. total Link-Layer packet size in octets.
 pub const MAX_PACKET_SIZE: usize = 1 /* preamble */ + 4 /* access addr */ + MAX_PDU_SIZE + 3 /* crc */;
-
 
 /// Link-Layer state machine, according to the Bluetooth spec.
 enum State {
@@ -236,7 +235,7 @@ impl<L: Logger> LinkLayer<L> {
 
         let pdu = StructuredPdu::AdvNonconnInd {
             advertiser_address: self.dev_addr,
-            advertiser_data: data
+            advertiser_data: data,
         };
         let mut payload = [0; MAX_PAYLOAD_SIZE];
         let header = pdu.lower(&mut payload);
@@ -252,7 +251,12 @@ impl<L: Logger> LinkLayer<L> {
     ///
     /// The access address of the packet must be `ADVERTISING_ADDRESS`, the CRC checksum must be
     /// correct.
-    pub fn process_adv_packet<T: Transmitter>(&mut self, tx: &mut T, header: advertising::Header, payload: &[u8]) -> Cmd {
+    pub fn process_adv_packet<T: Transmitter>(
+        &mut self,
+        tx: &mut T,
+        header: advertising::Header,
+        payload: &[u8],
+    ) -> Cmd {
         trace!(self.logger, " ADV<- {:?}", header);
         let _ = (tx, header, payload);
 
@@ -260,20 +264,23 @@ impl<L: Logger> LinkLayer<L> {
             State::Standby => unreachable!(),
             State::Advertising { channel, .. } => {
                 Cmd {
-                    radio: RadioCmd::ListenAdvertising {
-                        channel,
-                    },
-                    next_update: None,  // no change
+                    radio: RadioCmd::ListenAdvertising { channel },
+                    // no change
+                    next_update: None,
                 }
-            },
+            }
             State::Connection => unreachable!(),
-            State::Initiating |
-            State::Scanning => unreachable!(),
+            State::Initiating | State::Scanning => unreachable!(),
         }
     }
 
     /// Process an incoming data channel packet.
-    pub fn process_data_packet<T: Transmitter>(&mut self, tx: &mut T, header: data::Header, payload: &[u8]) -> Cmd {
+    pub fn process_data_packet<T: Transmitter>(
+        &mut self,
+        tx: &mut T,
+        header: data::Header,
+        payload: &[u8],
+    ) -> Cmd {
         let _ = (tx, header, payload);
         unimplemented!();
     }
@@ -289,7 +296,12 @@ impl<L: Logger> LinkLayer<L> {
     /// * `elapsed`: Time since the last `update` call or creation of this `LinkLayer`.
     pub fn update<T: Transmitter>(&mut self, tx: &mut T) -> Cmd {
         match self.state {
-            State::Advertising { interval, ref payload, header, channel } => {
+            State::Advertising {
+                interval,
+                ref payload,
+                header,
+                channel,
+            } => {
                 let payload_len = header.payload_length() as usize;
                 tx.tx_payload_buf()[..payload_len].copy_from_slice(&payload[..payload_len]);
                 tx.transmit_advertising(header, channel.into());
@@ -297,9 +309,7 @@ impl<L: Logger> LinkLayer<L> {
 
                 Cmd {
                     // FIXME: don't need to listen if we're a nonconnectable beacon
-                    radio: RadioCmd::ListenAdvertising {
-                        channel,
-                    },
+                    radio: RadioCmd::ListenAdvertising { channel },
                     next_update: Some(interval),
                 }
             }
@@ -414,7 +424,11 @@ pub trait Transmitter {
     ///
     /// * `header`: Advertising Channel PDU Header to prepend to the Payload in `payload_buf()`.
     /// * `channel`: Advertising Channel Index to transmit on.
-    fn transmit_advertising(&mut self, header: advertising::Header, channel: AdvertisingChannelIndex);
+    fn transmit_advertising(
+        &mut self,
+        header: advertising::Header,
+        channel: AdvertisingChannelIndex,
+    );
 
     /// Transmit a Data Channel PDU.
     ///
@@ -427,7 +441,13 @@ pub trait Transmitter {
     /// * `crc_iv`: CRC calculation initial value (`CRC_PRESET` for advertising channel).
     /// * `header`: Data Channel PDU Header to be prepended to the Payload in `payload_buf()`.
     /// * `channel`: Data Channel Index to transmit on.
-    fn transmit_data(&mut self, access_address: u32, crc_iv: u32, header: data::Header, channel: DataChannelIndex);
+    fn transmit_data(
+        &mut self,
+        access_address: u32,
+        crc_iv: u32,
+        header: data::Header,
+        channel: DataChannelIndex,
+    );
 }
 
 /// A `Transmitter` that lowers Link-Layer packets to raw byte arrays that can be directly
@@ -439,7 +459,8 @@ pub struct RawTransmitter<R: Radio> {
     radio: R,
 }
 
-const PDU_START: usize = 5;  // First 5 octets are Preamble and Access Address
+// First 5 octets are Preamble and Access Address
+const PDU_START: usize = 5;
 const HEADER_RANGE: Range<usize> = PDU_START..PDU_START + 2;
 const PAYLOAD_RANGE: Range<usize> = PDU_START + 2..PDU_START + MAX_PDU_SIZE;
 
@@ -461,11 +482,16 @@ impl<R: Radio> RawTransmitter<R> {
 
         LittleEndian::write_u32(&mut self.tx_buf[1..5], access_address);
 
-        let crc = ble_crc24(&self.tx_buf[PDU_START..PDU_START + 2 + payload_length as usize], crc_iv);
+        let crc = ble_crc24(
+            &self.tx_buf[PDU_START..PDU_START + 2 + payload_length as usize],
+            crc_iv,
+        );
         LittleEndian::write_u24(&mut self.tx_buf[MAX_PACKET_SIZE - 3..], crc);
 
         // TODO whitening
-        if true { unimplemented!(); }
+        if true {
+            unimplemented!();
+        }
 
         self.radio.transmit(&mut self.tx_buf, freq);
     }
@@ -476,17 +502,36 @@ impl<R: Radio> Transmitter for RawTransmitter<R> {
         &mut self.tx_buf[PAYLOAD_RANGE]
     }
 
-    fn transmit_advertising(&mut self, header: advertising::Header, channel: AdvertisingChannelIndex) {
+    fn transmit_advertising(
+        &mut self,
+        header: advertising::Header,
+        channel: AdvertisingChannelIndex,
+    ) {
         LittleEndian::write_u16(&mut self.tx_buf[HEADER_RANGE], header.to_u16());
-        self.transmit(ADVERTISING_ADDRESS, header.payload_length(), CRC_PRESET, channel.freq());
+        self.transmit(
+            ADVERTISING_ADDRESS,
+            header.payload_length(),
+            CRC_PRESET,
+            channel.freq(),
+        );
     }
 
-    fn transmit_data(&mut self, access_address: u32, crc_iv: u32, header: data::Header, channel: DataChannelIndex) {
+    fn transmit_data(
+        &mut self,
+        access_address: u32,
+        crc_iv: u32,
+        header: data::Header,
+        channel: DataChannelIndex,
+    ) {
         LittleEndian::write_u16(&mut self.tx_buf[HEADER_RANGE], header.to_u16());
-        self.transmit(access_address, header.payload_length(), crc_iv, channel.freq());
+        self.transmit(
+            access_address,
+            header.payload_length(),
+            crc_iv,
+            channel.freq(),
+        );
     }
 }
-
 
 /*
 

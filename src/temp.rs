@@ -1,6 +1,6 @@
-use nrf51::TEMP;
 use fpa::I30F2;
 use nb;
+use nrf51::TEMP;
 
 /// Integrated temperature sensor.
 pub struct Temp(TEMP);
@@ -29,7 +29,7 @@ impl Temp {
         if self.0.events_datardy.read().bits() == 0 {
             return Err(nb::Error::WouldBlock);
         } else {
-            self.0.events_datardy.reset();     // clear event
+            self.0.events_datardy.reset(); // clear event
             let raw = self.0.temp.read().bits();
             Ok(I30F2::from_bits(raw as i32))
         }

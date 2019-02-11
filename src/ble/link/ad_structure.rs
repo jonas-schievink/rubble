@@ -79,7 +79,7 @@ impl<'a> AdStructure<'a> {
                 buf[1] = Self::TYPE_FLAGS;
                 buf[2] = flags.to_u8();
                 1
-            },
+            }
             AdStructure::ServiceUuids16 { incomplete, uuids } => {
                 assert!(uuids.len() < 127);
                 buf[1] = if incomplete {
@@ -100,27 +100,27 @@ impl<'a> AdStructure<'a> {
                 buf[1] = Self::TYPE_SERVICE_DATA_16BIT_UUID;
                 buf[2] = uuid as u8;
                 buf[3] = (uuid >> 8) as u8;
-                buf[4..4+data.len()].copy_from_slice(data);
+                buf[4..4 + data.len()].copy_from_slice(data);
 
                 data.len() as u8 + 2
             }
             AdStructure::CompleteLocalName(name) => {
                 assert!(name.len() < 255);
                 buf[1] = Self::TYPE_COMPLETE_LOCAL_NAME;
-                buf[2..name.len()+2].copy_from_slice(name.as_bytes());
+                buf[2..name.len() + 2].copy_from_slice(name.as_bytes());
                 name.len() as u8
-            },
+            }
             AdStructure::ShortenedLocalName(name) => {
                 assert!(name.len() < 255);
                 buf[1] = Self::TYPE_SHORTENED_LOCAL_NAME;
-                buf[2..name.len()+2].copy_from_slice(name.as_bytes());
+                buf[2..name.len() + 2].copy_from_slice(name.as_bytes());
                 name.len() as u8
             }
             AdStructure::__Nonexhaustive => unreachable!(),
         };
 
-        buf[0] = len + 1;   // + Type length
-        len as usize + 2    // + Type length and prefix length byte
+        buf[0] = len + 1; // + Type length
+        len as usize + 2 // + Type length and prefix length byte
     }
 }
 
