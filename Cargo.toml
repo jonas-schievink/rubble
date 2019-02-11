@@ -25,5 +25,5 @@ bitflags = "1.0.4"
 opt-level = "s"
 
 [profile.release]
-opt-level = 3
+opt-level = "s"
 debug = true

@@ -79,7 +79,7 @@ const APP: () = {
         let mut serial = {
             let pins = device.GPIO.split();
             let rx = pins.pin1.downgrade();
-            let tx = pins.pin9.into_push_pull_output().downgrade();
+            let tx = pins.pin2.into_push_pull_output().downgrade();
             Serial::uart0(device.UART0, tx, rx, BAUDRATEW::BAUD230400)
                 .split()
                 .0
