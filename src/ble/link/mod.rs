@@ -252,6 +252,14 @@ impl<L: Logger> LinkLayer<L> {
         };
     }
 
+    /// TODO: "Two consecutive packets received with an invalid CRC match
+    /// within a connection event shall close the event."
+    ///
+    /// Does this mean the access address has to match our connection's? Probably.
+    pub fn crc_invalid(&mut self) {
+        unimplemented!()
+    }
+
     /// Process an incoming packet from an advertising channel.
     ///
     /// The access address of the packet must be `ADVERTISING_ADDRESS`, the CRC checksum must be
