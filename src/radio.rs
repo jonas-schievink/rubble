@@ -41,12 +41,12 @@
 //! length), the `Length` field, and the `S1` field (which just contains 2 unused bits, but they
 //! must still be sent, of course).
 
-use ble::link::log::Logger;
-use ble::link::{
+use crate::ble::link::log::Logger;
+use crate::ble::link::{
     advertising, data, LinkLayer, RadioCmd, Transmitter, ADVERTISING_ADDRESS, CRC_POLY, CRC_PRESET,
     MAX_PDU_SIZE,
 };
-use ble::phy::{AdvertisingChannelIndex, DataChannelIndex};
+use crate::ble::phy::{AdvertisingChannelIndex, DataChannelIndex};
 
 use nrf51::radio::state::STATER;
 use nrf51::{FICR, RADIO};

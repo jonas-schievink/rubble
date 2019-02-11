@@ -2,6 +2,8 @@
 //!
 //! Part of GAP (Generic Access Profile).
 
+use bitflags::bitflags;
+
 /// A list of AD structures can be sent along with an advertising packet or scan response.
 ///
 /// This mechanism allows a scanner to, for example, receive the device's name without having to

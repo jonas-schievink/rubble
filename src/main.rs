@@ -1,48 +1,39 @@
 #![no_std]
 #![no_main]
 
-#[macro_use]
-extern crate nb;
-extern crate byteorder;
-extern crate cortex_m;
-extern crate cortex_m_rt;
-extern crate cortex_m_semihosting;
-extern crate embedded_hal;
-extern crate fpa;
-extern crate nrf51;
-extern crate nrf51_hal;
+// panic_halt needed so we have a panic handler
 extern crate panic_halt;
-extern crate rtfm;
-#[macro_use]
-extern crate bitflags;
 
 pub mod ble;
 mod radio;
 mod temp;
 
-use ble::link::ad_structure::{AdStructure, Flags};
-pub use ble::link::MAX_PDU_SIZE;
-use ble::link::{AddressKind, DeviceAddress, LinkLayer};
-
-use radio::{Baseband, BleRadio};
-use temp::Temp;
-
-use byteorder::{ByteOrder, LittleEndian};
-use nrf51::UART0;
-use nrf51_hal::prelude::*;
-use nrf51_hal::serial::{self, Serial, BAUDRATEW};
-use rtfm::app;
-
-use core::fmt::Write;
-use core::time::Duration;
-use core::u32;
+use {
+    crate::{
+        ble::link::{
+            ad_structure::{AdStructure, Flags},
+            AddressKind, DeviceAddress, LinkLayer, MAX_PDU_SIZE,
+        },
+        radio::{Baseband, BleRadio, PacketBuffer},
+        temp::Temp,
+    },
+    byteorder::{ByteOrder, LittleEndian},
+    core::{fmt::Write, time::Duration, u32},
+    nb::block,
+    nrf51::UART0,
+    nrf51_hal::{
+        prelude::*,
+        serial::{self, Serial, BAUDRATEW},
+    },
+    rtfm::app,
+};
 
 type Logger = serial::Tx<UART0>;
 
 #[app(device = nrf51)]
 const APP: () = {
-    static mut BLE_TX_BUF: ::radio::PacketBuffer = [0; ::MAX_PDU_SIZE + 1];
-    static mut BLE_RX_BUF: ::radio::PacketBuffer = [0; ::MAX_PDU_SIZE + 1];
+    static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE + 1];
+    static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE + 1];
     static mut BASEBAND: Baseband<Logger> = ();
     static BLE_TIMER: nrf51::TIMER0 = ();
 

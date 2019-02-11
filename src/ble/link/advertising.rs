@@ -7,11 +7,14 @@
 //! Note that while the types in here do not completely eliminate illegal values to be created, they
 //! do employ a range of sanity checks that prevent bogus packets from being sent by the stack.
 
-use super::ad_structure::AdStructure;
-use super::DeviceAddress;
-
-use byteorder::{ByteOrder, LittleEndian};
-use core::fmt;
+use {
+    super::{
+        ad_structure::AdStructure,
+        DeviceAddress,
+    },
+    byteorder::{ByteOrder, LittleEndian},
+    core::fmt,
+};
 
 /// Higher-level representation of an advertising channel PDU.
 pub enum StructuredPdu<'a> {

@@ -120,17 +120,19 @@ pub mod data;
 #[macro_use]
 pub mod log;
 
-use self::ad_structure::AdStructure;
-use self::advertising::StructuredPdu;
-use self::log::{Logger, NoopLogger};
-
-use super::crc::ble_crc24;
-use super::phy::{AdvertisingChannelIndex, DataChannelIndex, Radio};
-
-use byteorder::{ByteOrder, LittleEndian};
-
-use core::ops::Range;
-use core::time::Duration;
+use {
+    self::{
+        ad_structure::AdStructure,
+        advertising::StructuredPdu,
+        log::{Logger, NoopLogger},
+    },
+    super::{
+        crc::ble_crc24,
+        phy::{AdvertisingChannelIndex, DataChannelIndex, Radio},
+    },
+    byteorder::{ByteOrder, LittleEndian},
+    core::{ops::Range, time::Duration},
+};
 
 /// The CRC polynomial to use for CRC24 generation.
 ///

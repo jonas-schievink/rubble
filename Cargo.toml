@@ -6,6 +6,7 @@ keywords = ["arm", "cortex-m", "template"]
 license = "CC-0"
 name = "nrf51-ble-demo"
 version = "0.1.0"
+edition = "2018"
 
 [dependencies]
 cortex-m = "0.5.8"
