@@ -8,10 +8,7 @@
 //! do employ a range of sanity checks that prevent bogus packets from being sent by the stack.
 
 use {
-    super::{
-        ad_structure::AdStructure,
-        DeviceAddress,
-    },
+    super::{ad_structure::AdStructure, DeviceAddress},
     byteorder::{ByteOrder, LittleEndian},
     core::fmt,
 };
@@ -19,6 +16,8 @@ use {
 /// Higher-level representation of an advertising channel PDU.
 pub enum StructuredPdu<'a> {
     /// Connectable undirected advertising event.
+    ///
+    /// Sent by device in Advertising State.
     AdvInd {
         /// Advertiser address.
         advertiser_address: DeviceAddress,
@@ -28,13 +27,16 @@ pub enum StructuredPdu<'a> {
 
     /// Connectable directed advertising event.
     ///
-    /// Sent from an advertiser to an initiator.
+    /// Sent by a device in Advertising State, received by a device in
+    /// Initiating State.
     AdvDirectInd {
         advertiser_address: DeviceAddress,
         initiator_address: DeviceAddress,
     },
 
     /// Non-connectable undirected advertising event.
+    ///
+    /// Sent by a device in Advertising State.
     AdvNonconnInd {
         advertiser_address: DeviceAddress,
         /// Advertising data (may be empty). Up to 31 octets / 15 AD structures.
@@ -249,9 +251,12 @@ impl fmt::Debug for Header {
 }
 
 enum_with_unknown! {
-    /// 4-bit PDU type in `PduHeader`.
+    /// 4-bit PDU type in [`Header`].
     ///
-    /// `Adv*` type PDUs are sent while in Advertising state.
+    /// For more details, see [`StructuredPdu`].
+    ///
+    /// [`Header`]: struct.Header.html
+    /// [`StructuredPdu`]: enum.StructuredPdu.html
     #[derive(Debug)]
     pub enum PduType(u8) {
         /// Connectable undirected advertising event.
@@ -260,10 +265,23 @@ enum_with_unknown! {
         AdvDirectInd = 0b0001,
         /// Non-connectable undirected advertising event.
         AdvNonconnInd = 0b0010,
-        ScanReq = 0b0011,
-        ScanRsp = 0b0100,
-        ConnectReq = 0b0101,
         /// Scannable undirected advertising event.
         AdvScanInd = 0b0110,
+
+        /// Scan request.
+        ///
+        /// Sent by device in Scanning State, received by device in Advertising
+        /// State.
+        ScanReq = 0b0011,
+        /// Scan response.
+        ///
+        /// Sent by device in Advertising State, received by devicein Scanning
+        /// State.
+        ScanRsp = 0b0100,
+        /// Connect request.
+        ///
+        /// Sent by device in Initiating State, received by device in
+        /// Advertising State.
+        ConnectReq = 0b0101,
     }
 }

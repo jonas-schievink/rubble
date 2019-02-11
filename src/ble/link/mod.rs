@@ -67,7 +67,10 @@
 //!
 //! Length may be in range 6 to 36 (inclusive).
 //!
-//! The data in `Payload` depends on the PDU Type. Refer to the spec for details.
+//! The data in `Payload` depends on the PDU Type. Refer to the spec or [`advertising::PduType`] for
+//! details.
+//!
+//! [`advertising::PduType`]: advertising/enum.PduType.html
 //!
 //! ## Data Channel PDU
 //!
