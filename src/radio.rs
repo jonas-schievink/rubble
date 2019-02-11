@@ -41,12 +41,15 @@
 //! length), the `Length` field, and the `S1` field (which just contains 2 unused bits, but they
 //! must still be sent, of course).
 
-use ble::link::{MAX_PDU_SIZE, ADVERTISING_ADDRESS, CRC_PRESET, CRC_POLY, LinkLayer, Transmitter, RadioCmd, advertising, data};
 use ble::link::log::Logger;
+use ble::link::{
+    advertising, data, LinkLayer, RadioCmd, Transmitter, ADVERTISING_ADDRESS, CRC_POLY, CRC_PRESET,
+    MAX_PDU_SIZE,
+};
 use ble::phy::{AdvertisingChannelIndex, DataChannelIndex};
 
-use nrf51::{FICR, RADIO};
 use nrf51::radio::state::STATER;
+use nrf51::{FICR, RADIO};
 
 use core::time::Duration;
 
@@ -69,11 +72,24 @@ impl BleRadio {
 
         if ficr.overrideen.read().ble_1mbit().is_override_() {
             unsafe {
-                radio.override0.write(|w| w.override0().bits(ficr.ble_1mbit[0].read().bits()));
-                radio.override1.write(|w| w.override1().bits(ficr.ble_1mbit[1].read().bits()));
-                radio.override2.write(|w| w.override2().bits(ficr.ble_1mbit[2].read().bits()));
-                radio.override3.write(|w| w.override3().bits(ficr.ble_1mbit[3].read().bits()));
-                radio.override4.write(|w| w.override4().bits(ficr.ble_1mbit[4].read().bits()).enable().set_bit());
+                radio
+                    .override0
+                    .write(|w| w.override0().bits(ficr.ble_1mbit[0].read().bits()));
+                radio
+                    .override1
+                    .write(|w| w.override1().bits(ficr.ble_1mbit[1].read().bits()));
+                radio
+                    .override2
+                    .write(|w| w.override2().bits(ficr.ble_1mbit[2].read().bits()));
+                radio
+                    .override3
+                    .write(|w| w.override3().bits(ficr.ble_1mbit[3].read().bits()));
+                radio.override4.write(|w| {
+                    w.override4()
+                        .bits(ficr.ble_1mbit[4].read().bits())
+                        .enable()
+                        .set_bit()
+                });
             }
         }
 
@@ -81,16 +97,27 @@ impl BleRadio {
         radio.txpower.write(|w| w.txpower().pos4d_bm());
 
         unsafe {
-            radio.pcnf1.write(|w| w
-                .maxlen().bits(37)   // no packet length limit
-                .balen().bits(3)     // 3-Byte Base Address + 1-Byte Address Prefix
-                .whiteen().set_bit() // Enable Data Whitening over PDU+CRC
+            radio.pcnf1.write(
+                |w| {
+                    w.maxlen()
+                        .bits(37) // no packet length limit
+                        .balen()
+                        .bits(3) // 3-Byte Base Address + 1-Byte Address Prefix
+                        .whiteen()
+                        .set_bit()
+                }, // Enable Data Whitening over PDU+CRC
             );
-            radio.crccnf.write(|w| w
-                .skipaddr().set_bit()   // skip address since only the S0, Length, S1 and Payload need CRC
-                .len().three()          // 3 Bytes = CRC24
+            radio.crccnf.write(
+                |w| {
+                    w.skipaddr()
+                        .set_bit() // skip address since only the S0, Length, S1 and Payload need CRC
+                        .len()
+                        .three()
+                }, // 3 Bytes = CRC24
             );
-            radio.crcpoly.write(|w| w.crcpoly().bits(CRC_POLY & 0xFFFFFF));
+            radio
+                .crcpoly
+                .write(|w| w.crcpoly().bits(CRC_POLY & 0xFFFFFF));
 
             // Configure logical address 0 as the canonical advertising address.
             // Base addresses are up to 32 bits in size. However, an 8 bit Address Prefix is
@@ -99,7 +126,9 @@ impl BleRadio {
             // it ignores the *lowest* 8 bit and instead transmits the upper 24 as the low 24 bits
             // of the Access Address. Shift address up to fix this.
             radio.base0.write(|w| w.bits(ADVERTISING_ADDRESS << 8));
-            radio.prefix0.write(|w| w.ap0().bits((ADVERTISING_ADDRESS >> 24) as u8));
+            radio
+                .prefix0
+                .write(|w| w.ap0().bits((ADVERTISING_ADDRESS >> 24) as u8));
         }
 
         // FIXME: No TIFS hardware support for now. Revisit when precise semantics are clear.
@@ -115,17 +144,18 @@ impl BleRadio {
         }*/
 
         // Configure shortcuts to simplify and speed up sending and receiving packets.
-        radio.shorts.write(|w| w
-            .ready_start().enabled()    // start transmission/recv immediately after ramp-up
-            .end_disable().enabled()    // disable radio when transmission/recv is done
+        radio.shorts.write(
+            |w| {
+                w.ready_start()
+                    .enabled() // start transmission/recv immediately after ramp-up
+                    .end_disable()
+                    .enabled()
+            }, // disable radio when transmission/recv is done
         );
         // We can now start the TXEN/RXEN tasks and the radio will do the rest and return to the
         // disabled state.
 
-        Self {
-            radio,
-            tx_buf,
-        }
+        Self { radio, tx_buf }
     }
 
     /// Returns the current radio state.
@@ -163,15 +193,17 @@ impl BleRadio {
 
         // Now we can freely configure all registers we need
         unsafe {
-            self.radio.pcnf0.write(|w| w
-                .s0len().bit(true)
-                .lflen().bits(6)
-                .s1len().bits(2)
-            );
+            self.radio
+                .pcnf0
+                .write(|w| w.s0len().bit(true).lflen().bits(6).s1len().bits(2));
 
-            self.radio.datawhiteiv.write(|w| w.datawhiteiv().bits(channel.whitening_iv()));
+            self.radio
+                .datawhiteiv
+                .write(|w| w.datawhiteiv().bits(channel.whitening_iv()));
             self.radio.crcinit.write(|w| w.crcinit().bits(CRC_PRESET));
-            self.radio.frequency.write(|w| w.frequency().bits((channel.freq() - 2400) as u8));
+            self.radio
+                .frequency
+                .write(|w| w.frequency().bits((channel.freq() - 2400) as u8));
         }
     }
 
@@ -186,10 +218,12 @@ impl BleRadio {
         unsafe {
             // "The CPU should reconfigure this pointer every time before the RADIO is started via
             // the START task."
-            self.radio.packetptr.write(|w| w.bits(self.tx_buf as *const _ as u32));
+            self.radio
+                .packetptr
+                .write(|w| w.bits(self.tx_buf as *const _ as u32));
 
             // Acknowledge left-over disable event
-            self.radio.events_disabled.reset();  // FIXME unnecessary, right?
+            self.radio.events_disabled.reset(); // FIXME unnecessary, right?
 
             // ...and kick off the transmission
             self.radio.tasks_txen.write(|w| w.bits(1));
@@ -209,22 +243,34 @@ impl Transmitter for BleRadio {
         &mut self.tx_buf[3..]
     }
 
-    fn transmit_advertising(&mut self, header: advertising::Header, channel: AdvertisingChannelIndex) {
+    fn transmit_advertising(
+        &mut self,
+        header: advertising::Header,
+        channel: AdvertisingChannelIndex,
+    ) {
         let raw_header = header.to_u16();
-        self.tx_buf[0] = raw_header as u8;         // S0     = 8 bits (LSB)
-        self.tx_buf[1] = header.payload_length();  // Length = 6 bits
-        self.tx_buf[2] = 0;                        // S1     = 2 unused bits = 0
+        self.tx_buf[0] = raw_header as u8; // S0     = 8 bits (LSB)
+        self.tx_buf[1] = header.payload_length(); // Length = 6 bits
+        self.tx_buf[2] = 0; // S1     = 2 unused bits = 0
 
         self.prepare_txrx_advertising(channel);
 
         // Set transmission address:
         // Logical addr. 0 uses BASE0 + PREFIX0, which is the canonical adv. Access Address
-        self.radio.txaddress.write(|w| unsafe { w.txaddress().bits(0) });
+        self.radio
+            .txaddress
+            .write(|w| unsafe { w.txaddress().bits(0) });
 
         self.transmit();
     }
 
-    fn transmit_data(&mut self, _access_address: u32, _crc_iv: u32, _header: data::Header, _channel: DataChannelIndex) {
+    fn transmit_data(
+        &mut self,
+        _access_address: u32,
+        _crc_iv: u32,
+        _header: data::Header,
+        _channel: DataChannelIndex,
+    ) {
         unimplemented!();
         //self.transmit(access_address, crc_iv, channel.whitening_iv(), channel.freq());
     }
@@ -281,7 +327,10 @@ impl<L: Logger> Baseband<L> {
                 // Acknowledge left-over disable event
                 self.radio.radio.events_disabled.reset();
                 // Disable radio
-                self.radio.radio.tasks_disable.write(|w| unsafe { w.bits(1) });
+                self.radio
+                    .radio
+                    .tasks_disable
+                    .write(|w| unsafe { w.bits(1) });
                 // Then wait until disable event is triggered
                 while self.radio.radio.events_disabled.read().bits() == 0 {}
                 // And acknowledge it
@@ -291,10 +340,16 @@ impl<L: Logger> Baseband<L> {
                 self.radio.prepare_txrx_advertising(channel);
 
                 let rx_buf = self.rx_buf as *mut _ as u32;
-                self.radio.radio.packetptr.write(|w| unsafe { w.bits(rx_buf) });
+                self.radio
+                    .radio
+                    .packetptr
+                    .write(|w| unsafe { w.bits(rx_buf) });
 
                 // Acknowledge left-over disable event
-                self.radio.radio.events_disabled.write(|w| unsafe { w.bits(0) });
+                self.radio
+                    .radio
+                    .events_disabled
+                    .write(|w| unsafe { w.bits(0) });
 
                 // Enable `END` interrupt (packet fully received)
                 self.radio.radio.intenset.write(|w| w.end().set());
