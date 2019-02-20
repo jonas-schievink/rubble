@@ -29,12 +29,14 @@ impl AdvertisingChannelIndex {
         AdvertisingChannelIndex(37)
     }
 
-    pub fn iter_all() -> impl Iterator<Item=Self> {
+    pub fn iter_all() -> impl Iterator<Item = Self> {
         [
             AdvertisingChannelIndex(37),
             AdvertisingChannelIndex(38),
             AdvertisingChannelIndex(39),
-        ].iter().cloned()
+        ]
+        .iter()
+        .cloned()
     }
 
     /// Returns the next advertising channel, or the first one if `self` is the last channel.

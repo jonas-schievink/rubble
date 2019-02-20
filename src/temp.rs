@@ -1,8 +1,4 @@
-use {
-    fpa::I30F2,
-    nb,
-    nrf51::TEMP,
-};
+use {fpa::I30F2, nb, nrf51::TEMP};
 
 /// Integrated temperature sensor.
 pub struct Temp(TEMP);
