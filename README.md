@@ -1,5 +1,11 @@
 # WIP Rust BLE stack
 
+This will hopefully eventually become a Bluetooth® Low Energy compatible
+protocol stack.
+
+**NOTE: None of this has passed the Bluetooth Qualification Process, so it must
+not be used in commercial products!**
+
 ## Development
 
 My development setup consists of a Nucleo-64 acting as an ST-Link programmer,
@@ -18,7 +24,7 @@ ST-Link (CN4) | WT51822 |  nRF51822
       SWDIO 4 |   P10   | SWDIO (23)
        NRST 5 |    -    |     -
         SWO 6 |    -    |     -
-        
+
           3V3 |   P1    | VDD
 ```
 
