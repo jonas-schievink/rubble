@@ -21,6 +21,7 @@ fpa = "0.1.0"
 byteorder = { version = "1.2.1", default-features = false }
 panic-semihosting = "0.5.1"
 bitflags = "1.0.4"
+uuid = { version = "0.7.2", default-features = false }
 
 [profile.dev]
 opt-level = "s"
