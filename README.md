@@ -1,5 +1,7 @@
 # WIP Rust BLE stack
 
+[![Build Status](https://travis-ci.org/jonas-schievink/nrf51-ble-demo.svg?branch=master)](https://travis-ci.org/jonas-schievink/nrf51-ble-demo)
+
 This will hopefully eventually become a Bluetooth® Low Energy compatible
 protocol stack.
 
