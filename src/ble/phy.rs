@@ -29,6 +29,14 @@ impl AdvertisingChannelIndex {
         AdvertisingChannelIndex(37)
     }
 
+    pub fn iter_all() -> impl Iterator<Item=Self> {
+        [
+            AdvertisingChannelIndex(37),
+            AdvertisingChannelIndex(38),
+            AdvertisingChannelIndex(39),
+        ].iter().cloned()
+    }
+
     /// Returns the next advertising channel, or the first one if `self` is the last channel.
     pub fn cycle(&self) -> Self {
         if self.0 == 39 {
@@ -121,6 +129,8 @@ impl DataChannelIndex {
 /// implemented.
 pub trait Radio {
     /// Transmit every Byte in `buf` over the air, LSb first, at `freq` MHz.
+    ///
+    /// TODO: Document all radio requirements
     fn transmit(&mut self, buf: &mut [u8], freq: u16);
 }
 

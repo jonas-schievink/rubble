@@ -120,18 +120,14 @@
 pub mod ad_structure;
 pub mod advertising;
 pub mod data;
-#[macro_use]
-pub mod log;
 
 use {
-    self::{
-        ad_structure::AdStructure,
-        advertising::StructuredPdu,
-        log::{Logger, NoopLogger},
-    },
+    self::{ad_structure::AdStructure, advertising::PduBuf},
     super::{
         crc::ble_crc24,
+        log::{Logger, NoopLogger},
         phy::{AdvertisingChannelIndex, DataChannelIndex, Radio},
+        Error,
     },
     byteorder::{ByteOrder, LittleEndian},
     core::{ops::Range, time::Duration},
@@ -162,6 +158,9 @@ pub const CRC_PRESET: u32 = 0x555555;
 pub const ADVERTISING_ADDRESS: u32 = 0x8E89BED6;
 
 /// Max. PDU payload size in Bytes.
+///
+/// This is the same for both advertising and data channel since both utilize a
+/// 2-Byte header.
 pub const MAX_PAYLOAD_SIZE: usize = MAX_PDU_SIZE - 2;
 
 /// Max. PDU size in octets.
@@ -185,8 +184,7 @@ enum State {
         interval: Duration,
 
         /// Precomputed PDU payload to copy into the transmitter's buffer.
-        payload: [u8; MAX_PAYLOAD_SIZE],
-        header: advertising::Header,
+        pdu: advertising::PduBuf,
 
         /// Next advertising channel to use for a message.
         // FIXME: spec check; no idea what order or change delay
@@ -229,27 +227,29 @@ impl<L: Logger> LinkLayer<L> {
         }
     }
 
+    pub fn logger(&mut self) -> &mut L {
+        &mut self.logger
+    }
+
     /// Starts advertising this device, optionally sending data along with the advertising PDU.
     ///
     /// Note that advertisements will only be sent by calling `update`.
-    pub fn start_advertise(&mut self, interval: Duration, data: &[AdStructure]) {
-        assert!(data.len() <= 31);
-        debug!(self.logger, "start_advertise: {:?}", data);
-
+    pub fn start_advertise(
+        &mut self,
+        interval: Duration,
+        data: &[AdStructure],
+    ) -> Result<(), Error> {
         // TODO tear down existing connection?
 
-        let pdu = StructuredPdu::AdvNonconnInd {
-            advertiser_address: self.dev_addr,
-            advertiser_data: data,
-        };
-        let mut payload = [0; MAX_PAYLOAD_SIZE];
-        let header = pdu.lower(&mut payload);
+        let pdu = PduBuf::discoverable(self.dev_addr, data)?;
+        debug!(self.logger, "start_advertise: adv_data = {:?}", data);
+        debug!(self.logger, "start_advertise: PDU = {:?}", pdu);
         self.state = State::Advertising {
             interval,
-            payload,
-            header,
+            pdu,
             channel: AdvertisingChannelIndex::first(),
         };
+        Ok(())
     }
 
     /// TODO: "Two consecutive packets received with an invalid CRC match
@@ -311,14 +311,15 @@ impl<L: Logger> LinkLayer<L> {
         match self.state {
             State::Advertising {
                 interval,
-                ref payload,
-                header,
+                ref pdu,
                 channel,
             } => {
-                let payload_len = header.payload_length() as usize;
-                tx.tx_payload_buf()[..payload_len].copy_from_slice(&payload[..payload_len]);
-                tx.transmit_advertising(header, channel.into());
-                trace!(self.logger, " ADV-> {:?}", header);
+                let payload = pdu.payload();
+                let buf = tx.tx_payload_buf();
+                buf[..payload.len()].copy_from_slice(payload);
+
+                trace!(self.logger, "->[ADV]");
+                tx.transmit_advertising(pdu.header(), channel);
 
                 Cmd {
                     // FIXME: don't need to listen if we're a nonconnectable beacon

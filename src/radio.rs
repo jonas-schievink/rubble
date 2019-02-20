@@ -41,17 +41,18 @@
 //! length), the `Length` field, and the `S1` field (which just contains 2 unused bits, but they
 //! must still be sent, of course).
 
-use crate::ble::link::log::Logger;
-use crate::ble::link::{
-    advertising, data, LinkLayer, RadioCmd, Transmitter, ADVERTISING_ADDRESS, CRC_POLY, CRC_PRESET,
-    MAX_PDU_SIZE,
+use {
+    crate::ble::{
+        link::{
+            advertising, data, LinkLayer, RadioCmd, Transmitter, ADVERTISING_ADDRESS, CRC_POLY,
+            CRC_PRESET, MAX_PDU_SIZE,
+        },
+        log::Logger,
+        phy::{AdvertisingChannelIndex, DataChannelIndex},
+    },
+    core::time::Duration,
+    nrf51::{radio::state::STATER, FICR, RADIO},
 };
-use crate::ble::phy::{AdvertisingChannelIndex, DataChannelIndex};
-
-use nrf51::radio::state::STATER;
-use nrf51::{FICR, RADIO};
-
-use core::time::Duration;
 
 /// The buffer has an extra Byte because the 16-bit PDU header needs to be split in 3 Bytes for the
 /// radio to understand it (S0 = pre-Length fields, Length, S1 = post-Length fields).
@@ -284,6 +285,14 @@ pub struct Baseband<L: Logger> {
 impl<L: Logger> Baseband<L> {
     pub fn new(radio: BleRadio, rx_buf: &'static mut PacketBuffer, ll: LinkLayer<L>) -> Self {
         Self { radio, rx_buf, ll }
+    }
+
+    pub fn transmitter(&mut self) -> &mut BleRadio {
+        &mut self.radio
+    }
+
+    pub fn logger(&mut self) -> &mut L {
+        self.ll.logger()
     }
 
     /// Call this when the `RADIO` interrupt fires.

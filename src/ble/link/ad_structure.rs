@@ -1,8 +1,15 @@
 //! Advertising Data / Extended Inquiry Response (EIR) data.
 //!
 //! Part of GAP (Generic Access Profile).
+//!
+//! Also see the [assigned numbers document][gap] hosted by the SIG.
+//!
+//! [gap]: https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
 
-use bitflags::bitflags;
+use {
+    crate::ble::{utils::MutSliceExt, Error},
+    bitflags::bitflags,
+};
 
 /// A list of AD structures can be sent along with an advertising packet or scan response.
 ///
@@ -68,29 +75,30 @@ impl<'a> AdStructure<'a> {
     /// Lowers this AD structure into a Byte buffer.
     ///
     /// Returns the number of Bytes of `buf` that are used by this AD structure.
-    ///
-    /// # Panics
-    ///
-    /// The buffer must have enough space, otherwise this method will panic. Since the buffer in
-    /// advertising packets has a fixed size and AD structures are usually constant, a panic
-    /// indicates that too much data was attempted to be put into the packet.
-    pub fn lower(&self, buf: &'a mut [u8]) -> usize {
+    pub fn lower(&self, buf: &'a mut [u8]) -> Result<usize, Error> {
         // First Byte = Length of record. Start encoding at offset 1, write length later.
+        let (first, mut buf) = match buf.split_first_mut() {
+            None => return Err(Error::Eof),
+            Some(s) => s,
+        };
+
+        // Write the type tag and data, returning length of the data written (w/o the type byte)
         let len = match *self {
             AdStructure::Flags(ref flags) => {
-                buf[1] = Self::TYPE_FLAGS;
-                buf[2] = flags.to_u8();
+                buf.write_byte(Self::TYPE_FLAGS)?;
+                buf.write_byte(flags.to_u8())?;
                 1
             }
             AdStructure::ServiceUuids16 { incomplete, uuids } => {
-                assert!(uuids.len() < 127);
-                buf[1] = if incomplete {
+                eof_unless!(uuids.len() < 127);
+                buf.write_byte(if incomplete {
                     Self::TYPE_INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
                 } else {
                     Self::TYPE_COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
-                };
+                })?;
 
-                for (dst, &src) in buf[2..].chunks_mut(2).zip(uuids) {
+                eof_unless!(buf.len() >= uuids.len() * 2);
+                for (dst, &src) in buf.chunks_mut(2).zip(uuids) {
                     dst[0] = src as u8;
                     dst[1] = (src >> 8) as u8;
                 }
@@ -99,30 +107,32 @@ impl<'a> AdStructure<'a> {
             }
             AdStructure::ServiceData16 { uuid, data } => {
                 assert!(data.len() < 255);
-                buf[1] = Self::TYPE_SERVICE_DATA_16BIT_UUID;
-                buf[2] = uuid as u8;
-                buf[3] = (uuid >> 8) as u8;
-                buf[4..4 + data.len()].copy_from_slice(data);
+                buf.write_byte(Self::TYPE_SERVICE_DATA_16BIT_UUID)?;
+                buf.write_byte(uuid as u8)?;
+                buf.write_byte((uuid >> 8) as u8)?;
+                buf.write_slice(data)?;
 
                 data.len() as u8 + 2
             }
             AdStructure::CompleteLocalName(name) => {
                 assert!(name.len() < 255);
-                buf[1] = Self::TYPE_COMPLETE_LOCAL_NAME;
-                buf[2..name.len() + 2].copy_from_slice(name.as_bytes());
+                buf.write_byte(Self::TYPE_COMPLETE_LOCAL_NAME)?;
+                buf.write_slice(name.as_bytes())?;
+
                 name.len() as u8
             }
             AdStructure::ShortenedLocalName(name) => {
                 assert!(name.len() < 255);
-                buf[1] = Self::TYPE_SHORTENED_LOCAL_NAME;
-                buf[2..name.len() + 2].copy_from_slice(name.as_bytes());
+                buf.write_byte(Self::TYPE_SHORTENED_LOCAL_NAME)?;
+                buf.write_slice(name.as_bytes())?;
+
                 name.len() as u8
             }
             AdStructure::__Nonexhaustive => unreachable!(),
         };
 
-        buf[0] = len + 1; // + Type length
-        len as usize + 2 // + Type length and prefix length byte
+        *first = len + 1; // + 1 for the Type field
+        Ok(len as usize + 2) // + Type field and prefix length byte
     }
 }
 

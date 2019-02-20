@@ -8,133 +8,192 @@
 //! do employ a range of sanity checks that prevent bogus packets from being sent by the stack.
 
 use {
-    super::{ad_structure::AdStructure, DeviceAddress},
+    super::{
+        ad_structure::{AdStructure, Flags},
+        DeviceAddress,
+    },
+    crate::ble::Error,
     byteorder::{ByteOrder, LittleEndian},
-    core::fmt,
+    core::{fmt, iter},
 };
 
-/// Higher-level representation of an advertising channel PDU.
-pub enum StructuredPdu<'a> {
-    /// Connectable undirected advertising event.
-    ///
-    /// Sent by device in Advertising State.
-    AdvInd {
-        /// Advertiser address.
-        advertiser_address: DeviceAddress,
-        /// Advertising data (may be empty). Up to 31 octets / 15 AD structures.
-        advertiser_data: &'a [AdStructure<'a>],
-    },
-
-    /// Connectable directed advertising event.
-    ///
-    /// Sent by a device in Advertising State, received by a device in
-    /// Initiating State.
-    AdvDirectInd {
-        advertiser_address: DeviceAddress,
-        initiator_address: DeviceAddress,
-    },
-
-    /// Non-connectable undirected advertising event.
-    ///
-    /// Sent by a device in Advertising State.
-    AdvNonconnInd {
-        advertiser_address: DeviceAddress,
-        /// Advertising data (may be empty). Up to 31 octets / 15 AD structures.
-        advertiser_data: &'a [AdStructure<'a>],
-    },
-
-    /// Scannable undirected advertising event.
-    ///
-    /// May also be referred to as `ADV_DISCOVER_IND`.
-    AdvScanInd {
-        advertiser_address: DeviceAddress,
-        /// Advertising data (may be empty). Up to 31 octets / 15 AD structures.
-        advertiser_data: &'a [AdStructure<'a>],
-    },
-
-    /// Scan request.
-    ///
-    /// Sent by a scanning device, received by an advertising device.
-    ScanReq {
-        scanner_address: DeviceAddress,
-        advertiser_address: DeviceAddress,
-    },
-
-    /// Response to a scan request.
-    ///
-    /// Sent by an advertising device to a scanning device.
-    ScanRsp {
-        advertiser_address: DeviceAddress,
-        /// Response data (may be empty). Up to 31 octets / 15 AD structures.
-        scan_response_data: &'a mut [AdStructure<'a>],
-    },
-
-    #[doc(hidden)]
-    __Nonexhaustive,
+/// Stores an advertising channel PDU.
+pub struct PduBuf {
+    /// 2-Byte header.
+    header: Header,
+    /// Fixed-size buffer that can store the largest PDU. Actual length is
+    /// stored in the header.
+    payload_buf: [u8; super::MAX_PAYLOAD_SIZE],
 }
 
-impl<'a> StructuredPdu<'a> {
-    /// Lowers this PDU into a payload buffer and a `Header`, preparing it for transmission.
-    ///
-    /// The number of Bytes stored in `payload` can be retrieved from the header using
-    /// `Header::payload_length`.
-    pub fn lower(&self, payload: &mut [u8]) -> Header {
-        let ty = match *self {
-            StructuredPdu::AdvInd { .. } => PduType::AdvInd,
-            StructuredPdu::AdvDirectInd { .. } => PduType::AdvDirectInd,
-            StructuredPdu::AdvNonconnInd { .. } => PduType::AdvNonconnInd,
-            StructuredPdu::AdvScanInd { .. } => PduType::AdvScanInd,
-            StructuredPdu::ScanReq { .. } => PduType::ScanReq,
-            StructuredPdu::ScanRsp { .. } => PduType::ScanRsp,
-            StructuredPdu::__Nonexhaustive => unreachable!(),
-        };
-
-        let mut header = Header::new(ty);
-
-        match *self {
-            StructuredPdu::AdvInd {
-                ref advertiser_address,
-                advertiser_data,
-            }
-            | StructuredPdu::AdvNonconnInd {
-                ref advertiser_address,
-                advertiser_data,
-            }
-            | StructuredPdu::AdvScanInd {
-                ref advertiser_address,
-                advertiser_data,
-            } => {
-                payload[0..6].copy_from_slice(advertiser_address.raw());
-                let data_buf = &mut payload[6..];
-                let mut ad_size = 0;
-                for ad in advertiser_data {
-                    let bytes = ad.lower(&mut data_buf[ad_size..]);
-                    ad_size += bytes;
-                }
-
-                assert!(data_buf.len() <= 31);
-                // 50 or something, not very important
-                assert!(ad_size < 50);
-                header.set_payload_length(6 + ad_size as u8);
-                header.set_tx_add(advertiser_address.is_random());
-                header.set_rx_add(false);
-            }
-            StructuredPdu::AdvDirectInd {
-                ref advertiser_address,
-                ref initiator_address,
-            } => {
-                header.set_payload_length(6 + 6);
-                header.set_tx_add(advertiser_address.is_random());
-                header.set_rx_add(initiator_address.is_random());
-                payload[0..6].copy_from_slice(advertiser_address.raw());
-                payload[6..12].copy_from_slice(initiator_address.raw());
-            }
-            StructuredPdu::ScanReq { .. } => unimplemented!(),
-            StructuredPdu::ScanRsp { .. } => unimplemented!(),
-            StructuredPdu::__Nonexhaustive => unreachable!(),
+impl PduBuf {
+    /// Builds a PDU buffer containing advertiser address and data.
+    fn adv(
+        ty: PduType,
+        adv: DeviceAddress,
+        adv_data: &mut Iterator<Item = &AdStructure>,
+    ) -> Result<Self, Error> {
+        let mut payload = [0; 37];
+        payload[0..6].copy_from_slice(adv.raw());
+        let data_buf = &mut payload[6..];
+        let mut ad_size = 0;
+        for ad in adv_data {
+            let bytes = ad.lower(&mut data_buf[ad_size..])?;
+            ad_size += bytes;
         }
 
-        header
+        let mut header = Header::new(ty);
+        header.set_payload_length(6 + ad_size as u8);
+        header.set_tx_add(adv.is_random());
+        header.set_rx_add(false);
+        Ok(Self {
+            header,
+            payload_buf: payload,
+        })
+    }
+
+    /// Creates a connectable undirected advertising PDU (`ADV_IND`).
+    ///
+    /// # Parameters
+    ///
+    /// * `adv`: The advertiser address, the address of the device sending this
+    ///   PDU.
+    /// * `adv_data`: Additional advertising data to send.
+    pub fn connectable_undirected(
+        advertiser_addr: DeviceAddress,
+        advertiser_data: &[AdStructure],
+    ) -> Result<Self, Error> {
+        Self::adv(
+            PduType::AdvInd,
+            advertiser_addr,
+            &mut advertiser_data.iter(),
+        )
+    }
+
+    /// Creates a connectable directed advertising PDU (`ADV_DIRECT_IND`).
+    pub fn connectable_directed(
+        advertiser_addr: DeviceAddress,
+        initiator_addr: DeviceAddress,
+    ) -> Self {
+        let mut payload = [0; 37];
+        payload[0..6].copy_from_slice(advertiser_addr.raw());
+        payload[6..12].copy_from_slice(initiator_addr.raw());
+
+        let mut header = Header::new(PduType::AdvDirectInd);
+        header.set_payload_length(6 + 6);
+        header.set_tx_add(advertiser_addr.is_random());
+        header.set_rx_add(initiator_addr.is_random());
+
+        Self {
+            header,
+            payload_buf: payload,
+        }
+    }
+
+    /// Creates a non-connectable undirected advertising PDU
+    /// (`ADV_NONCONN_IND`).
+    ///
+    /// This is equivalent to `PduBuf::beacon`, which should be preferred when
+    /// building a beacon PDU to improve clarity.
+    pub fn nonconnectable_undirected(
+        advertiser_addr: DeviceAddress,
+        advertiser_data: &[AdStructure],
+    ) -> Result<Self, Error> {
+        Self::adv(
+            PduType::AdvNonconnInd,
+            advertiser_addr,
+            &mut advertiser_data.iter(),
+        )
+    }
+
+    /// Creates a scannable undirected advertising PDU (`ADV_SCAN_IND`).
+    ///
+    /// Note that scanning is not supported at the moment.
+    pub fn scannable_undirected(
+        advertiser_addr: DeviceAddress,
+        advertiser_data: &[AdStructure],
+    ) -> Result<Self, Error> {
+        Self::adv(
+            PduType::AdvScanInd,
+            advertiser_addr,
+            &mut advertiser_data.iter(),
+        )
+    }
+
+    /// Creates an advertising channel PDU suitable for building a simple
+    /// beacon.
+    ///
+    /// This is mostly equivalent to `PduBuf::nonconnectable_undirected`, but it
+    /// will automatically add a suitable `Flags` AD structure to the
+    /// advertising data (this flags is mandatory).
+    pub fn beacon(
+        advertiser_addr: DeviceAddress,
+        advertiser_data: &[AdStructure],
+    ) -> Result<Self, Error> {
+        Self::adv(
+            PduType::AdvNonconnInd,
+            advertiser_addr,
+            &mut iter::once(&AdStructure::from(Flags::broadcast())).chain(advertiser_data),
+        )
+    }
+
+    /// Creates an advertising PDU that makes this device "visible" for scanning
+    /// devices that want to establish a connection.
+    ///
+    /// This is useful when this device would like to initiate pairing.
+    ///
+    /// This function is mostly equivalent to `PduBuf::connectable_undirected`,
+    /// but will automatically add a suitable `Flags` AD structure to the
+    /// advertising data.
+    ///
+    /// To establish a connection with an already paired device, a "directed"
+    /// advertisement must be sent instead.
+    pub fn discoverable(
+        advertiser_addr: DeviceAddress,
+        advertiser_data: &[AdStructure],
+    ) -> Result<Self, Error> {
+        // TODO what's the difference between "general" and "limited" discoverability?
+        Self::adv(
+            PduType::AdvInd,
+            advertiser_addr,
+            &mut iter::once(&AdStructure::from(Flags::discoverable())).chain(advertiser_data),
+        )
+    }
+
+    /// Creates a scan request PDU.
+    ///
+    /// Note that scanning is not yet implemented.
+    ///
+    /// # Parameters
+    ///
+    /// * `scanner`: Device address of the device in scanning state (sender of
+    ///   the request).
+    /// * `adv`: Device address of the advertising device that this scan request
+    ///   is directed towards.
+    pub fn scan_request(_scanner: DeviceAddress, _adv: DeviceAddress) -> Result<Self, Error> {
+        unimplemented!()
+    }
+
+    /// Creates a scan response PDU.
+    ///
+    /// Note that scanning is not yet implemented.
+    pub fn scan_response(_adv: DeviceAddress, _scan_data: &[AdStructure]) -> Result<Self, Error> {
+        unimplemented!()
+    }
+
+    pub fn header(&self) -> Header {
+        self.header
+    }
+
+    pub fn payload(&self) -> &[u8] {
+        let len = self.header.payload_length() as usize;
+        &self.payload_buf[..len]
+    }
+}
+
+impl fmt::Debug for PduBuf {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({:?}, {:?})", self.header(), self.payload())
     }
 }
 
@@ -153,7 +212,8 @@ impl<'a> StructuredPdu<'a> {
 /// The `TxAdd` and `RxAdd` field are only used for some payloads, for all others, they should be
 /// set to 0.
 ///
-/// Length may be in range 6 to 36 (inclusive).
+/// Length may be in range 6 to 37 (inclusive). With the 2-Byte header this is exactly the max.
+/// on-air packet size.
 #[derive(Copy, Clone)]
 pub struct Header(u16);
 

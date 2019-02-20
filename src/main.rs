@@ -1,8 +1,8 @@
 #![no_std]
 #![no_main]
 
-// panic_halt needed so we have a panic handler
-extern crate panic_halt;
+// We need to import this crate explicitly so we have a panic handler
+extern crate panic_semihosting;
 
 pub mod ble;
 mod radio;
@@ -10,9 +10,11 @@ mod temp;
 
 use {
     crate::{
-        ble::link::{
-            ad_structure::{AdStructure, Flags},
-            AddressKind, DeviceAddress, LinkLayer, MAX_PDU_SIZE,
+        ble::{
+            beacon::Beacon,
+            link::{
+                ad_structure::AdStructure, AddressKind, DeviceAddress, LinkLayer, MAX_PDU_SIZE,
+            },
         },
         radio::{Baseband, BleRadio, PacketBuffer},
         temp::Temp,
@@ -30,42 +32,74 @@ use {
 
 type Logger = serial::Tx<UART0>;
 
+/// Whether to broadcast a beacon or to establish a proper connection.
+///
+/// This is just used to test different code paths. Note that you can't do both
+/// at the same time unless you also generate separate device addresses.
+const TEST_BEACON: bool = true;
+
 #[app(device = nrf51)]
 const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE + 1];
     static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE + 1];
     static mut BASEBAND: Baseband<Logger> = ();
+    static mut BEACON: Beacon = ();
+    static mut BEACON_TIMER: nrf51::TIMER1 = ();
     static BLE_TIMER: nrf51::TIMER0 = ();
 
     #[init(resources = [BLE_TX_BUF, BLE_RX_BUF])]
     fn init() {
-        // On reset, internal 16MHz RC oscillator is active. Switch to ext. 16MHz crystal. This is
-        // needed for Bluetooth to work (but is apparently done on radio activation, too?).
+        {
+            // On reset, internal 16MHz RC oscillator is active. Switch to ext. 16MHz crystal.
+            // This is needed for Bluetooth to work (but is apparently done automatically on radio
+            // activation, too?).
 
-        // Ext. clock freq. defaults to 32 MHz for some reason
-        device.CLOCK.xtalfreq.write(|w| w.xtalfreq()._16mhz());
-        device
-            .CLOCK
-            .tasks_hfclkstart
-            .write(|w| unsafe { w.bits(1) });
-        while device.CLOCK.events_hfclkstarted.read().bits() == 0 {}
+            // Ext. clock freq. defaults to 32 MHz for some reason
+            device.CLOCK.xtalfreq.write(|w| w.xtalfreq()._16mhz());
+            device
+                .CLOCK
+                .tasks_hfclkstart
+                .write(|w| unsafe { w.bits(1) });
+            while device.CLOCK.events_hfclkstarted.read().bits() == 0 {}
+        }
 
-        // TIMER0 cfg, 32 bit @ 1 MHz
-        // Mostly copied from the `nrf51-hal` crate.
-        device.TIMER0.bitmode.write(|w| w.bitmode()._32bit());
-        device
-            .TIMER0
-            .prescaler
-            .write(|w| unsafe { w.prescaler().bits(4) });
-        device.TIMER0.intenset.write(|w| w.compare0().set());
-        device
-            .TIMER0
-            .shorts
-            .write(|w| w.compare0_clear().enabled().compare0_stop().enabled());
+        {
+            // TIMER0 cfg, 32 bit @ 1 MHz
+            // Mostly copied from the `nrf51-hal` crate.
+            device.TIMER0.bitmode.write(|w| w.bitmode()._32bit());
+            device
+                .TIMER0
+                .prescaler
+                .write(|w| unsafe { w.prescaler().bits(4) }); // 2^4 = µs resolution
+            device.TIMER0.intenset.write(|w| w.compare0().set());
+            device
+                .TIMER0
+                .shorts
+                .write(|w| w.compare0_clear().enabled().compare0_stop().enabled());
+        }
 
-        let mut temp = Temp::new(device.TEMP);
-        temp.start_measurement();
-        let temp = block!(temp.read()).unwrap();
+        {
+            // Configure TIMER1 as the beacon timer. It's only a 16-bit timer.
+            let timer = &mut device.TIMER1;
+            timer.bitmode.write(|w| w.bitmode()._16bit());
+            // prescaler = 2^9    = 512
+            // 16 MHz / prescaler = 31_250 Hz
+            timer.prescaler.write(|w| unsafe { w.prescaler().bits(9) }); // 0-9
+            timer.intenset.write(|w| w.compare0().set());
+            timer.shorts.write(|w| w.compare0_clear().enabled());
+            timer.cc[0].write(|w| unsafe { w.bits(31_250 / 3) }); // ~3x per second
+            timer.tasks_clear.write(|w| unsafe { w.bits(1) });
+
+            if TEST_BEACON {
+                timer.tasks_start.write(|w| unsafe { w.bits(1) });
+            }
+        }
+
+        let temp = {
+            let mut temp = Temp::new(device.TEMP);
+            temp.start_measurement();
+            block!(temp.read()).unwrap()
+        };
 
         let mut serial = {
             let pins = device.GPIO.split();
@@ -99,20 +133,30 @@ const APP: () = {
         let mut ll = LinkLayer::with_logger(device_address, serial);
         ll.start_advertise(
             Duration::from_millis(100),
-            &[
-                AdStructure::Flags(Flags::discoverable()),
-                AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS"),
-            ],
-        );
+            &[AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS")],
+        )
+        .unwrap();
 
-        // Queue first baseband update
-        cfg_timer(&device.TIMER0, Some(Duration::from_millis(1)));
-
-        BASEBAND = Baseband::new(
+        let baseband = Baseband::new(
             BleRadio::new(device.RADIO, &device.FICR, resources.BLE_TX_BUF),
             resources.BLE_RX_BUF,
             ll,
         );
+
+        let beacon = Beacon::new(
+            device_address,
+            &[AdStructure::CompleteLocalName("Rusty Beacon")],
+        )
+        .unwrap();
+
+        if !TEST_BEACON {
+            // Queue first baseband update
+            cfg_timer(&device.TIMER0, Some(Duration::from_millis(1)));
+        }
+
+        BEACON = beacon;
+        BEACON_TIMER = device.TIMER1;
+        BASEBAND = baseband;
         BLE_TIMER = device.TIMER0;
     }
 
@@ -127,6 +171,17 @@ const APP: () = {
     fn TIMER0() {
         let maybe_next_update = resources.BASEBAND.update();
         cfg_timer(&resources.BLE_TIMER, maybe_next_update);
+    }
+
+    /// Fire the beacon.
+    #[interrupt(resources = [BEACON_TIMER, BEACON, BASEBAND])]
+    fn TIMER1() {
+        // acknowledge event
+        resources.BEACON_TIMER.events_compare[0].reset();
+
+        let log = resources.BASEBAND.logger();
+        writeln!(log, "-> beacon").unwrap();
+        resources.BEACON.broadcast(resources.BASEBAND.transmitter());
     }
 };
 
