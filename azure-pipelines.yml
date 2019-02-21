@@ -6,7 +6,7 @@ jobs:
   displayName: "Code Formatting"
   pool:
     vmImage: 'Ubuntu-16.04'
-  container: rust
+  container: rust:latest
 
   steps:
   - script: rustup component add rustfmt
@@ -18,7 +18,7 @@ jobs:
   displayName: "Compiling project"
   pool:
     vmImage: 'Ubuntu-16.04'
-  container: rust
+  container: rust:latest
   strategy:
     matrix:
       thumbv6:
