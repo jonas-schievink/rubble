@@ -1,0 +1,30 @@
+trigger:
+- master
+
+jobs:
+- job: rustfmt
+  displayName: "Code Formatting"
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  container: rust
+
+  steps:
+  - script: rustup component add rustfmt
+    displayName: 'Install rustfmt'
+  - script: cargo fmt --all -- --check
+    displayName: 'Check code formatting'
+
+- job: check
+  displayName: "Compiling project"
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  container: rust
+  strategy:
+    matrix:
+      thumbv6:
+        TARGET: thumbv6m-none-eabi
+  steps:
+  - script: rustup target add $TARGET
+    displayName: "Installing $TARGET"
+  - script: cargo check --target $TARGET
+    displayName: "Running `cargo check`"
