@@ -140,7 +140,7 @@ impl PduBuf {
     /// Creates an advertising PDU that makes this device "visible" for scanning
     /// devices that want to establish a connection.
     ///
-    /// This is useful when this device would like to initiate pairing.
+    /// This should be used when this device would like to initiate pairing.
     ///
     /// This function is mostly equivalent to `PduBuf::connectable_undirected`,
     /// but will automatically add a suitable `Flags` AD structure to the
@@ -313,10 +313,10 @@ impl fmt::Debug for Header {
 enum_with_unknown! {
     /// 4-bit PDU type in [`Header`].
     ///
-    /// For more details, see [`StructuredPdu`].
+    /// For more details, see [`PduBuf`].
     ///
     /// [`Header`]: struct.Header.html
-    /// [`StructuredPdu`]: enum.StructuredPdu.html
+    /// [`PduBuf`]: struct.PduBuf.html
     #[derive(Debug)]
     pub enum PduType(u8) {
         /// Connectable undirected advertising event.

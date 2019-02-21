@@ -60,7 +60,7 @@ impl AdvertisingChannelIndex {
         }
     }
 
-    /// Returns the frequency of this channel in MHz.
+    /// Returns the center frequency of this channel in MHz.
     pub fn freq(&self) -> u16 {
         rf_channel_freq(self.rf_channel())
     }
@@ -106,7 +106,7 @@ impl DataChannelIndex {
         }
     }
 
-    /// Returns the frequency of this channel in MHz.
+    /// Returns the center frequency of this channel in MHz.
     pub fn freq(&self) -> u16 {
         rf_channel_freq(self.rf_channel())
     }
