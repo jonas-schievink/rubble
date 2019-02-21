@@ -28,4 +28,4 @@ jobs:
   - script: rustup target add $TARGET
     displayName: 'Install target libraries'
   - script: cargo check --target $TARGET
-    displayName: 'Running `cargo check`''
+    displayName: 'Running `cargo check`'
