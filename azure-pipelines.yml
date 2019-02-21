@@ -3,28 +3,29 @@ trigger:
 
 jobs:
 - job: rustfmt
-  displayName: "Code Formatting"
+  displayName: 'Check Code Formatting'
   pool:
     vmImage: 'Ubuntu-16.04'
-  container: rust:latest
-
   steps:
+  - script: curl https://sh.rustup.rs -sSf | sh -s -- -y
+    displayName: 'Install Rust'
   - script: rustup component add rustfmt
     displayName: 'Install rustfmt'
   - script: cargo fmt --all -- --check
     displayName: 'Check code formatting'
 
 - job: check
-  displayName: "Compiling project"
+  displayName: 'Build project'
   pool:
     vmImage: 'Ubuntu-16.04'
-  container: rust:latest
   strategy:
     matrix:
       thumbv6:
         TARGET: thumbv6m-none-eabi
   steps:
+  - script: curl https://sh.rustup.rs -sSf | sh -s -- -y
+    displayName: 'Install Rust'
   - script: rustup target add $TARGET
-    displayName: "Installing $TARGET"
+    displayName: 'Install target libraries'
   - script: cargo check --target $TARGET
-    displayName: "Running `cargo check`"
+    displayName: 'Running `cargo check`''
