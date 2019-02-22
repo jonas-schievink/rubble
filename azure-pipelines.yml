@@ -9,9 +9,9 @@ jobs:
   steps:
   - script: curl https://sh.rustup.rs -sSf | sh -s -- -y
     displayName: 'Install Rust'
-  - script: rustup component add rustfmt
+  - script: $HOME/.cargo/bin/rustup component add rustfmt
     displayName: 'Install rustfmt'
-  - script: cargo fmt --all -- --check
+  - script: $HOME/.cargo/bin/cargo fmt --all -- --check
     displayName: 'Check code formatting'
 
 - job: check
@@ -25,7 +25,7 @@ jobs:
   steps:
   - script: curl https://sh.rustup.rs -sSf | sh -s -- -y
     displayName: 'Install Rust'
-  - script: rustup target add $TARGET
+  - script: $HOME/.cargo/bin/rustup target add $TARGET
     displayName: 'Install target libraries'
-  - script: cargo check --target $TARGET
+  - script: $HOME/.cargo/bin/cargo check --target $TARGET
     displayName: 'Running `cargo check`'
