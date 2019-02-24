@@ -6,7 +6,6 @@ extern crate panic_semihosting;
 
 pub mod ble;
 mod radio;
-mod temp;
 
 use {
     crate::{
@@ -17,11 +16,9 @@ use {
             },
         },
         radio::{Baseband, BleRadio, PacketBuffer},
-        temp::Temp,
     },
     byteorder::{ByteOrder, LittleEndian},
     core::{fmt::Write, time::Duration, u32},
-    nb::block,
     nrf51::UART0,
     nrf51_hal::{
         prelude::*,
@@ -95,12 +92,6 @@ const APP: () = {
             }
         }
 
-        let temp = {
-            let mut temp = Temp::new(device.TEMP);
-            temp.start_measurement();
-            block!(temp.read()).unwrap()
-        };
-
         let mut serial = {
             let pins = device.GPIO.split();
             let rx = pins.pin1.downgrade();
@@ -109,7 +100,7 @@ const APP: () = {
                 .split()
                 .0
         };
-        writeln!(serial, "\n--- INIT ({}°C) ---", temp).unwrap();
+        writeln!(serial, "\n--- INIT ---").unwrap();
 
         let mut devaddr = [0u8; 6];
         let devaddr_lo = device.FICR.deviceaddr[0].read().bits();
