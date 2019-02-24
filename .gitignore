@@ -1,4 +1,6 @@
 **/*.rs.bk
-.gdb_history
 Cargo.lock
 target/
+
+.gdb_history
+.gdbinit
