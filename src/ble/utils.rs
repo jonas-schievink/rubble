@@ -118,7 +118,8 @@ pub trait SliceExt<T: Copy> {
     /// If `self` doesn't contain enough elements to fill an `S`, returns `None`
     /// without changing `self`.
     fn read_array<S>(&mut self) -> Option<S>
-        where S: Default + AsMut<[T]>;
+    where
+        S: Default + AsMut<[T]>;
 }
 
 impl<'a, T: Copy> SliceExt<T> for &'a [T] {
@@ -129,7 +130,8 @@ impl<'a, T: Copy> SliceExt<T> for &'a [T] {
     }
 
     fn read_array<S>(&mut self) -> Option<S>
-        where S: Default + AsMut<[T]>
+    where
+        S: Default + AsMut<[T]>,
     {
         let mut buf = S::default();
         let slice = buf.as_mut();
