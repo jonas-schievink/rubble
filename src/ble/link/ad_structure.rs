@@ -7,7 +7,11 @@
 //! [gap]: https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
 
 use {
-    crate::ble::{utils::MutSliceExt, Error},
+    crate::ble::{
+        utils::{BytesOr, IterBytesOr, MutSliceExt},
+        uuid::IsUuid,
+        Error,
+    },
     bitflags::bitflags,
 };
 
@@ -133,6 +137,35 @@ impl<'a> AdStructure<'a> {
 
         *first = len + 1; // + 1 for the Type field
         Ok(len as usize + 2) // + Type field and prefix length byte
+    }
+}
+
+pub struct ServiceUuids<'a, T: IsUuid> {
+    complete: bool,
+    data: BytesOr<'a, [T]>,
+}
+
+impl<'a, T: IsUuid> ServiceUuids<'a, T> {
+    pub fn from_bytes(complete: bool, bytes: &'a [u8]) -> Self {
+        Self {
+            complete,
+            data: BytesOr::from_bytes(bytes),
+        }
+    }
+
+    pub fn from_uuids(complete: bool, uuids: &'a [T]) -> Self {
+        Self {
+            complete,
+            data: BytesOr::from_ref(uuids),
+        }
+    }
+
+    pub fn is_complete(&self) -> bool {
+        self.complete
+    }
+
+    pub fn iter(&self) -> IterBytesOr<'a, T> {
+        self.data.iter()
     }
 }
 

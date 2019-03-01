@@ -18,7 +18,13 @@
 //!
 //! `1234ABCD-0000-1000-8000-00805F9B34FB`
 
-use byteorder::{BigEndian, ByteOrder};
+use {
+    crate::ble::{
+        utils::{FromBytes, MutSliceExt, SliceExt, ToBytes},
+        Error,
+    },
+    byteorder::{BigEndian, ByteOrder},
+};
 
 pub use uuid::Uuid;
 
@@ -59,3 +65,65 @@ impl Into<Uuid> for Uuid32 {
         Uuid::from_bytes(buf)
     }
 }
+
+impl ToBytes for Uuid16 {
+    fn space_needed(&self) -> usize {
+        2
+    }
+
+    fn to_bytes(&self, buffer: &mut &mut [u8]) -> Result<(), Error> {
+        buffer.write_slice(&self.0.to_be_bytes())
+    }
+}
+
+impl ToBytes for Uuid32 {
+    fn space_needed(&self) -> usize {
+        4
+    }
+
+    fn to_bytes(&self, buffer: &mut &mut [u8]) -> Result<(), Error> {
+        buffer.write_slice(&self.0.to_be_bytes())
+    }
+}
+
+impl ToBytes for Uuid {
+    fn space_needed(&self) -> usize {
+        16
+    }
+
+    fn to_bytes(&self, buffer: &mut &mut [u8]) -> Result<(), Error> {
+        buffer.write_slice(self.as_bytes())
+    }
+}
+
+impl FromBytes for Uuid16 {
+    fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
+        let array = bytes.read_array().ok_or(Error::Eof)?;
+        Ok(Uuid16(u16::from_be_bytes(array)))
+    }
+}
+
+impl FromBytes for Uuid32 {
+    fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
+        let array = bytes.read_array().ok_or(Error::Eof)?;
+        Ok(Uuid32(u32::from_be_bytes(array)))
+    }
+}
+
+impl FromBytes for Uuid {
+    fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
+        let array = bytes.read_array().ok_or(Error::Eof)?;
+        Ok(Uuid::from_bytes(array))
+    }
+}
+
+/// Marker for UUID types.
+///
+/// This is useful when being generic over the specific type of UUID used. It
+/// also brings in the `ToBytes` and `FromBytes` trait bounds that are likely
+/// needed as well.
+pub trait IsUuid: ToBytes + FromBytes + Copy {}
+
+impl IsUuid for Uuid16 {}
+impl IsUuid for Uuid32 {}
+impl IsUuid for Uuid {}

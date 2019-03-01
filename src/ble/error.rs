@@ -16,6 +16,9 @@ pub enum Error {
     /// while reading data from a buffer.
     Eof,
 
+    /// Parsing didn't consume the entire buffer.
+    IncompleteParse,
+
     #[doc(hidden)]
     __Nonexhaustive,
 }
@@ -25,6 +28,7 @@ impl fmt::Display for Error {
         f.write_str(match self {
             Error::InvalidLength => "invalid length value specified",
             Error::Eof => "end of buffer",
+            Error::IncompleteParse => "excess data in buffer",
             Error::__Nonexhaustive => unreachable!(),
         })
     }
