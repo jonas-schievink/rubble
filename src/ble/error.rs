@@ -9,6 +9,9 @@ pub enum Error {
     /// considered lost (if one is currently established).
     InvalidLength,
 
+    /// Invalid value supplied for field.
+    InvalidValue,
+
     /// Unexpectedly reached EOF while reading or writing data.
     ///
     /// This is returned when the application tries to fit too much data into a
@@ -27,6 +30,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(match self {
             Error::InvalidLength => "invalid length value specified",
+            Error::InvalidValue => "invalid value for field",
             Error::Eof => "end of buffer",
             Error::IncompleteParse => "excess data in buffer",
             Error::__Nonexhaustive => unreachable!(),

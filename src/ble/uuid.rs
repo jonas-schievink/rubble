@@ -20,7 +20,8 @@
 
 use {
     crate::ble::{
-        utils::{FromBytes, MutSliceExt, SliceExt, ToBytes},
+        bytes::*,
+        utils::{MutSliceExt, SliceExt},
         Error,
     },
     byteorder::{BigEndian, ByteOrder},
@@ -96,25 +97,31 @@ impl ToBytes for Uuid {
     }
 }
 
-impl FromBytes for Uuid16 {
+impl FromBytes<'_> for Uuid16 {
     fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
         let array = bytes.read_array().ok_or(Error::Eof)?;
         Ok(Uuid16(u16::from_be_bytes(array)))
     }
 }
 
-impl FromBytes for Uuid32 {
+impl FromBytes<'_> for Uuid32 {
     fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
         let array = bytes.read_array().ok_or(Error::Eof)?;
         Ok(Uuid32(u32::from_be_bytes(array)))
     }
 }
 
-impl FromBytes for Uuid {
+impl FromBytes<'_> for Uuid {
     fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
         let array = bytes.read_array().ok_or(Error::Eof)?;
         Ok(Uuid::from_bytes(array))
     }
+}
+
+pub enum UuidKind {
+    Uuid16,
+    Uuid32,
+    Uuid128,
 }
 
 /// Marker for UUID types.
@@ -122,8 +129,18 @@ impl FromBytes for Uuid {
 /// This is useful when being generic over the specific type of UUID used. It
 /// also brings in the `ToBytes` and `FromBytes` trait bounds that are likely
 /// needed as well.
-pub trait IsUuid: ToBytes + FromBytes + Copy {}
+pub trait IsUuid: for<'a> FromBytes<'a> + ToBytes + Copy {
+    const KIND: UuidKind;
+}
 
-impl IsUuid for Uuid16 {}
-impl IsUuid for Uuid32 {}
-impl IsUuid for Uuid {}
+impl IsUuid for Uuid16 {
+    const KIND: UuidKind = UuidKind::Uuid16;
+}
+
+impl IsUuid for Uuid32 {
+    const KIND: UuidKind = UuidKind::Uuid32;
+}
+
+impl IsUuid for Uuid {
+    const KIND: UuidKind = UuidKind::Uuid128;
+}

@@ -8,6 +8,7 @@ mod utils;
 #[macro_use]
 pub mod log;
 pub mod beacon;
+mod bytes;
 mod crc;
 mod error;
 pub mod link;

@@ -8,8 +8,9 @@
 
 use {
     crate::ble::{
-        utils::{BytesOr, IterBytesOr, MutSliceExt},
-        uuid::IsUuid,
+        bytes::*,
+        utils::{MutSliceExt, SliceExt},
+        uuid::{IsUuid, UuidKind},
         Error,
     },
     bitflags::bitflags,
@@ -67,15 +68,6 @@ pub enum AdStructure<'a> {
 }
 
 impl<'a> AdStructure<'a> {
-    // GAP Data Type Values.
-    // https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
-    const TYPE_FLAGS: u8 = 0x01;
-    const TYPE_INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS: u8 = 0x02;
-    const TYPE_COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS: u8 = 0x03;
-    const TYPE_SHORTENED_LOCAL_NAME: u8 = 0x08;
-    const TYPE_COMPLETE_LOCAL_NAME: u8 = 0x09;
-    const TYPE_SERVICE_DATA_16BIT_UUID: u8 = 0x16;
-
     /// Lowers this AD structure into a Byte buffer.
     ///
     /// Returns the number of Bytes of `buf` that are used by this AD structure.
@@ -89,16 +81,16 @@ impl<'a> AdStructure<'a> {
         // Write the type tag and data, returning length of the data written (w/o the type byte)
         let len = match *self {
             AdStructure::Flags(ref flags) => {
-                buf.write_byte(Self::TYPE_FLAGS)?;
+                buf.write_byte(Type::FLAGS)?;
                 buf.write_byte(flags.to_u8())?;
                 1
             }
             AdStructure::ServiceUuids16 { incomplete, uuids } => {
                 eof_unless!(uuids.len() < 127);
                 buf.write_byte(if incomplete {
-                    Self::TYPE_INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
+                    Type::INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
                 } else {
-                    Self::TYPE_COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
+                    Type::COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
                 })?;
 
                 eof_unless!(buf.len() >= uuids.len() * 2);
@@ -111,7 +103,7 @@ impl<'a> AdStructure<'a> {
             }
             AdStructure::ServiceData16 { uuid, data } => {
                 assert!(data.len() < 255);
-                buf.write_byte(Self::TYPE_SERVICE_DATA_16BIT_UUID)?;
+                buf.write_byte(Type::SERVICE_DATA_16BIT_UUID)?;
                 buf.write_byte(uuid as u8)?;
                 buf.write_byte((uuid >> 8) as u8)?;
                 buf.write_slice(data)?;
@@ -120,14 +112,14 @@ impl<'a> AdStructure<'a> {
             }
             AdStructure::CompleteLocalName(name) => {
                 assert!(name.len() < 255);
-                buf.write_byte(Self::TYPE_COMPLETE_LOCAL_NAME)?;
+                buf.write_byte(Type::COMPLETE_LOCAL_NAME)?;
                 buf.write_slice(name.as_bytes())?;
 
                 name.len() as u8
             }
             AdStructure::ShortenedLocalName(name) => {
                 assert!(name.len() < 255);
-                buf.write_byte(Self::TYPE_SHORTENED_LOCAL_NAME)?;
+                buf.write_byte(Type::SHORTENED_LOCAL_NAME)?;
                 buf.write_slice(name.as_bytes())?;
 
                 name.len() as u8
@@ -146,13 +138,6 @@ pub struct ServiceUuids<'a, T: IsUuid> {
 }
 
 impl<'a, T: IsUuid> ServiceUuids<'a, T> {
-    pub fn from_bytes(complete: bool, bytes: &'a [u8]) -> Self {
-        Self {
-            complete,
-            data: BytesOr::from_bytes(bytes),
-        }
-    }
-
     pub fn from_uuids(complete: bool, uuids: &'a [T]) -> Self {
         Self {
             complete,
@@ -160,12 +145,78 @@ impl<'a, T: IsUuid> ServiceUuids<'a, T> {
         }
     }
 
+    /// Returns a boolean indicating whether this list is complete.
+    ///
+    /// If this returns `false`, the device offers more services not contained
+    /// in this list.
+    // FIXME figure out if/how GATT services are related to this
     pub fn is_complete(&self) -> bool {
         self.complete
     }
 
-    pub fn iter(&self) -> IterBytesOr<'a, T> {
+    /// Returns an iterator over the UUIDs stored in `self`.
+    pub fn iter(&self) -> impl Iterator<Item = T> + 'a {
         self.data.iter()
+    }
+
+    fn type_(&self) -> u8 {
+        match (T::KIND, self.complete) {
+            (UuidKind::Uuid16, true) => Type::COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS,
+            (UuidKind::Uuid16, false) => Type::INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS,
+            (UuidKind::Uuid32, true) => Type::COMPLETE_LIST_OF_32BIT_SERVICE_UUIDS,
+            (UuidKind::Uuid32, false) => Type::INCOMPLETE_LIST_OF_32BIT_SERVICE_UUIDS,
+            (UuidKind::Uuid128, true) => Type::COMPLETE_LIST_OF_128BIT_SERVICE_UUIDS,
+            (UuidKind::Uuid128, false) => Type::INCOMPLETE_LIST_OF_128BIT_SERVICE_UUIDS,
+        }
+    }
+}
+
+/// Decodes `ServiceUuids` from a byte sequence containing:
+///
+/// * **`TYPE`**: The right "(In)complete List of N-bit Service Class UUIDs"
+///   type. Both the complete and incomplete type are accepted.
+/// * **`UUID`**...: n*2/4/16 Bytes of UUID data, in *little* endian.
+impl<'a, T: IsUuid> FromBytes<'a> for ServiceUuids<'a, T> {
+    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+        let (t_complete, t_incomplete) = match T::KIND {
+            UuidKind::Uuid16 => (
+                Type::COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS,
+                Type::INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS,
+            ),
+            UuidKind::Uuid32 => (
+                Type::COMPLETE_LIST_OF_32BIT_SERVICE_UUIDS,
+                Type::INCOMPLETE_LIST_OF_32BIT_SERVICE_UUIDS,
+            ),
+            UuidKind::Uuid128 => (
+                Type::COMPLETE_LIST_OF_128BIT_SERVICE_UUIDS,
+                Type::INCOMPLETE_LIST_OF_128BIT_SERVICE_UUIDS,
+            ),
+        };
+
+        let ty = bytes.read_first().ok_or(Error::Eof)?;
+        let complete = if ty == t_complete {
+            true
+        } else if ty == t_incomplete {
+            false
+        } else {
+            return Err(Error::InvalidValue);
+        };
+
+        Ok(Self {
+            complete,
+            data: BytesOr::from_bytes(bytes)?,
+        })
+    }
+}
+
+impl<'a, T: IsUuid> ToBytes for ServiceUuids<'a, T> {
+    fn space_needed(&self) -> usize {
+        1 + self.data.space_needed()
+    }
+
+    fn to_bytes(&self, buffer: &mut &mut [u8]) -> Result<(), Error> {
+        buffer.write_byte(self.type_())?;
+        self.data.to_bytes(buffer)
     }
 }
 
@@ -233,4 +284,60 @@ impl<'a> From<Flags> for AdStructure<'a> {
     fn from(flags: Flags) -> Self {
         AdStructure::Flags(flags)
     }
+}
+
+/// Data Type constants.
+///
+/// https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
+enum Type {}
+
+#[allow(unused)]
+impl Type {
+    const FLAGS: u8 = 0x01;
+    const INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS: u8 = 0x02;
+    const COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS: u8 = 0x03;
+    const INCOMPLETE_LIST_OF_32BIT_SERVICE_UUIDS: u8 = 0x04;
+    const COMPLETE_LIST_OF_32BIT_SERVICE_UUIDS: u8 = 0x05;
+    const INCOMPLETE_LIST_OF_128BIT_SERVICE_UUIDS: u8 = 0x06;
+    const COMPLETE_LIST_OF_128BIT_SERVICE_UUIDS: u8 = 0x07;
+    const SHORTENED_LOCAL_NAME: u8 = 0x08;
+    const COMPLETE_LOCAL_NAME: u8 = 0x09;
+    const TX_POWER_LEVEL: u8 = 0x0A;
+    const CLASS_OF_DEVICE: u8 = 0x0D;
+    const SIMPLE_PAIRING_HASH_C: u8 = 0x0E;
+    const SIMPLE_PAIRING_HASH_C192: u8 = 0x0E;
+    const SIMPLE_PAIRING_RANDOMIZER_R: u8 = 0x0F;
+    const SIMPLE_PAIRING_RANDOMIZER_R192: u8 = 0x0F;
+    const DEVICE_ID: u8 = 0x10;
+    const SECURITY_MANAGER_TK_VALUE: u8 = 0x10;
+    const SECURITY_MANAGER_OUT_OF_BAND_FLAGS: u8 = 0x11;
+    const SLAVE_CONNECTION_INTERVAL_RANGE: u8 = 0x12;
+    const LIST_OF_16BIT_SERVICE_SOLICITATION_UUIDS: u8 = 0x14;
+    const LIST_OF_128BIT_SERVICE_SOLICITATION_UUIDS: u8 = 0x15;
+    const SERVICE_DATA: u8 = 0x16;
+    const SERVICE_DATA_16BIT_UUID: u8 = 0x16;
+    const PUBLIC_TARGET_ADDRESS: u8 = 0x17;
+    const RANDOM_TARGET_ADDRESS: u8 = 0x18;
+    const APPEARANCE: u8 = 0x19;
+    const ADVERTISING_INTERVAL: u8 = 0x1A;
+    const LE_BLUETOOTH_DEVICE_ADDRESS: u8 = 0x1B;
+    const LE_ROLE: u8 = 0x1C;
+    const SIMPLE_PAIRING_HASH_C256: u8 = 0x1D;
+    const SIMPLE_PAIRING_RANDOMIZER_R256: u8 = 0x1E;
+    const LIST_OF_32BIT_SERVICE_SOLICITATION_UUIDS: u8 = 0x1F;
+    const SERVICE_DATA_32BIT_UUID: u8 = 0x20;
+    const SERVICE_DATA_128BIT_UUID: u8 = 0x21;
+    const LE_SECURE_CONNECTIONS_CONFIRMATION_VALUE: u8 = 0x22;
+    const LE_SECURE_CONNECTIONS_RANDOM_VALUE: u8 = 0x23;
+    const URI: u8 = 0x24;
+    const INDOOR_POSITIONING: u8 = 0x25;
+    const TRANSPORT_DISCOVERY_DATA: u8 = 0x26;
+    const LE_SUPPORTED_FEATURES: u8 = 0x27;
+    const CHANNEL_MAP_UPDATE_INDICATION: u8 = 0x28;
+    const PB_ADV: u8 = 0x29;
+    const MESH_MESSAGE: u8 = 0x2A;
+    const MESH_BEACON: u8 = 0x2B;
+    const THREE_D_INFORMATION_DATA: u8 = 0x3D;
+    const _3D_INFORMATION_DATA: u8 = 0x3D;
+    const MANUFACTURER_SPECIFIC_DATA: u8 = 0xFF;
 }
