@@ -33,7 +33,7 @@ type Logger = serial::Tx<UART0>;
 ///
 /// This is just used to test different code paths. Note that you can't do both
 /// at the same time unless you also generate separate device addresses.
-const TEST_BEACON: bool = true;
+const TEST_BEACON: bool = false;
 
 #[app(device = nrf51)]
 const APP: () = {
@@ -123,7 +123,7 @@ const APP: () = {
 
         let mut ll = LinkLayer::with_logger(device_address, serial);
         ll.start_advertise(
-            Duration::from_millis(100),
+            Duration::from_millis(200),
             &[AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS")],
         )
         .unwrap();

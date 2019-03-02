@@ -101,6 +101,8 @@ impl<'a> MutSliceExt<'a> for &'a mut [u8] {
     {
         eof_unless!(self.len() >= other.len());
         self[..other.len()].copy_from_slice(other);
+        let this = mem::replace(self, &mut []);
+        *self = &mut this[other.len()..];
         Ok(())
     }
 }

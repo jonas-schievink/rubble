@@ -10,9 +10,12 @@
 use {
     super::{
         ad_structure::{AdStructure, Flags},
-        DeviceAddress,
+        DeviceAddress, MAX_PAYLOAD_SIZE,
     },
-    crate::ble::Error,
+    crate::ble::{
+        bytes::{ByteWriter, ToBytes},
+        Error,
+    },
     byteorder::{ByteOrder, LittleEndian},
     core::{fmt, iter},
 };
@@ -23,7 +26,7 @@ pub struct PduBuf {
     header: Header,
     /// Fixed-size buffer that can store the largest PDU. Actual length is
     /// stored in the header.
-    payload_buf: [u8; super::MAX_PAYLOAD_SIZE],
+    payload_buf: [u8; MAX_PAYLOAD_SIZE],
 }
 
 impl PduBuf {
@@ -33,17 +36,17 @@ impl PduBuf {
         adv: DeviceAddress,
         adv_data: &mut Iterator<Item = &AdStructure>,
     ) -> Result<Self, Error> {
-        let mut payload = [0; 37];
-        payload[0..6].copy_from_slice(adv.raw());
-        let data_buf = &mut payload[6..];
-        let mut ad_size = 0;
+        let mut payload = [0; MAX_PAYLOAD_SIZE];
+        let mut buf = ByteWriter::new(&mut payload[..]);
+        buf.write_slice(adv.raw()).unwrap();
         for ad in adv_data {
-            let bytes = ad.lower(&mut data_buf[ad_size..])?;
-            ad_size += bytes;
+            ad.to_bytes(&mut buf)?;
         }
 
+        let left = buf.space_left();
+        let used = payload.len() - left;
         let mut header = Header::new(ty);
-        header.set_payload_length(6 + ad_size as u8);
+        header.set_payload_length(used as u8);
         header.set_tx_add(adv.is_random());
         header.set_rx_add(false);
         Ok(Self {

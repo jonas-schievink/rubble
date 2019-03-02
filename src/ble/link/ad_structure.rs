@@ -9,8 +9,8 @@
 use {
     crate::ble::{
         bytes::*,
-        utils::{MutSliceExt, SliceExt},
-        uuid::{IsUuid, UuidKind},
+        utils::SliceExt,
+        uuid::{IsUuid, Uuid, Uuid16, Uuid32, UuidKind},
         Error,
     },
     bitflags::bitflags,
@@ -36,16 +36,9 @@ pub enum AdStructure<'a> {
     /// Must not be used in scan response data.
     Flags(Flags),
 
-    /// List of 16-bit service UUIDs.
-    ///
-    /// Only one UUID size class is allowed in a single packet.
-    ServiceUuids16 {
-        /// Whether this is an incomplete (`true`) or complete (`false`) list of
-        /// UUIDs.
-        incomplete: bool,
-        /// The list of service UUIDs to send.
-        uuids: &'a [u16],
-    },
+    ServiceUuids16(ServiceUuids<'a, Uuid16>),
+    ServiceUuids32(ServiceUuids<'a, Uuid32>),
+    ServiceUuids128(ServiceUuids<'a, Uuid>),
 
     /// Service data with 16-bit service UUID.
     ServiceData16 {
@@ -67,71 +60,52 @@ pub enum AdStructure<'a> {
     __Nonexhaustive,
 }
 
-impl<'a> AdStructure<'a> {
+impl<'a> ToBytes for AdStructure<'a> {
     /// Lowers this AD structure into a Byte buffer.
     ///
     /// Returns the number of Bytes of `buf` that are used by this AD structure.
-    pub fn lower(&self, buf: &'a mut [u8]) -> Result<usize, Error> {
+    fn to_bytes(&self, buf: &mut ByteWriter) -> Result<(), Error> {
         // First Byte = Length of record. Start encoding at offset 1, write length later.
-        let (first, mut buf) = match buf.split_first_mut() {
+        let first = match buf.split_next_mut() {
             None => return Err(Error::Eof),
             Some(s) => s,
         };
 
-        // Write the type tag and data, returning length of the data written (w/o the type byte)
-        let len = match *self {
-            AdStructure::Flags(ref flags) => {
+        // Write the type tag and data
+        let left_before = buf.space_left();
+        match self {
+            AdStructure::Flags(flags) => {
                 buf.write_byte(Type::FLAGS)?;
                 buf.write_byte(flags.to_u8())?;
-                1
             }
-            AdStructure::ServiceUuids16 { incomplete, uuids } => {
-                eof_unless!(uuids.len() < 127);
-                buf.write_byte(if incomplete {
-                    Type::INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
-                } else {
-                    Type::COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
-                })?;
-
-                eof_unless!(buf.len() >= uuids.len() * 2);
-                for (dst, &src) in buf.chunks_mut(2).zip(uuids) {
-                    dst[0] = src as u8;
-                    dst[1] = (src >> 8) as u8;
-                }
-
-                uuids.len() as u8 * 2
-            }
+            AdStructure::ServiceUuids16(uuids) => uuids.to_bytes(buf)?,
+            AdStructure::ServiceUuids32(uuids) => uuids.to_bytes(buf)?,
+            AdStructure::ServiceUuids128(uuids) => uuids.to_bytes(buf)?,
             AdStructure::ServiceData16 { uuid, data } => {
-                assert!(data.len() < 255);
                 buf.write_byte(Type::SERVICE_DATA_16BIT_UUID)?;
-                buf.write_byte(uuid as u8)?;
-                buf.write_byte((uuid >> 8) as u8)?;
+                buf.write_byte(*uuid as u8)?;
+                buf.write_byte((*uuid >> 8) as u8)?;
                 buf.write_slice(data)?;
-
-                data.len() as u8 + 2
             }
             AdStructure::CompleteLocalName(name) => {
-                assert!(name.len() < 255);
                 buf.write_byte(Type::COMPLETE_LOCAL_NAME)?;
                 buf.write_slice(name.as_bytes())?;
-
-                name.len() as u8
             }
             AdStructure::ShortenedLocalName(name) => {
-                assert!(name.len() < 255);
                 buf.write_byte(Type::SHORTENED_LOCAL_NAME)?;
                 buf.write_slice(name.as_bytes())?;
-
-                name.len() as u8
             }
             AdStructure::__Nonexhaustive => unreachable!(),
-        };
+        }
+        let len = left_before - buf.space_left();
+        assert!(len <= 255);
 
-        *first = len + 1; // + 1 for the Type field
-        Ok(len as usize + 2) // + Type field and prefix length byte
+        *first = len as u8;
+        Ok(())
     }
 }
 
+#[derive(Debug)]
 pub struct ServiceUuids<'a, T: IsUuid> {
     complete: bool,
     data: BytesOr<'a, [T]>,
@@ -210,11 +184,7 @@ impl<'a, T: IsUuid> FromBytes<'a> for ServiceUuids<'a, T> {
 }
 
 impl<'a, T: IsUuid> ToBytes for ServiceUuids<'a, T> {
-    fn space_needed(&self) -> usize {
-        1 + self.data.space_needed()
-    }
-
-    fn to_bytes(&self, buffer: &mut &mut [u8]) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
         buffer.write_byte(self.type_())?;
         self.data.to_bytes(buffer)
     }

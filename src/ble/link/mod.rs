@@ -219,7 +219,8 @@ impl LinkLayer<NoopLogger> {
 
 impl<L: Logger> LinkLayer<L> {
     /// Creates a new Link-Layer with a custom logger.
-    pub fn with_logger(dev_addr: DeviceAddress, logger: L) -> Self {
+    pub fn with_logger(dev_addr: DeviceAddress, mut logger: L) -> Self {
+        trace!(logger, "new LinkLayer, dev={:?}", dev_addr);
         Self {
             dev_addr,
             logger,
@@ -312,18 +313,18 @@ impl<L: Logger> LinkLayer<L> {
             State::Advertising {
                 interval,
                 ref pdu,
-                channel,
+                ref mut channel,
             } => {
+                *channel = channel.cycle();
                 let payload = pdu.payload();
                 let buf = tx.tx_payload_buf();
                 buf[..payload.len()].copy_from_slice(payload);
 
-                trace!(self.logger, "->[ADV]");
-                tx.transmit_advertising(pdu.header(), channel);
+                trace!(self.logger, "->[ADV] {} MHz", channel.freq());
+                tx.transmit_advertising(pdu.header(), *channel);
 
                 Cmd {
-                    // FIXME: don't need to listen if we're a nonconnectable beacon
-                    radio: RadioCmd::ListenAdvertising { channel },
+                    radio: RadioCmd::ListenAdvertising { channel: *channel },
                     next_update: Some(interval),
                 }
             }

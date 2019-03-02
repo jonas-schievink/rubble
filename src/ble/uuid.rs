@@ -19,11 +19,7 @@
 //! `1234ABCD-0000-1000-8000-00805F9B34FB`
 
 use {
-    crate::ble::{
-        bytes::*,
-        utils::{MutSliceExt, SliceExt},
-        Error,
-    },
+    crate::ble::{bytes::*, utils::SliceExt, Error},
     byteorder::{BigEndian, ByteOrder},
 };
 
@@ -68,31 +64,19 @@ impl Into<Uuid> for Uuid32 {
 }
 
 impl ToBytes for Uuid16 {
-    fn space_needed(&self) -> usize {
-        2
-    }
-
-    fn to_bytes(&self, buffer: &mut &mut [u8]) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
         buffer.write_slice(&self.0.to_be_bytes())
     }
 }
 
 impl ToBytes for Uuid32 {
-    fn space_needed(&self) -> usize {
-        4
-    }
-
-    fn to_bytes(&self, buffer: &mut &mut [u8]) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
         buffer.write_slice(&self.0.to_be_bytes())
     }
 }
 
 impl ToBytes for Uuid {
-    fn space_needed(&self) -> usize {
-        16
-    }
-
-    fn to_bytes(&self, buffer: &mut &mut [u8]) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
         buffer.write_slice(self.as_bytes())
     }
 }
