@@ -51,7 +51,7 @@ use {
         phy::{AdvertisingChannelIndex, DataChannelIndex},
     },
     core::time::Duration,
-    nrf51::{radio::state::STATER, FICR, RADIO},
+    nrf52810_hal::nrf52810_pac::{radio::state::STATER, FICR, RADIO},
 };
 
 /// The buffer has an extra Byte because the 16-bit PDU header needs to be split in 3 Bytes for the
@@ -71,6 +71,7 @@ impl BleRadio {
     pub fn new(radio: RADIO, ficr: &FICR, tx_buf: &'static mut PacketBuffer) -> Self {
         assert!(radio.state.read().state().is_disabled());
 
+        /*
         if ficr.overrideen.read().ble_1mbit().is_override_() {
             unsafe {
                 radio
@@ -93,6 +94,7 @@ impl BleRadio {
                 });
             }
         }
+        */
 
         radio.mode.write(|w| w.mode().ble_1mbit());
         radio.txpower.write(|w| w.txpower().pos4d_bm());
