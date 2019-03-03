@@ -309,7 +309,7 @@ impl<L: Logger> Baseband<L> {
             // TODO check that `payload_length` is sane
 
             let cmd = {
-                let payload = &self.rx_buf[2..2 + header.payload_length() as usize];
+                let payload = &self.rx_buf[3..3 + header.payload_length() as usize];
                 self.ll.process_adv_packet(&mut self.radio, header, payload)
             };
             self.configure_receiver(cmd.radio);
