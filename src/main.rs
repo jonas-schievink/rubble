@@ -50,9 +50,8 @@ const APP: () = {
     #[init(resources = [BLE_TX_BUF, BLE_RX_BUF])]
     fn init() {
         {
-            // On reset, the internal high frequency clock is used, starting the HFCLK task
-            // switches to the external crystal, this is needed for Bluetooth to work (but is
-            // apparently done automatically on radio activation, too?).
+            // On reset the internal high frequency clock is used, but starting the HFCLK task
+            // switches to the external crystal; this is needed for Bluetooth to work.
 
             device
                 .CLOCK
