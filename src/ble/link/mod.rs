@@ -127,6 +127,7 @@ use {
         crc::ble_crc24,
         log::{Logger, NoopLogger},
         phy::{AdvertisingChannelIndex, DataChannelIndex, Radio},
+        utils::Hex,
         Error,
     },
     byteorder::{ByteOrder, LittleEndian},
@@ -267,12 +268,15 @@ impl<L: Logger> LinkLayer<L> {
     /// correct.
     pub fn process_adv_packet<T: Transmitter>(
         &mut self,
-        tx: &mut T,
+        _tx: &mut T,
         header: advertising::Header,
-        payload: &[u8],
+        mut payload: &[u8],
     ) -> Cmd {
-        trace!(self.logger, " ADV<- {:?}", header);
-        let _ = (tx, header, payload);
+        let oldpl = payload;
+        trace!(self.logger, " ADV<- {:?}, {:?}", header, Hex(payload));
+        let pdu = advertising::Pdu::from_header_and_payload(header, &mut payload);
+        trace!(self.logger, " pl:   {:?}", pdu);
+        trace!(self.logger, " pl-raw: {:?}", Hex(oldpl));
 
         match self.state {
             State::Standby => unreachable!(),

@@ -9,6 +9,8 @@ use {
 };
 
 /// A BLE beacon.
+///
+/// FIXME: This has to randomly offset the broadcast interval
 pub struct Beacon {
     pdu: PduBuf,
 }

@@ -9,7 +9,6 @@
 use {
     crate::ble::{
         bytes::*,
-        utils::SliceExt,
         uuid::{IsUuid, Uuid, Uuid16, Uuid32, UuidKind},
         Error,
     },
@@ -26,7 +25,7 @@ use {
 ///
 /// From a very unrepresentative scan, most devices seem to include Flags and Manufacturer Data, and
 /// optionally a device name, of course.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum AdStructure<'a> {
     /// Device flags and baseband capabilities.
     ///
@@ -55,6 +54,14 @@ pub enum AdStructure<'a> {
 
     /// Sets the shortened device name.
     ShortenedLocalName(&'a str),
+
+    /// An unknown or unimplemented AD structure stored as raw bytes.
+    Unknown {
+        /// Type byte.
+        ty: u8,
+        /// Raw data transmitted after the type.
+        data: &'a [u8],
+    },
 
     #[doc(hidden)]
     __Nonexhaustive,
@@ -95,6 +102,10 @@ impl<'a> ToBytes for AdStructure<'a> {
                 buf.write_byte(Type::SHORTENED_LOCAL_NAME)?;
                 buf.write_slice(name.as_bytes())?;
             }
+            AdStructure::Unknown { ty, data } => {
+                buf.write_byte(*ty)?;
+                buf.write_slice(data)?;
+            }
             AdStructure::__Nonexhaustive => unreachable!(),
         }
         let len = left_before - buf.space_left();
@@ -105,7 +116,28 @@ impl<'a> ToBytes for AdStructure<'a> {
     }
 }
 
-#[derive(Debug)]
+impl<'a> FromBytes<'a> for AdStructure<'a> {
+    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+        let len = bytes.read_first().ok_or(Error::Eof)?;
+        if len == 0 {
+            // Must be at least 1 for the type
+            return Err(Error::InvalidLength);
+        }
+
+        // The `FromBytes` impls of all AD structures also read the type byte
+        let data = bytes.read_slice(len.into()).ok_or(Error::Eof)?;
+        let ty = data[0];
+
+        Ok(match ty {
+            _ => AdStructure::Unknown {
+                ty,
+                data: &data[1..],
+            },
+        })
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
 pub struct ServiceUuids<'a, T: IsUuid> {
     complete: bool,
     data: BytesOr<'a, [T]>,

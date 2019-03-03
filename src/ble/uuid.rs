@@ -19,7 +19,7 @@
 //! `1234ABCD-0000-1000-8000-00805F9B34FB`
 
 use {
-    crate::ble::{bytes::*, utils::SliceExt, Error},
+    crate::ble::{bytes::*, Error},
     byteorder::{BigEndian, ByteOrder},
 };
 

@@ -10,17 +10,235 @@
 use {
     super::{
         ad_structure::{AdStructure, Flags},
-        DeviceAddress, MAX_PAYLOAD_SIZE,
+        AddressKind, DeviceAddress, MAX_PAYLOAD_SIZE,
     },
-    crate::ble::{
-        bytes::{ByteWriter, ToBytes},
-        Error,
-    },
+    crate::ble::{bytes::*, utils::Hex, Error},
     byteorder::{ByteOrder, LittleEndian},
     core::{fmt, iter},
 };
 
+mod private {
+    #[derive(Debug, Copy, Clone)]
+    pub struct Priv;
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct Pdu<'a> {
+    data: PduData,
+    ad: Option<BytesOr<'a, [AdStructure<'a>]>>,
+}
+
+impl<'a> Pdu<'a> {
+    pub fn from_header_and_payload(header: Header, payload: &mut &'a [u8]) -> Result<Self, Error> {
+        if usize::from(header.payload_length()) != payload.len() {
+            return Err(Error::InvalidLength);
+        }
+
+        let data = match header.type_() {
+            PduType::AdvInd => PduData::ConnectableUndirected {
+                advertiser_addr: {
+                    let kind = if header.tx_add() {
+                        AddressKind::Random
+                    } else {
+                        AddressKind::Public
+                    };
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                },
+                _priv: private::Priv,
+            },
+            PduType::AdvDirectInd => PduData::ConnectableDirected {
+                advertiser_addr: {
+                    let kind = if header.tx_add() {
+                        AddressKind::Random
+                    } else {
+                        AddressKind::Public
+                    };
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                },
+                initiator_addr: {
+                    let kind = if header.rx_add() {
+                        AddressKind::Random
+                    } else {
+                        AddressKind::Public
+                    };
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                },
+                _priv: private::Priv,
+            },
+            PduType::AdvNonconnInd => PduData::NonconnectableUndirected {
+                advertiser_addr: {
+                    let kind = if header.tx_add() {
+                        AddressKind::Random
+                    } else {
+                        AddressKind::Public
+                    };
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                },
+                _priv: private::Priv,
+            },
+            PduType::AdvScanInd => PduData::ScannableUndirected {
+                advertiser_addr: {
+                    let kind = if header.tx_add() {
+                        AddressKind::Random
+                    } else {
+                        AddressKind::Public
+                    };
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                },
+                _priv: private::Priv,
+            },
+            PduType::ScanReq => PduData::ScanRequest {
+                scanner_addr: {
+                    // Scanning device sends this PDU
+                    let kind = if header.tx_add() {
+                        AddressKind::Random
+                    } else {
+                        AddressKind::Public
+                    };
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                },
+                advertiser_addr: {
+                    // Advertiser receives this PDU (when it broadcasts an advertisement that
+                    // indicates that the device is scannable).
+                    let kind = if header.rx_add() {
+                        AddressKind::Random
+                    } else {
+                        AddressKind::Public
+                    };
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                },
+                _priv: private::Priv,
+            },
+            PduType::ScanRsp => PduData::ScanResponse {
+                advertiser_addr: {
+                    let kind = if header.tx_add() {
+                        AddressKind::Random
+                    } else {
+                        AddressKind::Public
+                    };
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                },
+                _priv: private::Priv,
+            },
+            PduType::ConnectReq => PduData::ConnectRequest {
+                // Initiator sends this PDU
+                initiator_addr: {
+                    // Scanning device sends this PDU
+                    let kind = if header.tx_add() {
+                        AddressKind::Random
+                    } else {
+                        AddressKind::Public
+                    };
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                },
+                // Advertiser receives this PDU (if it has sent a connectable advertisement)
+                advertiser_addr: {
+                    // Advertiser receives this PDU (when it broadcasts an advertisement that
+                    // indicates that the device is scannable).
+                    let kind = if header.rx_add() {
+                        AddressKind::Random
+                    } else {
+                        AddressKind::Public
+                    };
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                },
+                _priv: private::Priv,
+            },
+            PduType::Unknown(_) => return Err(Error::InvalidValue),
+        };
+        let ad = if header.type_().allows_adv_data() {
+            Some(BytesOr::from_bytes(payload)?)
+        } else {
+            None
+        };
+        Ok(Self { data, ad })
+    }
+
+    /// Returns a structured representation of all fixed data in this PDU.
+    ///
+    /// The returned `PduData` does not include the attached advertising data.
+    /// To get that, call `advertising_data()`.
+    pub fn data(&self) -> &PduData {
+        &self.data
+    }
+
+    /// Returns an iterator over all AD structures encoded in the PDU.
+    ///
+    /// If this PDU doesn't support attaching AD structures, this will return
+    /// `None`.
+    pub fn advertising_data(&self) -> Option<impl Iterator<Item = AdStructure<'a>>> {
+        self.ad.map(|ad| ad.iter())
+    }
+}
+
+/// Decodes an advertising channel PDU (consisting of header and payload) from
+/// raw bytes.
+impl<'a> FromBytes<'a> for Pdu<'a> {
+    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+        let header = Header::from_bytes(bytes)?;
+        Self::from_header_and_payload(header, bytes)
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum PduData {
+    /// Connectable and scannable advertisement.
+    ConnectableUndirected {
+        advertiser_addr: DeviceAddress,
+        // + adv_data
+        #[doc(hidden)]
+        _priv: private::Priv,
+    },
+    ConnectableDirected {
+        advertiser_addr: DeviceAddress,
+        initiator_addr: DeviceAddress,
+
+        #[doc(hidden)]
+        _priv: private::Priv,
+    },
+
+    NonconnectableUndirected {
+        advertiser_addr: DeviceAddress,
+        // + adv_data
+        #[doc(hidden)]
+        _priv: private::Priv,
+    },
+
+    ScannableUndirected {
+        advertiser_addr: DeviceAddress,
+        // + adv_data
+        #[doc(hidden)]
+        _priv: private::Priv,
+    },
+
+    ScanRequest {
+        scanner_addr: DeviceAddress,
+        advertiser_addr: DeviceAddress,
+
+        #[doc(hidden)]
+        _priv: private::Priv,
+    },
+
+    ScanResponse {
+        advertiser_addr: DeviceAddress,
+        // + adv_data (or scan_response_data)
+        #[doc(hidden)]
+        _priv: private::Priv,
+    },
+
+    ConnectRequest {
+        initiator_addr: DeviceAddress,
+        advertiser_addr: DeviceAddress,
+
+        #[doc(hidden)]
+        _priv: private::Priv,
+    },
+}
+
 /// Stores an advertising channel PDU.
+///
+/// This is an owned version of `Pdu` and should be used when *creating* a PDU
+/// to be sent out.
 pub struct PduBuf {
     /// 2-Byte header.
     header: Header,
@@ -196,7 +414,7 @@ impl PduBuf {
 
 impl fmt::Debug for PduBuf {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({:?}, {:?})", self.header(), self.payload())
+        write!(f, "({:?}, {:?})", self.header(), Hex(self.payload()))
     }
 }
 
@@ -313,6 +531,19 @@ impl fmt::Debug for Header {
     }
 }
 
+impl<'a> FromBytes<'a> for Header {
+    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+        let raw = bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?;
+        Ok(Header(raw))
+    }
+}
+
+impl ToBytes for Header {
+    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+        writer.write_u16::<LittleEndian>(self.0)
+    }
+}
+
 enum_with_unknown! {
     /// 4-bit PDU type in [`Header`].
     ///
@@ -346,5 +577,20 @@ enum_with_unknown! {
         /// Sent by device in Initiating State, received by device in
         /// Advertising State.
         ConnectReq = 0b0101,
+    }
+}
+
+impl PduType {
+    /// Whether AD structures can follow the fixed data in a PDU of this type.^
+    fn allows_adv_data(&self) -> bool {
+        match self {
+            PduType::AdvInd | PduType::AdvNonconnInd | PduType::AdvScanInd | PduType::ScanRsp => {
+                true
+            }
+            PduType::AdvDirectInd
+            | PduType::ScanReq
+            | PduType::ConnectReq
+            | PduType::Unknown(_) => false,
+        }
     }
 }

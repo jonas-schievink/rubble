@@ -1,12 +1,19 @@
 //! Utilities for parsing from and encoding into bytes.
 
 use {
-    crate::ble::{utils::SliceExt, Error},
+    crate::ble::Error,
+    byteorder::ByteOrder,
     core::{fmt, iter, mem},
 };
 
 /// Reference to a `T`, or to a byte slice that can be decoded as a `T`.
 pub struct BytesOr<'a, T: ?Sized>(Inner<'a, T>);
+
+impl<'a, T: ?Sized> From<&'a T> for BytesOr<'a, T> {
+    fn from(r: &'a T) -> Self {
+        BytesOr(Inner::Or(r))
+    }
+}
 
 enum Inner<'a, T: ?Sized> {
     Bytes(&'a [u8]),
@@ -76,9 +83,8 @@ impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, [T]> {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         {
             let mut bytes = &mut *bytes;
-            T::from_bytes(&mut bytes)?;
-            if !bytes.is_empty() {
-                return Err(Error::IncompleteParse);
+            while !bytes.is_empty() {
+                T::from_bytes(&mut bytes)?;
             }
         }
         Ok(BytesOr(Inner::Bytes(bytes)))
@@ -198,6 +204,15 @@ impl<'a> ByteWriter<'a> {
         Ok(())
     }
 
+    pub fn write_u16<'b, B: ByteOrder>(&'b mut self, value: u16) -> Result<(), Error>
+    where
+        'a: 'b,
+    {
+        let mut bytes = [0; 2];
+        B::write_u16(&mut bytes, value);
+        self.write_slice(&bytes)
+    }
+
     /// Splits off the next byte in the buffer.
     ///
     /// The writer will be advanced to point to the rest of the underlying
@@ -242,4 +257,128 @@ pub trait FromBytes<'a>: Sized {
     /// insufficient number of bytes, an error will be returned and the state of
     /// `bytes` is unspecified (it can point to arbitrary data).
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error>;
+}
+
+/// Extensions on `&'a [u8]` that expose byteorder methods.
+pub trait BytesExt<'a> {
+    fn read_u16<B: ByteOrder>(&mut self) -> Option<u16>;
+    fn read_u32<B: ByteOrder>(&mut self) -> Option<u32>;
+}
+
+impl<'a> BytesExt<'a> for &'a [u8] {
+    fn read_u16<B: ByteOrder>(&mut self) -> Option<u16> {
+        let arr = self.read_array::<[u8; 2]>()?;
+        Some(B::read_u16(&arr))
+    }
+
+    fn read_u32<B: ByteOrder>(&mut self) -> Option<u32> {
+        let arr = self.read_array::<[u8; 4]>()?;
+        Some(B::read_u32(&arr))
+    }
+}
+
+/// Extensions on `&'a [T]`.
+pub trait SliceExt<'a, T: Copy> {
+    /// Returns a copy of the first element in the slice `self` and advances
+    /// `self` to point past the element.
+    fn read_first(&mut self) -> Option<T>;
+
+    /// Reads an array-like type `S` out of `self`.
+    ///
+    /// `self` will be updated to point past the read data.
+    ///
+    /// If `self` doesn't contain enough elements to fill an `S`, returns `None`
+    /// without changing `self`.
+    fn read_array<S>(&mut self) -> Option<S>
+    where
+        S: Default + AsMut<[T]>;
+
+    /// Reads a slice of `len` items from `self`.
+    fn read_slice(&mut self, len: usize) -> Option<&'a [T]>;
+}
+
+impl<'a, T: Copy> SliceExt<'a, T> for &'a [T] {
+    fn read_first(&mut self) -> Option<T> {
+        let (first, rest) = self.split_first()?;
+        *self = rest;
+        Some(*first)
+    }
+
+    fn read_array<S>(&mut self) -> Option<S>
+    where
+        S: Default + AsMut<[T]>,
+    {
+        let mut buf = S::default();
+        let slice = buf.as_mut();
+        if self.len() < slice.len() {
+            return None;
+        }
+
+        slice.copy_from_slice(&self[..slice.len()]);
+        *self = &self[slice.len()..];
+        Some(buf)
+    }
+
+    fn read_slice(&mut self, len: usize) -> Option<&'a [T]> {
+        if self.len() < len {
+            None
+        } else {
+            let slice = &self[..len];
+            *self = &self[len..];
+            Some(slice)
+        }
+    }
+}
+
+/// Extensions on `&'a mut [u8]`.
+pub trait MutSliceExt<'a> {
+    /// Writes a byte to the beginning of `self` and updates `self` to point
+    /// behind the written byte.
+    ///
+    /// If `self` is empty, returns an error.
+    fn write_byte<'b>(&'b mut self, byte: u8) -> Result<(), Error>
+    where
+        'a: 'b;
+
+    /// Copies all elements from `other` into `self` and advances `self` to
+    /// point behind the copied elements.
+    ///
+    /// If `self` is empty, returns an error.
+    fn write_slice<'b>(&'b mut self, other: &[u8]) -> Result<(), Error>
+    where
+        'a: 'b;
+}
+
+impl<'a> MutSliceExt<'a> for &'a mut [u8] {
+    fn write_byte<'b>(&'b mut self, byte: u8) -> Result<(), Error>
+    where
+        'a: 'b,
+    {
+        // The `mem::replace` is needed to work around a complex borrowing restriction:
+        // If we had `'b: 'a` instead of `'a: 'b`, a call to `write_byte` would result in the
+        // "infinite self-borrow" problem, which makes the method useless. The `'a: 'b` means that
+        // we have a `&'b mut &'a mut [u8]`, and we could only get a shortened `&'b mut [u8]` out of
+        // that (for soundness reasons - the same thing that makes invariance necessary).
+        // By using `mem::replace` we can safely get a `&'a mut [u8]` out instead (replacing what's
+        // behind the reference with a `&'static mut []`).
+        match mem::replace(self, &mut []).split_first_mut() {
+            Some((first, rest)) => {
+                *first = byte;
+                *self = rest;
+                Ok(())
+            }
+            None => Err(Error::Eof),
+        }
+    }
+
+    fn write_slice<'b>(&'b mut self, other: &[u8]) -> Result<(), Error>
+    where
+        'a: 'b,
+    {
+        eof_unless!(self.len() >= other.len());
+        self[..other.len()].copy_from_slice(other);
+        let this = mem::replace(self, &mut []);
+        *self = &mut this[other.len()..];
+        Ok(())
+    }
 }
