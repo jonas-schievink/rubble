@@ -68,7 +68,7 @@ pub struct BleRadio {
 
 impl BleRadio {
     // TODO: Use type-safe clock configuration to ensure that chip uses ext. crystal
-    pub fn new(radio: RADIO, ficr: &FICR, tx_buf: &'static mut PacketBuffer) -> Self {
+    pub fn new(radio: RADIO, _ficr: &FICR, tx_buf: &'static mut PacketBuffer) -> Self {
         assert!(radio.state.read().state().is_disabled());
 
         radio.mode.write(|w| w.mode().ble_1mbit());

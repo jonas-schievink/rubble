@@ -12,8 +12,7 @@ use {
         ble::{
             beacon::Beacon,
             link::{
-                ad_structure::{AdStructure, Flags},
-                AddressKind, DeviceAddress, LinkLayer, MAX_PDU_SIZE,
+                ad_structure::AdStructure, AddressKind, DeviceAddress, LinkLayer, MAX_PDU_SIZE,
             },
         },
         radio::{Baseband, BleRadio, PacketBuffer},
