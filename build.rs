@@ -1,9 +1,4 @@
-use std::{
-    env,
-    fs::{self, File},
-    io::Write,
-    path::PathBuf,
-};
+use std::fs;
 
 fn main() {
     // Create default .gdbinit if none exists

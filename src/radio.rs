@@ -51,7 +51,7 @@ use {
         phy::{AdvertisingChannelIndex, DataChannelIndex},
     },
     core::time::Duration,
-    nrf52810_hal::nrf52810_pac::{radio::state::STATER, FICR, RADIO},
+    nrf52810_hal::nrf52810_pac::{radio::state::STATER, RADIO},
 };
 
 /// The buffer has an extra Byte because the 16-bit PDU header needs to be split in 3 Bytes for the
@@ -68,7 +68,7 @@ pub struct BleRadio {
 
 impl BleRadio {
     // TODO: Use type-safe clock configuration to ensure that chip uses ext. crystal
-    pub fn new(radio: RADIO, _ficr: &FICR, tx_buf: &'static mut PacketBuffer) -> Self {
+    pub fn new(radio: RADIO, tx_buf: &'static mut PacketBuffer) -> Self {
         assert!(radio.state.read().state().is_disabled());
 
         radio.mode.write(|w| w.mode().ble_1mbit());

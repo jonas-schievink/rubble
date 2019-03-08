@@ -136,7 +136,7 @@ const APP: () = {
         .unwrap();
 
         let baseband = Baseband::new(
-            BleRadio::new(device.RADIO, &device.FICR, resources.BLE_TX_BUF),
+            BleRadio::new(device.RADIO, resources.BLE_TX_BUF),
             resources.BLE_RX_BUF,
             ll,
         );
