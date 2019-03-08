@@ -35,7 +35,7 @@ type Logger = Uarte<UARTE0>;
 ///
 /// This is just used to test different code paths. Note that you can't do both
 /// at the same time unless you also generate separate device addresses.
-const TEST_BEACON: bool = true;
+const TEST_BEACON: bool = false;
 
 #[app(device = nrf52810_hal::nrf52810_pac)]
 const APP: () = {
