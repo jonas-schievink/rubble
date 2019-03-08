@@ -19,40 +19,39 @@ use {
     },
     byteorder::{ByteOrder, LittleEndian},
     core::{fmt::Write, time::Duration, u32},
-    nrf51::UART0,
-    nrf51_hal::{
+    nrf52810_hal::{
+        self as hal,
+        gpio::Level,
+        nrf52810_pac::{self as pac, UARTE0},
         prelude::*,
-        serial::{self, Serial, BAUDRATEW},
+        uarte::{Baudrate, Parity, Uarte},
     },
     rtfm::app,
 };
 
-type Logger = serial::Tx<UART0>;
+type Logger = Uarte<UARTE0>;
 
 /// Whether to broadcast a beacon or to establish a proper connection.
 ///
 /// This is just used to test different code paths. Note that you can't do both
 /// at the same time unless you also generate separate device addresses.
-const TEST_BEACON: bool = false;
+const TEST_BEACON: bool = true;
 
-#[app(device = nrf51)]
+#[app(device = nrf52810_hal::nrf52810_pac)]
 const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE + 1];
     static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE + 1];
     static mut BASEBAND: Baseband<Logger> = ();
     static mut BEACON: Beacon = ();
-    static mut BEACON_TIMER: nrf51::TIMER1 = ();
-    static BLE_TIMER: nrf51::TIMER0 = ();
+    static mut BEACON_TIMER: pac::TIMER1 = ();
+    static BLE_TIMER: pac::TIMER0 = ();
 
     #[init(resources = [BLE_TX_BUF, BLE_RX_BUF])]
     fn init() {
         {
-            // On reset, internal 16MHz RC oscillator is active. Switch to ext. 16MHz crystal.
-            // This is needed for Bluetooth to work (but is apparently done automatically on radio
-            // activation, too?).
+            // On reset the internal high frequency clock is used, but starting the HFCLK task
+            // switches to the external crystal; this is needed for Bluetooth to work.
 
-            // Ext. clock freq. defaults to 32 MHz for some reason
-            device.CLOCK.xtalfreq.write(|w| w.xtalfreq()._16mhz());
             device
                 .CLOCK
                 .tasks_hfclkstart
@@ -62,7 +61,6 @@ const APP: () = {
 
         {
             // TIMER0 cfg, 32 bit @ 1 MHz
-            // Mostly copied from the `nrf51-hal` crate.
             device.TIMER0.bitmode.write(|w| w.bitmode()._32bit());
             device
                 .TIMER0
@@ -92,13 +90,22 @@ const APP: () = {
             }
         }
 
+        let p0 = device.P0.split();
+
         let mut serial = {
-            let pins = device.GPIO.split();
-            let rx = pins.pin1.downgrade();
-            let tx = pins.pin2.into_push_pull_output().downgrade();
-            Serial::uart0(device.UART0, tx, rx, BAUDRATEW::BAUD921600)
-                .split()
-                .0
+            let rxd = p0.p0_08.into_floating_input().degrade();
+            let txd = p0.p0_06.into_push_pull_output(Level::Low).degrade();
+
+            let pins = hal::uarte::Pins {
+                rxd,
+                txd,
+                cts: None,
+                rts: None,
+            };
+
+            device
+                .UARTE0
+                .constrain(pins, Parity::EXCLUDED, Baudrate::BAUD921600)
         };
         writeln!(serial, "\n--- INIT ---").unwrap();
 
@@ -129,14 +136,14 @@ const APP: () = {
         .unwrap();
 
         let baseband = Baseband::new(
-            BleRadio::new(device.RADIO, &device.FICR, resources.BLE_TX_BUF),
+            BleRadio::new(device.RADIO, resources.BLE_TX_BUF),
             resources.BLE_RX_BUF,
             ll,
         );
 
         let beacon = Beacon::new(
             device_address,
-            &[AdStructure::CompleteLocalName("Rusty Beacon")],
+            &[AdStructure::CompleteLocalName("Rusty Beacon (nRF52)")],
         )
         .unwrap();
 
@@ -182,7 +189,7 @@ const APP: () = {
 ///
 /// Note that if the timer has already queued an interrupt, the task will still be run after the
 /// timer is stopped by this function.
-fn cfg_timer(t: &nrf51::TIMER0, duration: Option<Duration>) {
+fn cfg_timer(t: &pac::TIMER0, duration: Option<Duration>) {
     // Timer activation code is also copied from the `nrf51-hal` crate.
     if let Some(duration) = duration {
         assert!(duration.as_secs() < ((u32::MAX - duration.subsec_micros()) / 1_000_000) as u64);
