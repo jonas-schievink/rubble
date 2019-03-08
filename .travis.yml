@@ -2,7 +2,7 @@ language: rust
 rust: stable
 env:
   global:
-    - TARGET_BUILD=thumbv6m-none-eabi
+    - TARGET_BUILD=thumbv7em-none-eabi
     - RUSTFLAGS="--deny warnings"
 
 install:
