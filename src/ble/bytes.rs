@@ -64,8 +64,8 @@ impl<'a, T: ?Sized> BytesOr<'a, T> {
 impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, T> {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         {
-            let mut bytes = &mut *bytes;
-            T::from_bytes(&mut bytes)?;
+            let mut bytes = &mut &**bytes;
+            T::from_bytes(bytes)?;
             if !bytes.is_empty() {
                 return Err(Error::IncompleteParse);
             }
@@ -82,7 +82,7 @@ impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, T> {
 impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, [T]> {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         {
-            let mut bytes = &mut *bytes;
+            let mut bytes = &mut &**bytes;
             while !bytes.is_empty() {
                 T::from_bytes(&mut bytes)?;
             }
