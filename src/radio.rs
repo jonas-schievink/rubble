@@ -277,8 +277,8 @@ impl<L: Logger> Baseband<L> {
     /// Returns a duration if the BLE stack requested that the next update time be changed. Returns
     /// `None` if the update time should stay as-is from the last `update` call.
     pub fn interrupt(&mut self) -> Option<Duration> {
-        // Acknowledge END event:
-        self.radio.radio.events_end.reset();
+        // Acknowledge DISABLED event:
+        self.radio.radio.events_disabled.reset();
 
         if self.radio.radio.crcstatus.read().crcstatus().is_crcok() {
             let header = advertising::Header::parse(self.rx_buf);
@@ -306,8 +306,8 @@ impl<L: Logger> Baseband<L> {
     fn configure_receiver(&mut self, cmd: RadioCmd) {
         match cmd {
             RadioCmd::Off => {
-                // Disable `END` interrupt, effectively stopping reception
-                self.radio.radio.intenclr.write(|w| w.end().clear());
+                // Disable `DISABLED` interrupt, effectively stopping reception
+                self.radio.radio.intenclr.write(|w| w.disabled().clear());
 
                 // Acknowledge left-over disable event
                 self.radio.radio.events_disabled.reset();
@@ -336,8 +336,8 @@ impl<L: Logger> Baseband<L> {
                     .events_disabled
                     .write(|w| unsafe { w.bits(0) });
 
-                // Enable `END` interrupt (packet fully received)
-                self.radio.radio.intenset.write(|w| w.end().set());
+                // Enable `DISABLED` interrupt (packet fully received)
+                self.radio.radio.intenset.write(|w| w.disabled().set());
 
                 // Match on logical address 0 only
                 self.radio.radio.rxaddresses.write(|w| w.addr0().enabled());
