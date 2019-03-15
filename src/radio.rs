@@ -300,9 +300,6 @@ impl<L: Logger> Baseband<L> {
             self.configure_receiver(cmd.radio);
             cmd.next_update
         } else {
-            // Wait until disable event is triggered
-            while self.radio.radio.events_disabled.read().bits() == 0 {}
-
             // Re-enter recv mode
             self.radio.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
 
