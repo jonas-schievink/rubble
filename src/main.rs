@@ -19,6 +19,7 @@ use {
     },
     byteorder::{ByteOrder, LittleEndian},
     core::{fmt::Write, time::Duration, u32},
+    cortex_m_semihosting::hprintln,
     nrf52810_hal::{
         self as hal,
         gpio::Level,
@@ -48,6 +49,8 @@ const APP: () = {
 
     #[init(resources = [BLE_TX_BUF, BLE_RX_BUF])]
     fn init() {
+        hprintln!("\n<< INIT >>\n").ok();
+
         {
             // On reset the internal high frequency clock is used, but starting the HFCLK task
             // switches to the external crystal; this is needed for Bluetooth to work.
