@@ -283,10 +283,15 @@ impl<L: Logger> Baseband<L> {
         if self.radio.radio.crcstatus.read().crcstatus().is_crcok() {
             let header = advertising::Header::parse(self.rx_buf);
 
-            // TODO check that `payload_length` is sane
-
             let cmd = {
-                let payload = &self.rx_buf[3..3 + header.payload_length() as usize];
+                // check that `payload_length` is sane
+                let payload = match self.rx_buf.get(3..3 + header.payload_length() as usize) {
+                    Some(pl) => pl,
+                    None => {
+                        // `payload_length` is too large, ignore the packet
+                        return None;
+                    }
+                };
                 self.ll.process_adv_packet(&mut self.radio, header, payload)
             };
             self.configure_receiver(cmd.radio);
