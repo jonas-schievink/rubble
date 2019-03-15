@@ -277,6 +277,9 @@ impl<L: Logger> Baseband<L> {
     /// Returns a duration if the BLE stack requested that the next update time be changed. Returns
     /// `None` if the update time should stay as-is from the last `update` call.
     pub fn interrupt(&mut self) -> Option<Duration> {
+        // When we get here, the radio must have transitioned to DISABLED state.
+        assert!(self.radio.state().is_disabled());
+
         // Acknowledge DISABLED event:
         self.radio.radio.events_disabled.reset();
 
