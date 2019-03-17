@@ -130,6 +130,7 @@ use {
         crc::ble_crc24,
         log::{Logger, NoopLogger},
         phy::{AdvertisingChannelIndex, DataChannelIndex, Radio},
+        utils::Hex,
         Error,
     },
     byteorder::{ByteOrder, LittleEndian},
@@ -258,8 +259,7 @@ impl<L: Logger> LinkLayer<L> {
 
     /// Process an incoming packet from an advertising channel.
     ///
-    /// The access address of the packet must be `ADVERTISING_ADDRESS`, the CRC checksum must be
-    /// correct.
+    /// The access address of the packet must be `ADVERTISING_ADDRESS`.
     pub fn process_adv_packet<T: Transmitter>(
         &mut self,
         _tx: &mut T,
@@ -268,7 +268,8 @@ impl<L: Logger> LinkLayer<L> {
         _crc_ok: bool,
     ) -> Cmd {
         let pdu = advertising::Pdu::from_header_and_payload(header, &mut payload);
-        trace!(self.logger, " ADV<- {:?}", pdu);
+        trace!(self.logger, "ADV<- {:?}, {:?}", header, Hex(payload));
+        trace!(self.logger, "{:?}\n\n", pdu);
 
         match self.state {
             State::Standby => unreachable!("standby, can't receive packets"),
