@@ -10,7 +10,7 @@ pub enum AddressKind {
 }
 
 /// Bluetooth device address.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct DeviceAddress {
     bytes: [u8; 6],
     kind: AddressKind,
