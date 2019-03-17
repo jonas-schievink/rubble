@@ -277,55 +277,55 @@ impl<L: Logger> Baseband<L> {
     /// Returns a duration if the BLE stack requested that the next update time be changed. Returns
     /// `None` if the update time should stay as-is from the last `update` call.
     pub fn interrupt(&mut self) -> Option<Duration> {
+        if self.radio.radio.events_disabled.read().bits() == 0 {
+            return None;
+        }
+
         // When we get here, the radio must have transitioned to DISABLED state.
         assert!(self.radio.state().is_disabled());
 
         // Acknowledge DISABLED event:
         self.radio.radio.events_disabled.reset();
 
-        if self.radio.radio.crcstatus.read().crcstatus().is_crcok() {
-            let header = advertising::Header::parse(self.rx_buf);
+        let crc_ok = self.radio.radio.crcstatus.read().crcstatus().is_crcok();
+        let header = advertising::Header::parse(self.rx_buf);
 
-            let cmd = {
-                // check that `payload_length` is sane
-                let payload = match self.rx_buf.get(3..3 + header.payload_length() as usize) {
-                    Some(pl) => pl,
-                    None => {
-                        // `payload_length` is too large, ignore the packet
-                        return None;
-                    }
-                };
-                self.ll.process_adv_packet(&mut self.radio, header, payload)
+        let cmd = {
+            // check that `payload_length` is sane
+            let payload = match self.rx_buf.get(3..3 + header.payload_length() as usize) {
+                Some(pl) => pl,
+                None => {
+                    // `payload_length` is too large, ignore the packet
+                    self.radio.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
+                    return None;
+                }
             };
-            self.configure_receiver(cmd.radio);
-            cmd.next_update
-        } else {
-            // Re-enter recv mode
-            self.radio.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
-
-            None
-        }
+            self.ll
+                .process_adv_packet(&mut self.radio, header, payload, crc_ok)
+        };
+        self.configure_receiver(cmd.radio);
+        cmd.next_update
     }
 
     /// Configures the Radio for (not) receiving data according to `cmd`.
     fn configure_receiver(&mut self, cmd: RadioCmd) {
-        match cmd {
-            RadioCmd::Off => {
-                // Disable `DISABLED` interrupt, effectively stopping reception
-                self.radio.radio.intenclr.write(|w| w.disabled().clear());
+        // Disable `DISABLED` interrupt, effectively stopping reception
+        self.radio.radio.intenclr.write(|w| w.disabled().clear());
 
-                // Acknowledge left-over disable event
-                self.radio.radio.events_disabled.reset();
-                // Disable radio
-                self.radio
-                    .radio
-                    .tasks_disable
-                    .write(|w| unsafe { w.bits(1) });
-                // Then wait until disable event is triggered
-                while self.radio.radio.events_disabled.read().bits() == 0 {}
-                // And acknowledge it
-                self.radio.radio.events_disabled.reset();
-            }
+        // Acknowledge left-over disable event
+        self.radio.radio.events_disabled.reset();
+        // Disable radio
+        self.radio
+            .radio
+            .tasks_disable
+            .write(|w| unsafe { w.bits(1) });
+        // Then wait until disable event is triggered
+        while self.radio.radio.events_disabled.read().bits() == 0 {}
+        // And acknowledge it
+        self.radio.radio.events_disabled.reset();
+
+        match cmd {
+            RadioCmd::Off => {}
             RadioCmd::ListenAdvertising { channel } => {
                 self.radio.prepare_txrx_advertising(channel);
 
@@ -334,12 +334,6 @@ impl<L: Logger> Baseband<L> {
                     .radio
                     .packetptr
                     .write(|w| unsafe { w.bits(rx_buf) });
-
-                // Acknowledge left-over disable event
-                self.radio
-                    .radio
-                    .events_disabled
-                    .write(|w| unsafe { w.bits(0) });
 
                 // Enable `DISABLED` interrupt (packet fully received)
                 self.radio.radio.intenset.write(|w| w.disabled().set());

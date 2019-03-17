@@ -127,7 +127,6 @@ use {
         crc::ble_crc24,
         log::{Logger, NoopLogger},
         phy::{AdvertisingChannelIndex, DataChannelIndex, Radio},
-        utils::Hex,
         Error,
     },
     byteorder::{ByteOrder, LittleEndian},
@@ -254,14 +253,6 @@ impl<L: Logger> LinkLayer<L> {
         Ok(())
     }
 
-    /// TODO: "Two consecutive packets received with an invalid CRC match
-    /// within a connection event shall close the event."
-    ///
-    /// Does this mean the access address has to match our connection's? Probably.
-    pub fn crc_invalid(&mut self) {
-        unimplemented!()
-    }
-
     /// Process an incoming packet from an advertising channel.
     ///
     /// The access address of the packet must be `ADVERTISING_ADDRESS`, the CRC checksum must be
@@ -271,15 +262,14 @@ impl<L: Logger> LinkLayer<L> {
         _tx: &mut T,
         header: advertising::Header,
         mut payload: &[u8],
+        _crc_ok: bool,
     ) -> Cmd {
-        let oldpl = payload;
-        trace!(self.logger, " ADV<- {:?}, {:?}", header, Hex(payload));
         let pdu = advertising::Pdu::from_header_and_payload(header, &mut payload);
-        trace!(self.logger, " pl:   {:?}", pdu);
-        trace!(self.logger, " pl-raw: {:?}", Hex(oldpl));
+        trace!(self.logger, " ADV<- {:?}", pdu);
 
         match self.state {
-            State::Standby => unreachable!(),
+            State::Standby => unreachable!("standby, can't receive packets"),
+            State::Connection => unreachable!("connected, can't receive adv. packet"),
             State::Advertising { channel, .. } => {
                 Cmd {
                     radio: RadioCmd::ListenAdvertising { channel },
@@ -287,7 +277,6 @@ impl<L: Logger> LinkLayer<L> {
                     next_update: None,
                 }
             }
-            State::Connection => unreachable!(),
             State::Initiating | State::Scanning => unreachable!(),
         }
     }
