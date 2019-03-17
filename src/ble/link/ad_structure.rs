@@ -125,18 +125,36 @@ impl<'a> FromBytes<'a> for AdStructure<'a> {
         }
 
         // The `FromBytes` impls of all AD structures also read the type byte
-        let data = bytes.read_slice(len.into()).ok_or(Error::Eof)?;
-        let ty = data[0];
+        let mut data = bytes.read_slice(usize::from(len)).ok_or(Error::Eof)?;
+        let mut ty_and_data = data;
+        let ty = data.read_first().ok_or(Error::Eof)?;
 
         Ok(match ty {
-            _ => AdStructure::Unknown {
-                ty,
-                data: &data[1..],
-            },
+            Type::FLAGS => {
+                if data.len() != 1 {
+                    return Err(Error::InvalidLength);
+                }
+
+                let bits = data[0];
+                let flags = Flags::from_bits_truncate(bits);
+                AdStructure::Flags(flags)
+            }
+            Type::COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
+            | Type::INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS => {
+                let uuids = ServiceUuids::<Uuid16>::from_bytes(&mut ty_and_data)?;
+                AdStructure::ServiceUuids16(uuids)
+            }
+            _ => AdStructure::Unknown { ty, data },
         })
     }
 }
 
+/// List of service UUIDs offered by the device.
+///
+/// The list can be marked as complete or incomplete. For an incomplete list,
+/// more UUIDs can be sent in the scan response.
+///
+/// The `ServiceUuids` type can handle 16-, 32-, and full-size 128-bit UUIDs.
 #[derive(Debug, Copy, Clone)]
 pub struct ServiceUuids<'a, T: IsUuid> {
     complete: bool,
@@ -144,6 +162,7 @@ pub struct ServiceUuids<'a, T: IsUuid> {
 }
 
 impl<'a, T: IsUuid> ServiceUuids<'a, T> {
+    /// Creates a `ServiceUuids` container from a list of UUIDs.
     pub fn from_uuids(complete: bool, uuids: &'a [T]) -> Self {
         Self {
             complete,
