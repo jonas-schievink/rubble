@@ -213,6 +213,21 @@ impl<'a> Pdu<'a> {
         &self.data
     }
 
+    /// Returns the PDU type of `self`.
+    pub fn ty(&self) -> PduType {
+        use self::PduData::*;
+
+        match self.data {
+            ConnectableUndirected { .. } => PduType::AdvInd,
+            ConnectableDirected { .. } => PduType::AdvDirectInd,
+            NonconnectableUndirected { .. } => PduType::AdvNonconnInd,
+            ScannableUndirected { .. } => PduType::AdvScanInd,
+            ScanRequest { .. } => PduType::ScanReq,
+            ScanResponse { .. } => PduType::ScanRsp,
+            ConnectRequest { .. } => PduType::ConnectReq,
+        }
+    }
+
     /// Returns an iterator over all AD structures encoded in the PDU.
     ///
     /// If this PDU doesn't support attaching AD structures, this will return
