@@ -59,8 +59,8 @@ impl<'a, T: ?Sized> BytesOr<'a, T> {
 
 /// Creates a `BytesOr` that stores bytes that can be decoded to a `T`.
 ///
-/// This will check that `bytes` can indeed be decoded as a `T`, and returns
-/// an error if not.
+/// This will check that `bytes` can indeed be decoded as a `T`, and returns an error if not. An
+/// error will also be returned if `bytes` contains more data than needed for a `T`.
 impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, T> {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         {
@@ -74,11 +74,10 @@ impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, T> {
     }
 }
 
-/// Creates a `BytesOr` that stores bytes that can be decoded to a sequence
-/// of `T`s.
+/// Creates a `BytesOr` that stores bytes that can be decoded to a sequence of `T`s.
 ///
-/// This will check that `bytes` can indeed be decoded as a sequence of
-/// `T`s, and returns an error if not.
+/// This will check that `bytes` can indeed be decoded as a sequence of `T`s, and returns an error
+/// if not.
 impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, [T]> {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         {
@@ -175,7 +174,8 @@ impl<'a> ByteWriter<'a> {
         ByteWriter(buf)
     }
 
-    pub fn into_inner(self) -> &'a mut [u8] {
+    /// Consumes `self` and returns the part of the contained buffer that has not been written to.
+    pub fn into_rest(self) -> &'a mut [u8] {
         self.0
     }
 
@@ -184,6 +184,9 @@ impl<'a> ByteWriter<'a> {
         self.0.len()
     }
 
+    /// Writes a single byte to `self`.
+    ///
+    /// Returns `Error::Eof` when no space is left.
     pub fn write_byte<'b>(&'b mut self, byte: u8) -> Result<(), Error>
     where
         'a: 'b,
@@ -193,6 +196,10 @@ impl<'a> ByteWriter<'a> {
         Ok(())
     }
 
+    /// Writes all bytes from `other` to `self`.
+    ///
+    /// Returns `Error::Eof` when `self` does not have enough space left to fit `other`. In that
+    /// case, `self` will not be modified.
     pub fn write_slice<'b>(&'b mut self, other: &[u8]) -> Result<(), Error>
     where
         'a: 'b,
@@ -204,6 +211,10 @@ impl<'a> ByteWriter<'a> {
         Ok(())
     }
 
+    /// Writes a `u16` to `self`, using byte order `B`.
+    ///
+    /// If `self` does not have enough space left, an error will be returned and no bytes will be
+    /// written to `self`.
     pub fn write_u16<'b, B: ByteOrder>(&'b mut self, value: u16) -> Result<(), Error>
     where
         'a: 'b,
@@ -215,11 +226,9 @@ impl<'a> ByteWriter<'a> {
 
     /// Splits off the next byte in the buffer.
     ///
-    /// The writer will be advanced to point to the rest of the underlying
-    /// buffer.
+    /// The writer will be advanced to point to the rest of the underlying buffer.
     ///
-    /// This allows filling in the value of the byte later, after writing more
-    /// data.
+    /// This allows filling in the value of the byte later, after writing more data.
     pub fn split_next_mut<'b>(&'b mut self) -> Option<&'a mut u8>
     where
         'a: 'b,
@@ -239,23 +248,21 @@ impl<'a> ByteWriter<'a> {
 
 /// Trait for encoding a value into a byte buffer.
 pub trait ToBytes {
-    /// Converts `self` to bytes and writes them into `buffer`, advancing
-    /// `buffer` to point past the encoded value.
+    /// Converts `self` to bytes and writes them into `buffer`, advancing `buffer` to point past the
+    /// encoded value.
     ///
-    /// If `buffer` does not contain enough space, an error will be returned and
-    /// the state of the buffer is unspecified (eg. `self` may be partially
-    /// written into `buffer`).
+    /// If `buffer` does not contain enough space, an error will be returned and the state of the
+    /// buffer is unspecified (eg. `self` may be partially written into `buffer`).
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error>;
 }
 
 /// Trait for decoding values from a slice.
 pub trait FromBytes<'a>: Sized {
-    /// Decode a `Self` from a byte slice, advancing `bytes` to point past the
-    /// data that was read.
+    /// Decode a `Self` from a byte slice, advancing `bytes` to point past the data that was read.
     ///
-    /// If `bytes` contains data not valid for the target type, or contains an
-    /// insufficient number of bytes, an error will be returned and the state of
-    /// `bytes` is unspecified (it can point to arbitrary data).
+    /// If `bytes` contains data not valid for the target type, or contains an insufficient number
+    /// of bytes, an error will be returned and the state of `bytes` is unspecified (it can point to
+    /// arbitrary data).
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error>;
 }
 
@@ -279,21 +286,26 @@ impl<'a> BytesExt<'a> for &'a [u8] {
 
 /// Extensions on `&'a [T]`.
 pub trait SliceExt<'a, T: Copy> {
-    /// Returns a copy of the first element in the slice `self` and advances
-    /// `self` to point past the element.
+    /// Returns a copy of the first element in the slice `self` and advances `self` to point past
+    /// the element.
     fn read_first(&mut self) -> Option<T>;
 
     /// Reads an array-like type `S` out of `self`.
     ///
     /// `self` will be updated to point past the read data.
     ///
-    /// If `self` doesn't contain enough elements to fill an `S`, returns `None`
-    /// without changing `self`.
+    /// If `self` doesn't contain enough elements to fill an `S`, returns `None` without changing
+    /// `self`.
     fn read_array<S>(&mut self) -> Option<S>
     where
         S: Default + AsMut<[T]>;
 
     /// Reads a slice of `len` items from `self`.
+    ///
+    /// `self` will be updated to point past the extracted elements.
+    ///
+    /// If `self` does not contains `len` elements, `None` will be returned and `self` will not be
+    /// modified.
     fn read_slice(&mut self, len: usize) -> Option<&'a [T]>;
 }
 
@@ -332,16 +344,16 @@ impl<'a, T: Copy> SliceExt<'a, T> for &'a [T] {
 
 /// Extensions on `&'a mut [u8]`.
 pub trait MutSliceExt<'a> {
-    /// Writes a byte to the beginning of `self` and updates `self` to point
-    /// behind the written byte.
+    /// Writes a byte to the beginning of `self` and updates `self` to point behind the written
+    /// byte.
     ///
     /// If `self` is empty, returns an error.
     fn write_byte<'b>(&'b mut self, byte: u8) -> Result<(), Error>
     where
         'a: 'b;
 
-    /// Copies all elements from `other` into `self` and advances `self` to
-    /// point behind the copied elements.
+    /// Copies all elements from `other` into `self` and advances `self` to point behind the copied
+    /// elements.
     ///
     /// If `self` is empty, returns an error.
     fn write_slice<'b>(&'b mut self, other: &[u8]) -> Result<(), Error>
