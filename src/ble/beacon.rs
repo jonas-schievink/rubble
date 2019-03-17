@@ -36,8 +36,8 @@ impl Beacon {
     ///
     /// This will broadcast once on every advertising channel.
     pub fn broadcast<T: Transmitter>(&self, tx: &mut T) {
-        // FIXME: Is it okay to broadcast on all channels at basically the same
-        // time or do we have to delay?
+        // The spec says that we have to broadcast on all 3 channels in sequence, so that the total
+        // time of this broadcast ("advertising event") is <10ms.
 
         // FIXME: Do we have to write the payload again every time we send (ie.
         // is the transmitter allowed to overwrite it)?
