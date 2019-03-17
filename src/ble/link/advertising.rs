@@ -22,6 +22,7 @@ mod private {
     pub struct Priv;
 }
 
+/// A parsed advertising channel PDU.
 #[derive(Debug, Copy, Clone)]
 pub struct Pdu<'a> {
     data: PduData,
@@ -29,6 +30,7 @@ pub struct Pdu<'a> {
 }
 
 impl<'a> Pdu<'a> {
+    /// Constructs a PDU by parsing `payload`.
     pub fn from_header_and_payload(header: Header, payload: &mut &'a [u8]) -> Result<Self, Error> {
         if usize::from(header.payload_length()) != payload.len() {
             return Err(Error::InvalidLength);
@@ -152,6 +154,55 @@ impl<'a> Pdu<'a> {
             None
         };
         Ok(Self { data, ad })
+    }
+
+    /// Returns the device address of the sender of this PDU.
+    pub fn sender(&self) -> &DeviceAddress {
+        use self::PduData::*;
+
+        match &self.data {
+            ConnectableUndirected {
+                advertiser_addr, ..
+            }
+            | ConnectableDirected {
+                advertiser_addr, ..
+            }
+            | NonconnectableUndirected {
+                advertiser_addr, ..
+            }
+            | ScannableUndirected {
+                advertiser_addr, ..
+            }
+            | ScanResponse {
+                advertiser_addr, ..
+            } => advertiser_addr,
+
+            ScanRequest { scanner_addr, .. } => scanner_addr,
+
+            ConnectRequest { initiator_addr, .. } => initiator_addr,
+        }
+    }
+
+    /// Returns the intended receiver of this PDU.
+    ///
+    /// This may be `None` if the PDU doesn't have a fixed receiver.
+    pub fn receiver(&self) -> Option<&DeviceAddress> {
+        use self::PduData::*;
+
+        match &self.data {
+            ConnectableUndirected { .. }
+            | NonconnectableUndirected { .. }
+            | ScannableUndirected { .. }
+            | ScanResponse { .. } => None,
+
+            ConnectableDirected { initiator_addr, .. } => Some(initiator_addr),
+            ScanRequest {
+                advertiser_addr, ..
+            }
+            | ConnectRequest {
+                advertiser_addr, ..
+            } => Some(advertiser_addr),
+        }
     }
 
     /// Returns a structured representation of all fixed data in this PDU.
@@ -553,26 +604,26 @@ enum_with_unknown! {
     /// [`PduBuf`]: struct.PduBuf.html
     #[derive(Debug)]
     pub enum PduType(u8) {
-        /// Connectable undirected advertising event.
+        /// Connectable undirected advertising event (`ADV_IND`).
         AdvInd = 0b0000,
-        /// Connectable directed advertising event.
+        /// Connectable directed advertising event (`ADV_DIRECT_IND`).
         AdvDirectInd = 0b0001,
-        /// Non-connectable undirected advertising event.
+        /// Non-connectable undirected advertising event (`ADV_NONCONN_IND`).
         AdvNonconnInd = 0b0010,
-        /// Scannable undirected advertising event.
+        /// Scannable undirected advertising event (`ADV_SCAN_IND`).
         AdvScanInd = 0b0110,
 
-        /// Scan request.
+        /// Scan request (`SCAN_REQ`).
         ///
         /// Sent by device in Scanning State, received by device in Advertising
         /// State.
         ScanReq = 0b0011,
-        /// Scan response.
+        /// Scan response (`SCAN_RSP`).
         ///
         /// Sent by device in Advertising State, received by devicein Scanning
         /// State.
         ScanRsp = 0b0100,
-        /// Connect request.
+        /// Connect request (`CONNECT_REQ`).
         ///
         /// Sent by device in Initiating State, received by device in
         /// Advertising State.
@@ -581,7 +632,7 @@ enum_with_unknown! {
 }
 
 impl PduType {
-    /// Whether AD structures can follow the fixed data in a PDU of this type.^
+    /// Whether AD structures can follow the fixed data in a PDU of this type.
     fn allows_adv_data(&self) -> bool {
         match self {
             PduType::AdvInd | PduType::AdvNonconnInd | PduType::AdvScanInd | PduType::ScanRsp => {
