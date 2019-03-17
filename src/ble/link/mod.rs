@@ -125,7 +125,10 @@ mod device_address;
 pub use self::device_address::*;
 
 use {
-    self::{ad_structure::AdStructure, advertising::PduBuf},
+    self::{
+        ad_structure::AdStructure,
+        advertising::{PduBuf, PduType},
+    },
     super::{
         crc::ble_crc24,
         log::{Logger, NoopLogger},
@@ -265,11 +268,22 @@ impl<L: Logger> LinkLayer<L> {
         _tx: &mut T,
         header: advertising::Header,
         mut payload: &[u8],
-        _crc_ok: bool,
+        crc_ok: bool,
     ) -> Cmd {
         let pdu = advertising::Pdu::from_header_and_payload(header, &mut payload);
         trace!(self.logger, "ADV<- {:?}, {:?}", header, Hex(payload));
         trace!(self.logger, "{:?}\n\n", pdu);
+
+        if let Ok(pdu) = pdu {
+            if crc_ok && self.is_advertising() && pdu.receiver() == Some(&self.dev_addr) {
+                // Got a packet addressed at us, can be a scan or connect request
+                match pdu.ty() {
+                    PduType::ScanReq => debug!(self.logger, "SCAN REQUEST"),
+                    PduType::ConnectReq => debug!(self.logger, "CONNECT REQUEST"),
+                    _ => {}
+                }
+            }
+        }
 
         match self.state {
             State::Standby => unreachable!("standby, can't receive packets"),
@@ -326,6 +340,14 @@ impl<L: Logger> LinkLayer<L> {
                 }
             }
             _ => unimplemented!(),
+        }
+    }
+
+    pub fn is_advertising(&self) -> bool {
+        if let State::Advertising { .. } = self.state {
+            true
+        } else {
+            false
         }
     }
 }
