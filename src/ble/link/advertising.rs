@@ -464,8 +464,27 @@ impl PduBuf {
     /// Creates a scan response PDU.
     ///
     /// Note that scanning is not yet implemented.
-    pub fn scan_response(_adv: DeviceAddress, _scan_data: &[AdStructure]) -> Result<Self, Error> {
-        unimplemented!()
+    pub fn scan_response(
+        advertiser_addr: DeviceAddress,
+        scan_data: &[AdStructure],
+    ) -> Result<Self, Error> {
+        let mut payload = [0; MAX_PAYLOAD_SIZE];
+        let mut buf = ByteWriter::new(&mut payload[..]);
+        buf.write_slice(advertiser_addr.raw()).unwrap();
+        for ad in scan_data {
+            ad.to_bytes(&mut buf)?;
+        }
+
+        let left = buf.space_left();
+        let used = payload.len() - left;
+        let mut header = Header::new(PduType::ScanRsp);
+        header.set_payload_length(used as u8);
+        header.set_tx_add(advertiser_addr.is_random());
+        header.set_rx_add(false);
+        Ok(Self {
+            header,
+            payload_buf: payload,
+        })
     }
 
     pub fn header(&self) -> Header {

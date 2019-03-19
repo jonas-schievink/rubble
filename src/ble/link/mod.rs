@@ -265,25 +265,44 @@ impl<L: Logger> LinkLayer<L> {
     /// The access address of the packet must be `ADVERTISING_ADDRESS`.
     pub fn process_adv_packet<T: Transmitter>(
         &mut self,
-        _tx: &mut T,
+        tx: &mut T,
         header: advertising::Header,
         mut payload: &[u8],
         crc_ok: bool,
     ) -> Cmd {
         let pdu = advertising::Pdu::from_header_and_payload(header, &mut payload);
-        trace!(self.logger, "ADV<- {:?}, {:?}", header, Hex(payload));
-        trace!(self.logger, "{:?}\n\n", pdu);
 
         if let Ok(pdu) = pdu {
-            if crc_ok && self.is_advertising() && pdu.receiver() == Some(&self.dev_addr) {
-                // Got a packet addressed at us, can be a scan or connect request
-                match pdu.ty() {
-                    PduType::ScanReq => debug!(self.logger, "SCAN REQUEST"),
-                    PduType::ConnectReq => debug!(self.logger, "CONNECT REQUEST"),
-                    _ => {}
+            if let State::Advertising { channel, .. } = &self.state {
+                if crc_ok && pdu.receiver() == Some(&self.dev_addr) {
+                    // Got a packet addressed at us, can be a scan or connect request
+                    match pdu.ty() {
+                        PduType::ScanReq => {
+                            let scan_data = &[]; // TODO make this configurable
+                            let response = PduBuf::scan_response(self.dev_addr, scan_data).unwrap();
+                            tx.transmit_advertising(response.header(), *channel);
+
+                            // Log after responding to meet timing
+                            debug!(self.logger, "<- SCAN REQUEST {:?}", pdu);
+                            debug!(self.logger, "-> {:?}", response);
+                        }
+                        PduType::ConnectReq => {
+                            debug!(self.logger, "<- CONNECT REQUEST {:?}", pdu);
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
+
+        trace!(
+            self.logger,
+            "ADV<- {}{:?}, {:?}",
+            if crc_ok { "" } else { "BADCRC " },
+            header,
+            Hex(payload),
+        );
+        trace!(self.logger, "{:?}\n\n", pdu);
 
         match self.state {
             State::Standby => unreachable!("standby, can't receive packets"),
@@ -331,7 +350,7 @@ impl<L: Logger> LinkLayer<L> {
                 let buf = tx.tx_payload_buf();
                 buf[..payload.len()].copy_from_slice(payload);
 
-                trace!(self.logger, "->[ADV] {} MHz", channel.freq());
+                //trace!(self.logger, "->[ADV] {} MHz", channel.freq());
                 tx.transmit_advertising(pdu.header(), *channel);
 
                 Cmd {
