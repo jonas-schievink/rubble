@@ -108,7 +108,7 @@ const APP: () = {
 
             device
                 .UARTE0
-                .constrain(pins, Parity::EXCLUDED, Baudrate::BAUD921600)
+                .constrain(pins, Parity::EXCLUDED, Baudrate::BAUD1M)
         };
         writeln!(serial, "\n--- INIT ---").unwrap();
 
