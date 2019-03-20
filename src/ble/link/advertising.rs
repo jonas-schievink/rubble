@@ -327,26 +327,33 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
 pub struct ConnectRequestData {
     access_address: Hex<u32>,
     crc_init: Hex<u24>,
-    win_size: fpa::I6F2,
-    win_offset: fpa::I14F2,
-    interval: fpa::I14F2,
+    /// Transmit window size in µs.
+    win_size: u32,
+    /// Transmit window offset in µs.
+    win_offset: u32,
+    /// Connection interval in µs.
+    interval: u32,
+    /// Slave latency (number of connection events).
     latency: u16,
+    /// Connection timeout.
     timeout: u32,
     chm: [u8; 5],
     hop: u8,
     sca: SleepClockAccuracy,
 }
 
+impl ConnectRequestData {
+    pub fn access_address(&self) -> u32 {
+        self.access_address.0
+    }
+
+    pub fn crc_init(&self) -> u24 {
+        self.crc_init.0
+    }
+}
+
 impl FromBytes<'_> for ConnectRequestData {
     fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
-        fn bits8_1_25() -> fpa::I6F2 {
-            fpa::I6F2(1u8).unwrap() + fpa::I6F2(1u8).unwrap() / fpa::I6F2(4u8).unwrap()
-        }
-
-        fn bits16_1_25() -> fpa::I14F2 {
-            fpa::I14F2(1u8) + fpa::I14F2(1u8) / fpa::I14F2(4u8)
-        }
-
         let sca;
         Ok(Self {
             access_address: Hex(bytes.read_u32::<LittleEndian>().ok_or(Error::Eof)?),
@@ -356,16 +363,11 @@ impl FromBytes<'_> for ConnectRequestData {
                 Hex(u24::new(u32::from_le_bytes(le_bytes)))
             },
             // transmitWindowSize in 1.25 ms steps
-            win_size: fpa::I6F2(bytes.read_u8().ok_or(Error::Eof)?).expect("WinSize overflowed")
-                * bits8_1_25(),
+            win_size: u32::from(bytes.read_u8().ok_or(Error::Eof)?) * 1250,
             // transmitWindowOffset in 1.25 ms steps
-            win_offset: fpa::I14F2(bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?)
-                .expect("WinOffset overflowed")
-                * bits16_1_25(),
+            win_offset: u32::from(bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?) * 1250,
             // connInterval in 1.25 ms steps
-            interval: fpa::I14F2(bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?)
-                .expect("interval overflowed")
-                * bits16_1_25(),
+            interval: u32::from(bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?) * 1250,
             // connSlaveLatency in no. of events
             latency: bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?,
             // timeout in 10 ms steps
