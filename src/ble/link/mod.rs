@@ -350,6 +350,8 @@ impl<L: Logger> LinkLayer<L> {
                 let buf = tx.tx_payload_buf();
                 buf[..payload.len()].copy_from_slice(payload);
 
+                // FIXME According to the spec, this has to broadcast on all advertising channels
+
                 //trace!(self.logger, "->[ADV] {} MHz", channel.freq());
                 tx.transmit_advertising(pdu.header(), *channel);
 

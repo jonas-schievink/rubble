@@ -268,11 +268,16 @@ pub trait FromBytes<'a>: Sized {
 
 /// Extensions on `&'a [u8]` that expose byteorder methods.
 pub trait BytesExt<'a> {
+    fn read_u8(&mut self) -> Option<u8>;
     fn read_u16<B: ByteOrder>(&mut self) -> Option<u16>;
     fn read_u32<B: ByteOrder>(&mut self) -> Option<u32>;
 }
 
 impl<'a> BytesExt<'a> for &'a [u8] {
+    fn read_u8(&mut self) -> Option<u8> {
+        Some(self.read_array::<[u8; 1]>()?[0])
+    }
+
     fn read_u16<B: ByteOrder>(&mut self) -> Option<u16> {
         let arr = self.read_array::<[u8; 2]>()?;
         Some(B::read_u16(&arr))
