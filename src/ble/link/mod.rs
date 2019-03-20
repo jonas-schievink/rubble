@@ -127,7 +127,7 @@ pub use self::device_address::*;
 use {
     self::{
         ad_structure::AdStructure,
-        advertising::{PduBuf, PduType},
+        advertising::{Pdu, PduBuf},
     },
     super::{
         crc::ble_crc24,
@@ -138,6 +138,7 @@ use {
     },
     byteorder::{ByteOrder, LittleEndian},
     core::{ops::Range, time::Duration},
+    ux::u24,
 };
 
 /// The CRC polynomial to use for CRC24 generation.
@@ -180,6 +181,7 @@ pub const MAX_PACKET_SIZE: usize = 1 /* preamble */ + 4 /* access addr */ + MAX_
 enum State {
     /// Radio silence: Not listening, not transmitting anything.
     Standby,
+
     /// Device is an advertiser. Periodic transmission of advertising packets and (optionally)
     /// listening for responses.
     ///
@@ -197,15 +199,14 @@ enum State {
         // FIXME: spec check; no idea what order or change delay
         channel: AdvertisingChannelIndex,
     },
-    /// Device is listening for advertising packets, but doesn't want to actively connect (yet).
-    #[allow(unused)]
-    Scanning,
-    /// Device wants to connect to a specific device.
-    #[allow(unused)]
-    Initiating,
+
     /// Connected with other device.
     #[allow(unused)]
-    Connection,
+    Connection {
+        access_address: u32,
+        crc: u24,
+        // ...
+    },
 }
 
 /// Implementation of the BLE Link-Layer logic.
@@ -276,8 +277,8 @@ impl<L: Logger> LinkLayer<L> {
             if let State::Advertising { channel, .. } = &self.state {
                 if crc_ok && pdu.receiver() == Some(&self.dev_addr) {
                     // Got a packet addressed at us, can be a scan or connect request
-                    match pdu.ty() {
-                        PduType::ScanReq => {
+                    match pdu {
+                        Pdu::ScanRequest { .. } => {
                             let scan_data = &[]; // TODO make this configurable
                             let response = PduBuf::scan_response(self.dev_addr, scan_data).unwrap();
                             tx.transmit_advertising(response.header(), *channel);
@@ -286,8 +287,13 @@ impl<L: Logger> LinkLayer<L> {
                             debug!(self.logger, "<- SCAN REQUEST {:?}", pdu);
                             debug!(self.logger, "-> {:?}", response);
                         }
-                        PduType::ConnectReq => {
+                        Pdu::ConnectRequest { lldata, .. } => {
                             debug!(self.logger, "<- CONNECT REQUEST {:?}", pdu);
+
+                            self.state = State::Connection {
+                                access_address: lldata.access_address(),
+                                crc: lldata.crc_init(),
+                            };
                         }
                         _ => {}
                     }
@@ -306,7 +312,7 @@ impl<L: Logger> LinkLayer<L> {
 
         match self.state {
             State::Standby => unreachable!("standby, can't receive packets"),
-            State::Connection => unreachable!("connected, can't receive adv. packet"),
+            State::Connection { .. } => unimplemented!(),
             State::Advertising { channel, .. } => {
                 Cmd {
                     radio: RadioCmd::ListenAdvertising { channel },
@@ -314,7 +320,6 @@ impl<L: Logger> LinkLayer<L> {
                     next_update: None,
                 }
             }
-            State::Initiating | State::Scanning => unreachable!(),
         }
     }
 
