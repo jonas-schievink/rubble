@@ -12,7 +12,11 @@ use {
         ad_structure::{AdStructure, Flags},
         AddressKind, DeviceAddress, MAX_PAYLOAD_SIZE,
     },
-    crate::ble::{bytes::*, utils::Hex, Error},
+    crate::ble::{
+        bytes::*,
+        utils::{Hex, HexSlice},
+        Error,
+    },
     byteorder::{ByteOrder, LittleEndian},
     core::{fmt, iter},
     ux::{u24, u3, u5},
@@ -321,42 +325,89 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
 /// `LLData`).
 #[derive(Copy, Clone, Debug)]
 pub struct ConnectRequestData {
-    access_address: u32,
-    crc_init: u24,
-    win_size: u8,
-    win_offset: u16,
-    interval: u16,
+    access_address: Hex<u32>,
+    crc_init: Hex<u24>,
+    win_size: fpa::I6F2,
+    win_offset: fpa::I14F2,
+    interval: fpa::I14F2,
     latency: u16,
-    timeout: u16,
+    timeout: u32,
     chm: [u8; 5],
-    hop: u5,
-    sca: u3,
+    hop: u8,
+    sca: SleepClockAccuracy,
 }
 
 impl FromBytes<'_> for ConnectRequestData {
     fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
+        fn bits8_1_25() -> fpa::I6F2 {
+            fpa::I6F2(1u8).unwrap() + fpa::I6F2(1u8).unwrap() / fpa::I6F2(4u8).unwrap()
+        }
+
+        fn bits16_1_25() -> fpa::I14F2 {
+            fpa::I14F2(1u8) + fpa::I14F2(1u8) / fpa::I14F2(4u8)
+        }
+
         let sca;
         Ok(Self {
-            access_address: bytes.read_u32::<LittleEndian>().ok_or(Error::Eof)?,
+            access_address: Hex(bytes.read_u32::<LittleEndian>().ok_or(Error::Eof)?),
             crc_init: {
                 let mut le_bytes = [0u8; 4];
                 le_bytes[..3].copy_from_slice(bytes.read_slice(3).ok_or(Error::Eof)?);
-                u24::new(u32::from_le_bytes(le_bytes))
+                Hex(u24::new(u32::from_le_bytes(le_bytes)))
             },
-            win_size: bytes.read_u8().ok_or(Error::Eof)?,
-            win_offset: bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?,
-            interval: bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?,
+            // transmitWindowSize in 1.25 ms steps
+            win_size: fpa::I6F2(bytes.read_u8().ok_or(Error::Eof)?).expect("WinSize overflowed")
+                * bits8_1_25(),
+            // transmitWindowOffset in 1.25 ms steps
+            win_offset: fpa::I14F2(bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?)
+                .expect("WinOffset overflowed")
+                * bits16_1_25(),
+            // connInterval in 1.25 ms steps
+            interval: fpa::I14F2(bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?)
+                .expect("interval overflowed")
+                * bits16_1_25(),
+            // connSlaveLatency in no. of events
             latency: bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?,
-            timeout: bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?,
+            // timeout in 10 ms steps
+            timeout: bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)? as u32 * 10,
             chm: bytes.read_array().ok_or(Error::Eof)?,
             hop: {
                 let hop_and_sca = bytes.read_u8().ok_or(Error::Eof)?;
-                sca = u3::new(hop_and_sca & 0b111);
-                u5::new(hop_and_sca >> 3)
+                sca = hop_and_sca & 0b111;
+                hop_and_sca >> 3
             },
-            sca,
+            sca: {
+                use self::SleepClockAccuracy::*;
+                match sca {
+                    0 => Ppm251To500,
+                    1 => Ppm151To250,
+                    2 => Ppm101To150,
+                    3 => Ppm76To100,
+                    4 => Ppm51To75,
+                    5 => Ppm31To50,
+                    6 => Ppm21To30,
+                    7 => Ppm0To20,
+                    _ => unreachable!(), // only 3 bits
+                }
+            },
         })
     }
+}
+
+/// Indicates the master's sleep clock accuracy (SCA) in ppm (parts per
+/// million).
+///
+/// The lower the PPM, the higher the accuracy.
+#[derive(Copy, Clone, Debug)]
+pub enum SleepClockAccuracy {
+    Ppm251To500,
+    Ppm151To250,
+    Ppm101To150,
+    Ppm76To100,
+    Ppm51To75,
+    Ppm31To50,
+    Ppm21To30,
+    Ppm0To20,
 }
 
 /// Stores an advertising channel PDU.
@@ -557,7 +608,7 @@ impl PduBuf {
 
 impl fmt::Debug for PduBuf {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({:?}, {:?})", self.header(), Hex(self.payload()))
+        write!(f, "({:?}, {:?})", self.header(), HexSlice(self.payload()))
     }
 }
 

@@ -54,12 +54,13 @@ macro_rules! eof_unless {
     };
 }
 
-/// `Debug`-formats its contents in hexadecimal.
-pub struct Hex<T>(pub T)
+/// `Debug`-formats its contents as a hexadecimal byte slice.
+#[derive(Copy, Clone)]
+pub struct HexSlice<T>(pub T)
 where
     T: AsRef<[u8]>;
 
-impl<T: AsRef<[u8]>> fmt::Debug for Hex<T> {
+impl<T: AsRef<[u8]>> fmt::Debug for HexSlice<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str("[")?;
         for (i, byte) in self.0.as_ref().iter().enumerate() {
@@ -69,5 +70,17 @@ impl<T: AsRef<[u8]>> fmt::Debug for Hex<T> {
             write!(f, "{:02x}", byte)?;
         }
         f.write_str("]")
+    }
+}
+
+/// `Debug`-formats its contents in hexadecimal.
+#[derive(Copy, Clone)]
+pub struct Hex<T>(pub T)
+where
+    T: fmt::LowerHex;
+
+impl<T: fmt::LowerHex> fmt::Debug for Hex<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:#x}", self.0)
     }
 }
