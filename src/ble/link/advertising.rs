@@ -19,7 +19,7 @@ use {
     },
     byteorder::{ByteOrder, LittleEndian},
     core::{fmt, iter},
-    ux::{u24, u3, u5},
+    ux::u24,
 };
 
 /// A parsed advertising channel PDU.
