@@ -133,7 +133,7 @@ use {
         crc::ble_crc24,
         log::{Logger, NoopLogger},
         phy::{AdvertisingChannelIndex, DataChannelIndex, Radio},
-        utils::Hex,
+        utils::HexSlice,
         Error,
     },
     byteorder::{ByteOrder, LittleEndian},
@@ -300,7 +300,7 @@ impl<L: Logger> LinkLayer<L> {
             "ADV<- {}{:?}, {:?}",
             if crc_ok { "" } else { "BADCRC " },
             header,
-            Hex(payload),
+            HexSlice(payload),
         );
         trace!(self.logger, "{:?}\n\n", pdu);
 
