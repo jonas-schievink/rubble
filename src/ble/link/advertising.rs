@@ -136,7 +136,7 @@ impl<'a> Pdu<'a> {
                     } else {
                         AddressKind::Public
                     };
-                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>()?, kind)
                 },
                 advertising_data: BytesOr::from_bytes(payload)?,
             },
@@ -147,7 +147,7 @@ impl<'a> Pdu<'a> {
                     } else {
                         AddressKind::Public
                     };
-                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>()?, kind)
                 },
                 initiator_addr: {
                     let kind = if header.rx_add() {
@@ -155,7 +155,7 @@ impl<'a> Pdu<'a> {
                     } else {
                         AddressKind::Public
                     };
-                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>()?, kind)
                 },
             },
             PduType::AdvNonconnInd => NonconnectableUndirected {
@@ -165,7 +165,7 @@ impl<'a> Pdu<'a> {
                     } else {
                         AddressKind::Public
                     };
-                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>()?, kind)
                 },
                 advertising_data: BytesOr::from_bytes(payload)?,
             },
@@ -176,7 +176,7 @@ impl<'a> Pdu<'a> {
                     } else {
                         AddressKind::Public
                     };
-                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>()?, kind)
                 },
                 advertising_data: BytesOr::from_bytes(payload)?,
             },
@@ -188,7 +188,7 @@ impl<'a> Pdu<'a> {
                     } else {
                         AddressKind::Public
                     };
-                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>()?, kind)
                 },
                 advertiser_addr: {
                     // Advertiser receives this PDU (when it broadcasts an advertisement that
@@ -198,7 +198,7 @@ impl<'a> Pdu<'a> {
                     } else {
                         AddressKind::Public
                     };
-                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>()?, kind)
                 },
             },
             PduType::ScanRsp => ScanResponse {
@@ -208,7 +208,7 @@ impl<'a> Pdu<'a> {
                     } else {
                         AddressKind::Public
                     };
-                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>()?, kind)
                 },
                 scan_data: BytesOr::from_bytes(payload)?,
             },
@@ -221,7 +221,7 @@ impl<'a> Pdu<'a> {
                     } else {
                         AddressKind::Public
                     };
-                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>()?, kind)
                 },
                 // Advertiser receives this PDU (if it has sent a connectable advertisement)
                 advertiser_addr: {
@@ -232,7 +232,7 @@ impl<'a> Pdu<'a> {
                     } else {
                         AddressKind::Public
                     };
-                    DeviceAddress::new(payload.read_array::<[u8; 6]>().ok_or(Error::Eof)?, kind)
+                    DeviceAddress::new(payload.read_array::<[u8; 6]>()?, kind)
                 },
                 lldata: ConnectRequestData::from_bytes(payload)?,
             },
@@ -376,25 +376,25 @@ impl FromBytes<'_> for ConnectRequestData {
     fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
         let sca;
         Ok(Self {
-            access_address: Hex(bytes.read_u32::<LittleEndian>().ok_or(Error::Eof)?),
+            access_address: Hex(bytes.read_u32::<LittleEndian>()?),
             crc_init: {
                 let mut le_bytes = [0u8; 4];
-                le_bytes[..3].copy_from_slice(bytes.read_slice(3).ok_or(Error::Eof)?);
+                le_bytes[..3].copy_from_slice(bytes.read_slice(3)?);
                 Hex(u24::new(u32::from_le_bytes(le_bytes)))
             },
             // transmitWindowSize in 1.25 ms steps
-            win_size: u32::from(bytes.read_u8().ok_or(Error::Eof)?) * 1250,
+            win_size: u32::from(bytes.read_u8()?) * 1250,
             // transmitWindowOffset in 1.25 ms steps
-            win_offset: u32::from(bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?) * 1250,
+            win_offset: u32::from(bytes.read_u16::<LittleEndian>()?) * 1250,
             // connInterval in 1.25 ms steps
-            interval: u32::from(bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?) * 1250,
+            interval: u32::from(bytes.read_u16::<LittleEndian>()?) * 1250,
             // connSlaveLatency in no. of events
-            latency: bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?,
+            latency: bytes.read_u16::<LittleEndian>()?,
             // timeout in 10 ms steps
-            timeout: bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)? as u32 * 10,
-            chm: bytes.read_array().ok_or(Error::Eof)?,
+            timeout: bytes.read_u16::<LittleEndian>()? as u32 * 10,
+            chm: bytes.read_array()?,
             hop: {
-                let hop_and_sca = bytes.read_u8().ok_or(Error::Eof)?;
+                let hop_and_sca = bytes.read_u8()?;
                 sca = hop_and_sca & 0b111;
                 hop_and_sca >> 3
             },
@@ -749,7 +749,7 @@ impl fmt::Debug for Header {
 
 impl<'a> FromBytes<'a> for Header {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
-        let raw = bytes.read_u16::<LittleEndian>().ok_or(Error::Eof)?;
+        let raw = bytes.read_u16::<LittleEndian>()?;
         Ok(Header(raw))
     }
 }

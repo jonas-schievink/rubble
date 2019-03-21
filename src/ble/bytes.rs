@@ -160,7 +160,7 @@ impl<'a, T: Copy + FromBytes<'a>> Iterator for IterBytesOr<'a, T> {
                     Some(T::from_bytes(b).unwrap())
                 }
             }
-            Inner::Or(slice) => slice.read_first(),
+            Inner::Or(slice) => slice.read_first().ok(),
         }
     }
 }
@@ -268,24 +268,24 @@ pub trait FromBytes<'a>: Sized {
 
 /// Extensions on `&'a [u8]` that expose byteorder methods.
 pub trait BytesExt<'a> {
-    fn read_u8(&mut self) -> Option<u8>;
-    fn read_u16<B: ByteOrder>(&mut self) -> Option<u16>;
-    fn read_u32<B: ByteOrder>(&mut self) -> Option<u32>;
+    fn read_u8(&mut self) -> Result<u8, Error>;
+    fn read_u16<B: ByteOrder>(&mut self) -> Result<u16, Error>;
+    fn read_u32<B: ByteOrder>(&mut self) -> Result<u32, Error>;
 }
 
 impl<'a> BytesExt<'a> for &'a [u8] {
-    fn read_u8(&mut self) -> Option<u8> {
-        Some(self.read_array::<[u8; 1]>()?[0])
+    fn read_u8(&mut self) -> Result<u8, Error> {
+        Ok(self.read_array::<[u8; 1]>()?[0])
     }
 
-    fn read_u16<B: ByteOrder>(&mut self) -> Option<u16> {
+    fn read_u16<B: ByteOrder>(&mut self) -> Result<u16, Error> {
         let arr = self.read_array::<[u8; 2]>()?;
-        Some(B::read_u16(&arr))
+        Ok(B::read_u16(&arr))
     }
 
-    fn read_u32<B: ByteOrder>(&mut self) -> Option<u32> {
+    fn read_u32<B: ByteOrder>(&mut self) -> Result<u32, Error> {
         let arr = self.read_array::<[u8; 4]>()?;
-        Some(B::read_u32(&arr))
+        Ok(B::read_u32(&arr))
     }
 }
 
@@ -293,15 +293,15 @@ impl<'a> BytesExt<'a> for &'a [u8] {
 pub trait SliceExt<'a, T: Copy> {
     /// Returns a copy of the first element in the slice `self` and advances `self` to point past
     /// the element.
-    fn read_first(&mut self) -> Option<T>;
+    fn read_first(&mut self) -> Result<T, Error>;
 
     /// Reads an array-like type `S` out of `self`.
     ///
     /// `self` will be updated to point past the read data.
     ///
-    /// If `self` doesn't contain enough elements to fill an `S`, returns `None` without changing
-    /// `self`.
-    fn read_array<S>(&mut self) -> Option<S>
+    /// If `self` doesn't contain enough elements to fill an `S`, returns `Error::Eof` without
+    /// changing `self`.
+    fn read_array<S>(&mut self) -> Result<S, Error>
     where
         S: Default + AsMut<[T]>;
 
@@ -309,40 +309,40 @@ pub trait SliceExt<'a, T: Copy> {
     ///
     /// `self` will be updated to point past the extracted elements.
     ///
-    /// If `self` does not contains `len` elements, `None` will be returned and `self` will not be
-    /// modified.
-    fn read_slice(&mut self, len: usize) -> Option<&'a [T]>;
+    /// If `self` does not contains `len` elements, `Error::Eof` will be returned and `self` will
+    /// not be modified.
+    fn read_slice(&mut self, len: usize) -> Result<&'a [T], Error>;
 }
 
 impl<'a, T: Copy> SliceExt<'a, T> for &'a [T] {
-    fn read_first(&mut self) -> Option<T> {
-        let (first, rest) = self.split_first()?;
+    fn read_first(&mut self) -> Result<T, Error> {
+        let (first, rest) = self.split_first().ok_or(Error::Eof)?;
         *self = rest;
-        Some(*first)
+        Ok(*first)
     }
 
-    fn read_array<S>(&mut self) -> Option<S>
+    fn read_array<S>(&mut self) -> Result<S, Error>
     where
         S: Default + AsMut<[T]>,
     {
         let mut buf = S::default();
         let slice = buf.as_mut();
         if self.len() < slice.len() {
-            return None;
+            return Err(Error::Eof);
         }
 
         slice.copy_from_slice(&self[..slice.len()]);
         *self = &self[slice.len()..];
-        Some(buf)
+        Ok(buf)
     }
 
-    fn read_slice(&mut self, len: usize) -> Option<&'a [T]> {
+    fn read_slice(&mut self, len: usize) -> Result<&'a [T], Error> {
         if self.len() < len {
-            None
+            Err(Error::Eof)
         } else {
             let slice = &self[..len];
             *self = &self[len..];
-            Some(slice)
+            Ok(slice)
         }
     }
 }

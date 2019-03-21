@@ -118,16 +118,16 @@ impl<'a> ToBytes for AdStructure<'a> {
 
 impl<'a> FromBytes<'a> for AdStructure<'a> {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
-        let len = bytes.read_first().ok_or(Error::Eof)?;
+        let len = bytes.read_first()?;
         if len == 0 {
             // Must be at least 1 for the type
             return Err(Error::InvalidLength);
         }
 
         // The `FromBytes` impls of all AD structures also read the type byte
-        let mut data = bytes.read_slice(usize::from(len)).ok_or(Error::Eof)?;
+        let mut data = bytes.read_slice(usize::from(len))?;
         let mut ty_and_data = data;
-        let ty = data.read_first().ok_or(Error::Eof)?;
+        let ty = data.read_first()?;
 
         Ok(match ty {
             Type::FLAGS => {
@@ -218,7 +218,7 @@ impl<'a, T: IsUuid> FromBytes<'a> for ServiceUuids<'a, T> {
             ),
         };
 
-        let ty = bytes.read_first().ok_or(Error::Eof)?;
+        let ty = bytes.read_first()?;
         let complete = if ty == t_complete {
             true
         } else if ty == t_incomplete {
