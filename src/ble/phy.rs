@@ -14,26 +14,28 @@ fn rf_channel_freq(rf_channel: u8) -> u16 {
     2402 + u16::from(rf_channel) * 2
 }
 
+/// Returns the data whitening IV for a channel index (not RF channel).
 fn whitening_iv(channel_idx: u8) -> u8 {
     debug_assert!(channel_idx <= 39);
     0b01000000 | channel_idx
 }
 
-/// Represents one of the three advertising channels (channel indices 37, 38 or 39).
+/// One of the three advertising channels (channel indices 37, 38 or 39).
 #[derive(Copy, Clone)]
-pub struct AdvertisingChannelIndex(u8);
+pub struct AdvertisingChannel(u8);
 
-impl AdvertisingChannelIndex {
+impl AdvertisingChannel {
     /// Returns the first (lowest-numbered) advertising channel.
     pub fn first() -> Self {
-        AdvertisingChannelIndex(37)
+        AdvertisingChannel(37)
     }
 
+    /// Returns an iterator that yields all 3 advertising channels in ascending order.
     pub fn iter_all() -> impl Iterator<Item = Self> {
         [
-            AdvertisingChannelIndex(37),
-            AdvertisingChannelIndex(38),
-            AdvertisingChannelIndex(39),
+            AdvertisingChannel(37),
+            AdvertisingChannel(38),
+            AdvertisingChannel(39),
         ]
         .iter()
         .cloned()
@@ -42,9 +44,9 @@ impl AdvertisingChannelIndex {
     /// Returns the next advertising channel, or the first one if `self` is the last channel.
     pub fn cycle(&self) -> Self {
         if self.0 == 39 {
-            AdvertisingChannelIndex(37)
+            AdvertisingChannel(37)
         } else {
-            AdvertisingChannelIndex(self.0 + 1)
+            AdvertisingChannel(self.0 + 1)
         }
     }
 
@@ -78,13 +80,13 @@ impl AdvertisingChannelIndex {
     }
 }
 
-/// A data channel index uniquely identifies an RF channel on which only data PDUs are sent.
+/// One of 37 data channels on which only data channel PDUs are sent between connected devices.
 ///
 /// (channel indices 0..=36)
 #[derive(Copy, Clone)]
-pub struct DataChannelIndex(u8);
+pub struct DataChannel(u8);
 
-impl DataChannelIndex {
+impl DataChannel {
     /// Creates a `DataChannelIndex` from a raw index.
     ///
     /// # Panics
@@ -92,7 +94,7 @@ impl DataChannelIndex {
     /// This will panic if `index` is not a valid data channel index. Valid indices are 0..=36.
     pub fn new(index: u8) -> Self {
         assert!(index <= 36);
-        DataChannelIndex(index)
+        DataChannel(index)
     }
 
     /// Returns the RF channel corresponding to this data channel index.

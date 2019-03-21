@@ -132,7 +132,7 @@ use {
     super::{
         crc::ble_crc24,
         log::{Logger, NoopLogger},
-        phy::{AdvertisingChannelIndex, DataChannelIndex, Radio},
+        phy::{AdvertisingChannel, DataChannel, Radio},
         utils::HexSlice,
         Error,
     },
@@ -184,7 +184,7 @@ enum State {
 
         /// Next advertising channel to use for a message.
         // FIXME: spec check; no idea what order or change delay
-        channel: AdvertisingChannelIndex,
+        channel: AdvertisingChannel,
     },
 
     /// Connected with other device.
@@ -243,7 +243,7 @@ impl<L: Logger> LinkLayer<L> {
         self.state = State::Advertising {
             interval,
             pdu,
-            channel: AdvertisingChannelIndex::first(),
+            channel: AdvertisingChannel::first(),
         };
         Ok(())
     }
@@ -395,14 +395,14 @@ pub enum RadioCmd {
     /// `LinkLayer::process_adv_packet`.
     ListenAdvertising {
         /// The advertising channel to listen on.
-        channel: AdvertisingChannelIndex,
+        channel: AdvertisingChannel,
     },
 
     /// Listen on a data channel. If a matching packet is received, pass it to
     /// `LinkLayer::process_data_packet`.
     ListenData {
         /// The data channel to listen on.
-        channel: DataChannelIndex,
+        channel: DataChannel,
 
         /// The Access Address to listen for.
         ///
@@ -435,11 +435,7 @@ pub trait Transmitter {
     ///
     /// * `header`: Advertising Channel PDU Header to prepend to the Payload in `payload_buf()`.
     /// * `channel`: Advertising Channel Index to transmit on.
-    fn transmit_advertising(
-        &mut self,
-        header: advertising::Header,
-        channel: AdvertisingChannelIndex,
-    );
+    fn transmit_advertising(&mut self, header: advertising::Header, channel: AdvertisingChannel);
 
     /// Transmit a Data Channel PDU.
     ///
@@ -457,7 +453,7 @@ pub trait Transmitter {
         access_address: u32,
         crc_iv: u32,
         header: data::Header,
-        channel: DataChannelIndex,
+        channel: DataChannel,
     );
 }
 
@@ -513,11 +509,7 @@ impl<R: Radio> Transmitter for RawTransmitter<R> {
         &mut self.tx_buf[PAYLOAD_RANGE]
     }
 
-    fn transmit_advertising(
-        &mut self,
-        header: advertising::Header,
-        channel: AdvertisingChannelIndex,
-    ) {
+    fn transmit_advertising(&mut self, header: advertising::Header, channel: AdvertisingChannel) {
         LittleEndian::write_u16(&mut self.tx_buf[HEADER_RANGE], header.to_u16());
         self.transmit(
             advertising::ACCESS_ADDRESS,
@@ -532,7 +524,7 @@ impl<R: Radio> Transmitter for RawTransmitter<R> {
         access_address: u32,
         crc_iv: u32,
         header: data::Header,
-        channel: DataChannelIndex,
+        channel: DataChannel,
     ) {
         LittleEndian::write_u16(&mut self.tx_buf[HEADER_RANGE], header.to_u16());
         self.transmit(

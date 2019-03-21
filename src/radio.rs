@@ -45,7 +45,7 @@ use {
     crate::ble::{
         link::{advertising, data, LinkLayer, RadioCmd, Transmitter, CRC_POLY, MAX_PDU_SIZE},
         log::Logger,
-        phy::{AdvertisingChannelIndex, DataChannelIndex},
+        phy::{AdvertisingChannel, DataChannel},
     },
     core::time::Duration,
     nrf52810_hal::nrf52810_pac::{radio::state::STATER, RADIO},
@@ -150,7 +150,7 @@ impl BleRadio {
     /// `packetptr` must be pointed to the RX buffer.
     ///
     /// Of course, other tasks may also be performed.
-    fn prepare_txrx_advertising(&mut self, channel: AdvertisingChannelIndex) {
+    fn prepare_txrx_advertising(&mut self, channel: AdvertisingChannel) {
         unsafe {
             // Acknowledge left-over disable event
             self.radio.events_disabled.reset();
@@ -220,11 +220,7 @@ impl Transmitter for BleRadio {
         &mut self.tx_buf[3..]
     }
 
-    fn transmit_advertising(
-        &mut self,
-        header: advertising::Header,
-        channel: AdvertisingChannelIndex,
-    ) {
+    fn transmit_advertising(&mut self, header: advertising::Header, channel: AdvertisingChannel) {
         let raw_header = header.to_u16();
         // S0 = 8 bits (LSB)
         self.tx_buf[0] = raw_header as u8;
@@ -249,7 +245,7 @@ impl Transmitter for BleRadio {
         _access_address: u32,
         _crc_iv: u32,
         _header: data::Header,
-        _channel: DataChannelIndex,
+        _channel: DataChannel,
     ) {
         unimplemented!();
         //self.transmit(access_address, crc_iv, channel.whitening_iv(), channel.freq());

@@ -3,7 +3,7 @@
 use {
     super::{
         link::{ad_structure::AdStructure, advertising::PduBuf, DeviceAddress, Transmitter},
-        phy::AdvertisingChannelIndex,
+        phy::AdvertisingChannel,
     },
     crate::ble::Error,
 };
@@ -46,7 +46,7 @@ impl Beacon {
         let buf = tx.tx_payload_buf();
         buf[..payload.len()].copy_from_slice(payload);
 
-        for channel in AdvertisingChannelIndex::iter_all() {
+        for channel in AdvertisingChannel::iter_all() {
             tx.transmit_advertising(self.pdu.header(), channel);
         }
     }
