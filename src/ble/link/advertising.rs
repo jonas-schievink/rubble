@@ -10,7 +10,7 @@
 use {
     super::{
         ad_structure::{AdStructure, Flags},
-        AddressKind, DeviceAddress, MAX_PAYLOAD_SIZE,
+        AddressKind, DeviceAddress,
     },
     crate::ble::{
         bytes::*,
@@ -21,6 +21,21 @@ use {
     core::{fmt, iter},
     ux::u24,
 };
+
+/// CRC initialization value for advertising channel packets.
+///
+/// Data channel packets use a preset shared when initiating the connection.
+///
+/// (as with `CRC_POLY`, only the least significant 24 bits count)
+pub const CRC_PRESET: u32 = 0x555555;
+
+/// Max. advertising PDU payload size in Bytes.
+///
+/// Note that data channel PDUs can carry much larger payloads.
+pub const MAX_PAYLOAD_SIZE: usize = 37;
+
+/// Access Address to use for all advertising channel packets.
+pub const ACCESS_ADDRESS: u32 = 0x8E89BED6;
 
 /// A parsed advertising channel PDU.
 #[derive(Debug, Copy, Clone)]

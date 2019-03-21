@@ -155,24 +155,11 @@ use {
 /// `x^24 + x^10 + x^9 + x^6 + x^4 + x^3 + x + 1`
 pub const CRC_POLY: u32 = 0b00000001_00000000_00000110_01011011;
 
-/// CRC initialization value for advertising channel packets.
-///
-/// Data channel packets use a preset shared when initiating the connection.
-///
-/// (as with `CRC_POLY`, only the least significant 24 bits count)
-pub const CRC_PRESET: u32 = 0x555555;
+/// Max. PDU payload size in Bytes (for both advertising and data channels).
+pub const MAX_PAYLOAD_SIZE: usize = 255;
 
-/// Access Address to use for all advertising channel packets.
-pub const ADVERTISING_ADDRESS: u32 = 0x8E89BED6;
-
-/// Max. PDU payload size in Bytes.
-///
-/// This is the same for both advertising and data channel since both utilize a
-/// 2-Byte header.
-pub const MAX_PAYLOAD_SIZE: usize = MAX_PDU_SIZE - 2;
-
-/// Max. PDU size in octets.
-pub const MAX_PDU_SIZE: usize = 39;
+/// Max. PDU size in octets (header + payload).
+pub const MAX_PDU_SIZE: usize = MAX_PAYLOAD_SIZE + 2; // data & adv. have a 16-bit header
 
 /// Max. total Link-Layer packet size in octets.
 pub const MAX_PACKET_SIZE: usize = 1 /* preamble */ + 4 /* access addr */ + MAX_PDU_SIZE + 3 /* crc */;
@@ -440,8 +427,9 @@ pub trait Transmitter {
     /// For Advertising Channel PDUs, the CRC initialization value is always `CRC_PRESET`, and the
     /// Access Address is always `ADVERTISING_ADDRESS`.
     ///
-    /// The implementor is expected to send the preamble and assemble the rest of the packet, and
-    /// must apply data whitening and do the CRC calculation.
+    /// The implementor is expected to send the preamble and access address, and assemble the rest
+    /// of the packet, and must apply data whitening and do the CRC calculation. The inter-frame
+    /// spacing also has to be implemented by the implementor (`T_IFS`).
     ///
     /// # Parameters
     ///
@@ -532,9 +520,9 @@ impl<R: Radio> Transmitter for RawTransmitter<R> {
     ) {
         LittleEndian::write_u16(&mut self.tx_buf[HEADER_RANGE], header.to_u16());
         self.transmit(
-            ADVERTISING_ADDRESS,
+            advertising::ACCESS_ADDRESS,
             header.payload_length(),
-            CRC_PRESET,
+            advertising::CRC_PRESET,
             channel.freq(),
         );
     }

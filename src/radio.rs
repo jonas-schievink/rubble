@@ -43,10 +43,7 @@
 
 use {
     crate::ble::{
-        link::{
-            advertising, data, LinkLayer, RadioCmd, Transmitter, ADVERTISING_ADDRESS, CRC_POLY,
-            CRC_PRESET, MAX_PDU_SIZE,
-        },
+        link::{advertising, data, LinkLayer, RadioCmd, Transmitter, CRC_POLY, MAX_PDU_SIZE},
         log::Logger,
         phy::{AdvertisingChannelIndex, DataChannelIndex},
     },
@@ -54,6 +51,8 @@ use {
     nrf52810_hal::nrf52810_pac::{radio::state::STATER, RADIO},
 };
 
+/// A packet buffer that can hold header and payload of any advertising or data channel packet.
+///
 /// The buffer has an extra Byte because the 16-bit PDU header needs to be split in 3 Bytes for the
 /// radio to understand it (S0 = pre-Length fields, Length, S1 = post-Length fields).
 pub type PacketBuffer = [u8; MAX_PDU_SIZE + 1];
@@ -101,10 +100,12 @@ impl BleRadio {
             // BASE0 has, apparently, undocumented semantics: It is a proper 32-bit register, but
             // it ignores the *lowest* 8 bit and instead transmits the upper 24 as the low 24 bits
             // of the Access Address. Shift address up to fix this.
-            radio.base0.write(|w| w.bits(ADVERTISING_ADDRESS << 8));
+            radio
+                .base0
+                .write(|w| w.bits(advertising::ACCESS_ADDRESS << 8));
             radio
                 .prefix0
-                .write(|w| w.ap0().bits((ADVERTISING_ADDRESS >> 24) as u8));
+                .write(|w| w.ap0().bits((advertising::ACCESS_ADDRESS >> 24) as u8));
         }
 
         // FIXME: No TIFS hardware support for now. Revisit when precise semantics are clear.
@@ -174,7 +175,9 @@ impl BleRadio {
             self.radio
                 .datawhiteiv
                 .write(|w| w.datawhiteiv().bits(channel.whitening_iv()));
-            self.radio.crcinit.write(|w| w.crcinit().bits(CRC_PRESET));
+            self.radio
+                .crcinit
+                .write(|w| w.crcinit().bits(advertising::CRC_PRESET));
             self.radio
                 .frequency
                 .write(|w| w.frequency().bits((channel.freq() - 2400) as u8));
