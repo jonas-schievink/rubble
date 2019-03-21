@@ -15,7 +15,7 @@ use {
                 ad_structure::AdStructure, AddressKind, DeviceAddress, LinkLayer, MAX_PDU_SIZE,
             },
         },
-        radio::{Baseband, BleRadio, PacketBuffer},
+        radio::{BleRadio, PacketBuffer},
     },
     byteorder::{ByteOrder, LittleEndian},
     core::{fmt::Write, time::Duration, u32},
@@ -42,7 +42,8 @@ const TEST_BEACON: bool = false;
 const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE + 1];
     static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE + 1];
-    static mut BASEBAND: Baseband<Logger> = ();
+    static mut BLE: LinkLayer<Logger> = ();
+    static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
     static mut BEACON_TIMER: pac::TIMER1 = ();
     static BLE_TIMER: pac::TIMER0 = ();
@@ -138,11 +139,7 @@ const APP: () = {
         )
         .unwrap();
 
-        let baseband = Baseband::new(
-            BleRadio::new(device.RADIO, resources.BLE_TX_BUF),
-            resources.BLE_RX_BUF,
-            ll,
-        );
+        let radio = BleRadio::new(device.RADIO, resources.BLE_TX_BUF, resources.BLE_RX_BUF);
 
         let beacon = Beacon::new(
             device_address,
@@ -155,34 +152,35 @@ const APP: () = {
             cfg_timer(&device.TIMER0, Some(Duration::from_millis(1)));
         }
 
+        RADIO = radio;
+        BLE = ll;
         BEACON = beacon;
         BEACON_TIMER = device.TIMER1;
-        BASEBAND = baseband;
         BLE_TIMER = device.TIMER0;
     }
 
-    #[interrupt(resources = [BLE_TIMER, BASEBAND])]
+    #[interrupt(resources = [BLE_TIMER, RADIO, BLE])]
     fn RADIO() {
-        if let Some(new_timeout) = resources.BASEBAND.interrupt() {
+        if let Some(new_timeout) = resources.RADIO.recv_interrupt(&mut resources.BLE) {
             cfg_timer(&resources.BLE_TIMER, Some(new_timeout));
         }
     }
 
-    #[interrupt(resources = [BLE_TIMER, BASEBAND])]
+    #[interrupt(resources = [BLE_TIMER, RADIO, BLE])]
     fn TIMER0() {
-        let maybe_next_update = resources.BASEBAND.update();
-        cfg_timer(&resources.BLE_TIMER, maybe_next_update);
+        let cmd = resources.BLE.update(&mut *resources.RADIO);
+        resources.RADIO.configure_receiver(cmd.radio);
+
+        cfg_timer(&resources.BLE_TIMER, cmd.next_update);
     }
 
     /// Fire the beacon.
-    #[interrupt(resources = [BEACON_TIMER, BEACON, BASEBAND])]
+    #[interrupt(resources = [BEACON_TIMER, BEACON, RADIO])]
     fn TIMER1() {
         // acknowledge event
         resources.BEACON_TIMER.events_compare[0].reset();
 
-        let log = resources.BASEBAND.logger();
-        writeln!(log, "-> beacon").unwrap();
-        resources.BEACON.broadcast(resources.BASEBAND.transmitter());
+        resources.BEACON.broadcast(&mut *resources.RADIO);
     }
 };
 
