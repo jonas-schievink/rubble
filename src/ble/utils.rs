@@ -84,3 +84,25 @@ impl<T: fmt::LowerHex> fmt::Debug for Hex<T> {
         write!(f, "{:#x}", self.0)
     }
 }
+
+/// Extension traits for primitive integers allowing bit reversal.
+///
+/// This exists only because the `reverse_bits` methods are still unstable. If they get stabilized,
+/// this should get removed.
+pub trait ReverseBits {
+    /// Reverse all bits in `self`, returning the result in a new number.
+    fn reverse_bits_ext(&self) -> Self;
+}
+
+impl ReverseBits for u8 {
+    fn reverse_bits_ext(&self) -> Self {
+        let mut input = *self;
+        let mut result = 0;
+        for _ in 0..8 {
+            result <<= 1;
+            result |= input & 1;
+            input >>= 1;
+        }
+        result
+    }
+}

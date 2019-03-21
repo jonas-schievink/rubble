@@ -14,6 +14,7 @@ use {
     },
     crate::ble::{
         bytes::*,
+        phy::ChannelMap,
         utils::{Hex, HexSlice},
         Error,
     },
@@ -352,7 +353,7 @@ pub struct ConnectRequestData {
     latency: u16,
     /// Connection timeout.
     timeout: u32,
-    chm: [u8; 5],
+    chm: ChannelMap,
     hop: u8,
     sca: SleepClockAccuracy,
 }
@@ -392,11 +393,11 @@ impl FromBytes<'_> for ConnectRequestData {
             latency: bytes.read_u16::<LittleEndian>()?,
             // timeout in 10 ms steps
             timeout: bytes.read_u16::<LittleEndian>()? as u32 * 10,
-            chm: bytes.read_array()?,
+            chm: ChannelMap::from_raw(bytes.read_array()?),
             hop: {
                 let hop_and_sca = bytes.read_u8()?;
-                sca = hop_and_sca & 0b111;
-                hop_and_sca >> 3
+                sca = (hop_and_sca >> 5) & 0b111;
+                hop_and_sca & 0b11111
             },
             sca: {
                 use self::SleepClockAccuracy::*;
