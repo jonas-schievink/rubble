@@ -136,6 +136,8 @@ impl DataChannel {
 }
 
 /// A map marking data channels as used or unused.
+///
+/// A channel map must mark at least 2 channels as used.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct ChannelMap {
     raw: [u8; 5],

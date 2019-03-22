@@ -368,8 +368,22 @@ impl ConnectRequestData {
     }
 
     /// Returns the initialization value for the CRC calculation.
+    ///
+    /// The CRC *polynomial* is always the same.
     pub fn crc_init(&self) -> u24 {
         self.crc_init.0
+    }
+
+    /// Returns the channel map specified by the initiator.
+    pub fn channel_map(&self) -> &ChannelMap {
+        &self.chm
+    }
+
+    /// Returns the channel hop distance.
+    ///
+    /// This must be in range `5..=16`.
+    pub fn hop(&self) -> u8 {
+        self.hop
     }
 }
 

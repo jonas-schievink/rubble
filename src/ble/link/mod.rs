@@ -119,8 +119,10 @@
 
 pub mod ad_structure;
 pub mod advertising;
+mod connection;
 pub mod data;
 mod device_address;
+mod seq_num;
 
 pub use self::device_address::*;
 
@@ -128,8 +130,10 @@ use {
     self::{
         ad_structure::AdStructure,
         advertising::{Pdu, PduBuf},
+        connection::Connection,
+        seq_num::SequenceNumber,
     },
-    super::{
+    crate::ble::{
         crc::ble_crc24,
         log::{Logger, NoopLogger},
         phy::{AdvertisingChannel, DataChannel, Radio},
@@ -138,7 +142,6 @@ use {
     },
     byteorder::{ByteOrder, LittleEndian},
     core::{ops::Range, time::Duration},
-    ux::u24,
 };
 
 /// The CRC polynomial to use for CRC24 generation.
@@ -187,13 +190,8 @@ enum State {
         channel: AdvertisingChannel,
     },
 
-    /// Connected with other device.
-    #[allow(unused)]
-    Connection {
-        access_address: u32,
-        crc: u24,
-        // ...
-    },
+    /// Connected with another device.
+    Connection(Connection),
 }
 
 /// Implementation of the BLE Link-Layer logic.
@@ -258,6 +256,7 @@ impl<L: Logger> LinkLayer<L> {
         mut payload: &[u8],
         crc_ok: bool,
     ) -> Cmd {
+        let orig_payload = payload;
         let pdu = advertising::Pdu::from_header_and_payload(header, &mut payload);
 
         if let Ok(pdu) = pdu {
@@ -271,16 +270,10 @@ impl<L: Logger> LinkLayer<L> {
                             tx.transmit_advertising(response.header(), *channel);
 
                             // Log after responding to meet timing
-                            debug!(self.logger, "<- SCAN REQUEST {:?}", pdu);
-                            debug!(self.logger, "-> {:?}", response);
+                            debug!(self.logger, "-> SCAN RESP: {:?}", response);
                         }
                         Pdu::ConnectRequest { lldata, .. } => {
-                            debug!(self.logger, "<- CONNECT REQUEST {:?}", pdu);
-
-                            self.state = State::Connection {
-                                access_address: lldata.access_address(),
-                                crc: lldata.crc_init(),
-                            };
+                            self.state = State::Connection(Connection::new(&lldata));
                         }
                         _ => {}
                     }
@@ -290,12 +283,12 @@ impl<L: Logger> LinkLayer<L> {
 
         trace!(
             self.logger,
-            "ADV<- {}{:?}, {:?}",
+            "ADV<- {}{:?}, {:?}\n{:?}\n",
             if crc_ok { "" } else { "BADCRC " },
             header,
-            HexSlice(payload),
+            HexSlice(orig_payload),
+            pdu,
         );
-        trace!(self.logger, "{:?}\n\n", pdu);
 
         match self.state {
             State::Standby => unreachable!("standby, can't receive packets"),
@@ -409,6 +402,11 @@ pub enum RadioCmd {
         /// Packets with a different Access Address must not be passed to the Link-Layer. You may be
         /// able to use your Radio's hardware address matching for this.
         access_address: u32,
+
+        /// Initialization value of the CRC-24 calculation.
+        ///
+        /// Only the least significant 24 bits are relevant.
+        crc_init: u32,
     },
 }
 
@@ -419,7 +417,14 @@ pub enum RadioCmd {
 /// just a compatible radio is needed.
 pub trait Transmitter {
     /// Get a reference to the Transmitter's PDU payload buffer.
-    // FIXME This really wants to be [u8; MAX_PAYLOAD] instead, but conversion from &[u8] isn't convenient
+    ///
+    /// The buffer must hold at least 37 Bytes, as that is the maximum length of advertising channel
+    /// payloads. While data channel payloads can be up to 251 Bytes in length (resulting in a
+    /// "length" field of 255 with the MIC), devices are allowed to use smaller buffers and report
+    /// the supported payload length.
+    ///
+    /// Both advertising and data channel packets also use an additional 2-Byte header preceding
+    /// this payload.
     fn tx_payload_buf(&mut self) -> &mut [u8];
 
     /// Transmit an Advertising Channel PDU.
@@ -429,7 +434,7 @@ pub trait Transmitter {
     ///
     /// The implementor is expected to send the preamble and access address, and assemble the rest
     /// of the packet, and must apply data whitening and do the CRC calculation. The inter-frame
-    /// spacing also has to be implemented by the implementor (`T_IFS`).
+    /// spacing also has to be upheld by the implementor (`T_IFS`).
     ///
     /// # Parameters
     ///
