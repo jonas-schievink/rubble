@@ -60,9 +60,14 @@ use {
 /// new (not a retransmission), and `nextExpectedSeqNum` should be incremented by 1. If the value is
 /// not equal to `nextExpectedSeqNum`, this packet is a retransmission, so `nextExpectedSeqNum`
 /// should not be changed.
+#[derive(Copy, Clone)]
 pub struct Header(u16);
 
 impl Header {
+    pub fn new(len: u8, llid: Llid) -> Self {
+        Header((u16::from(len) << 8) | llid as u16)
+    }
+
     pub fn parse(raw: &[u8]) -> Self {
         Header(LittleEndian::read_u16(&raw))
     }
@@ -101,6 +106,15 @@ impl Header {
         }
     }
 
+    /// Sets the value of the `NESN` field.
+    pub fn set_nesn(&mut self, nesn: SequenceNumber) {
+        if nesn == SequenceNumber::one() {
+            self.0 |= 0b0100;
+        } else {
+            self.0 &= !0b0100;
+        }
+    }
+
     /// Returns the value of the `SN` field (Sequence Number).
     pub fn sn(&self) -> SequenceNumber {
         let bit = self.0 & 0b1000;
@@ -111,10 +125,28 @@ impl Header {
         }
     }
 
+    /// Sets the value of the `SN` field.
+    pub fn set_sn(&mut self, sn: SequenceNumber) {
+        if sn == SequenceNumber::one() {
+            self.0 |= 0b1000;
+        } else {
+            self.0 &= !0b1000;
+        }
+    }
+
     /// Returns whether the `MD` field is set (More Data).
     pub fn md(&self) -> bool {
         let bit = self.0 & 0b1_0000;
         bit != 0
+    }
+
+    /// Sets the value of the `MD` field.
+    pub fn set_md(&mut self, md: bool) {
+        if md {
+            self.0 |= 0b1_0000;
+        } else {
+            self.0 &= !0b1_0000;
+        }
     }
 }
 
@@ -144,4 +176,34 @@ pub enum Llid {
 
     /// LL control PDU.
     Control = 0b11,
+}
+
+pub enum Pdu<'a> {
+    DataCont { message: &'a [u8] },
+
+    DataStart { message: &'a [u8] },
+
+    Control { data: &'a [u8] },
+}
+
+impl<'a> Pdu<'a> {
+    /// Creates an empty PDU that carries no message.
+    pub fn empty() -> Self {
+        Pdu::DataCont { message: &[] }
+    }
+
+    /// Returns a prefilled `Header` for this PDU.
+    ///
+    /// The `NESN`, `SN`, and `MD` fields are always set to `0`/`false` and must be filled in by the
+    /// link layer.
+    pub fn header(&self) -> Header {
+        let (llid, len) = match self {
+            Pdu::DataCont { message } => (Llid::DataCont, message.len()),
+            Pdu::DataStart { message } => (Llid::DataStart, message.len()),
+            Pdu::Control { data } => (Llid::Control, data.len()),
+        };
+
+        assert!(len < 256);
+        Header::new(len as u8, llid)
+    }
 }
