@@ -444,6 +444,9 @@ pub trait Transmitter {
     ///
     /// Both advertising and data channel packets also use an additional 2-Byte header preceding
     /// this payload.
+    ///
+    /// This buffer must not be changed. The BLE stack relies on the buffer to retain its old
+    /// contents after transmitting a packet. A separate buffer must be used for received packets.
     fn tx_payload_buf(&mut self) -> &mut [u8];
 
     /// Transmit an Advertising Channel PDU.
