@@ -1,15 +1,21 @@
 //! Data Channel operations.
 
+use {
+    crate::ble::link::SequenceNumber,
+    byteorder::{ByteOrder, LittleEndian},
+    core::fmt,
+};
+
 /// 16-bit data channel header preceding the payload.
 ///
-/// Layout:
+/// Layout (in Bluetooth 4.2):
 ///
 /// ```notrust
-/// LSB                                                                           MSB
-/// +----------+---------+---------+---------+------------+--------------+----------+
-/// |   LLID   |  NESN   |   SN    |   MD    |     -      |    Length    |    -     |
-/// | (2 bits) | (1 bit) | (1 bit) | (1 bit) |  (3 bits)  |   (5 bits)   | (3 bits) |
-/// +----------+---------+---------+---------+------------+--------------+----------+
+/// LSB                                                                MSB
+/// +----------+---------+---------+---------+------------+--------------+
+/// |   LLID   |  NESN   |   SN    |   MD    |     -      |    Length    |
+/// | (2 bits) | (1 bit) | (1 bit) | (1 bit) |  (3 bits)  |   (8 bits)   |
+/// +----------+---------+---------+---------+------------+--------------+
 /// ```
 ///
 /// Payload format depends on the value of the 2-bit `LLID` field:
@@ -26,10 +32,9 @@
 /// The `MD` field specifies that the device sending the packet has more data to send. When both
 /// slave and master send a packet with the `MD` bit set to 0, the connection is closed.
 ///
-/// The `Length` field specifies the length of payload **and `MIC`**. Its maximum value is 31,
-/// resulting in a 27 octet Payload (the maximum) and a 32-bit `MIC`.
-///
-/// Note that the `Length` field is 1 bit shorter than for Advertising Channel PDUs.
+/// The `Length` field specifies the length of payload **and `MIC`**. Prior to Bluetooth 4.2, this
+/// was a 5-bit field, resulting in payloads + MICs of up to 31 Bytes. With Bluetooth 4.2, devices
+/// can communicate their buffer sizes and optionally transmit larger packets.
 ///
 /// ## Sequence Numbers
 ///
@@ -58,6 +63,10 @@
 pub struct Header(u16);
 
 impl Header {
+    pub fn parse(raw: &[u8]) -> Self {
+        Header(LittleEndian::read_u16(&raw))
+    }
+
     /// Returns the raw representation of the header.
     ///
     /// The returned `u16` must be transmitted LSB and LSb first as the first 2 octets of the PDU.
@@ -66,11 +75,73 @@ impl Header {
     }
 
     /// Returns the length of the payload in octets as specified in the `Length` field.
-    ///
-    /// According to the spec, the length must be in range 6...37, but this isn't checked by this
-    /// function.
     pub fn payload_length(&self) -> u8 {
-        // Subtle difference to advertising header: 5 bits, not 6!
-        ((self.0 & 0b00011111_00000000) >> 8) as u8
+        ((self.0 & 0b11111111_00000000) >> 8) as u8
     }
+
+    /// Returns the `LLID` field (PDU type).
+    pub fn llid(&self) -> Llid {
+        let bits = self.0 & 0b11;
+        match bits {
+            0b00 => Llid::Reserved,
+            0b01 => Llid::DataCont,
+            0b10 => Llid::DataStart,
+            0b11 => Llid::Control,
+            _ => unreachable!(),
+        }
+    }
+
+    /// Returns the value of the `NESN` field (Next Expected Sequence Number).
+    pub fn nesn(&self) -> SequenceNumber {
+        let bit = self.0 & 0b0100;
+        if bit == 0 {
+            SequenceNumber::zero()
+        } else {
+            SequenceNumber::one()
+        }
+    }
+
+    /// Returns the value of the `SN` field (Sequence Number).
+    pub fn sn(&self) -> SequenceNumber {
+        let bit = self.0 & 0b1000;
+        if bit == 0 {
+            SequenceNumber::zero()
+        } else {
+            SequenceNumber::one()
+        }
+    }
+
+    /// Returns whether the `MD` field is set (More Data).
+    pub fn md(&self) -> bool {
+        let bit = self.0 & 0b1_0000;
+        bit != 0
+    }
+}
+
+impl fmt::Debug for Header {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Header")
+            .field("LLID", &self.llid())
+            .field("NESN", &self.nesn())
+            .field("SN", &self.sn())
+            .field("MD", &self.md())
+            .field("Length", &self.payload_length())
+            .finish()
+    }
+}
+
+/// Values of the LLID field in `Header`.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Llid {
+    /// Reserved for future use.
+    Reserved = 0b00,
+
+    /// Continuation of L2CAP message, or empty PDU.
+    DataCont = 0b01,
+
+    /// Start of L2CAP message.
+    DataStart = 0b10,
+
+    /// LL control PDU.
+    Control = 0b11,
 }
