@@ -4,7 +4,7 @@ use crate::ble::{
     link::{
         advertising::ConnectRequestData,
         data::{self, Llid, Pdu},
-        Cmd, Logger, RadioCmd, SequenceNumber, Transmitter,
+        Cmd, Logger, NextUpdate, RadioCmd, SequenceNumber, Transmitter,
     },
     phy::{ChannelMap, DataChannel},
     utils::HexSlice,
@@ -55,7 +55,7 @@ impl Connection {
         this.hop_channel();
 
         let cmd = Cmd {
-            next_update: None, // FIXME connection timeout
+            next_update: NextUpdate::Disable, // FIXME connection timeout
             radio: RadioCmd::ListenData {
                 channel: this.channel,
                 access_address: this.access_address,
@@ -115,7 +115,7 @@ impl Connection {
         );
 
         Ok(Cmd {
-            next_update: None, // FIXME wrong
+            next_update: NextUpdate::Disable, // FIXME wrong
             radio: RadioCmd::ListenData {
                 channel: self.channel,
                 access_address: self.access_address,

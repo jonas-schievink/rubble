@@ -226,13 +226,12 @@ impl<L: Logger> LinkLayer<L> {
     }
 
     /// Starts advertising this device, optionally sending data along with the advertising PDU.
-    ///
-    /// Note that advertisements will only be sent by calling `update`.
-    pub fn start_advertise(
+    pub fn start_advertise<T: Transmitter>(
         &mut self,
         interval: Duration,
         data: &[AdStructure],
-    ) -> Result<(), Error> {
+        tx: &mut T,
+    ) -> Result<NextUpdate, Error> {
         // TODO tear down existing connection?
 
         let pdu = PduBuf::discoverable(self.dev_addr, data)?;
@@ -243,7 +242,7 @@ impl<L: Logger> LinkLayer<L> {
             pdu,
             channel: AdvertisingChannel::first(),
         };
-        Ok(())
+        Ok(self.update(tx).next_update)
     }
 
     /// Process an incoming packet from an advertising channel.
@@ -301,7 +300,7 @@ impl<L: Logger> LinkLayer<L> {
                 Cmd {
                     radio: RadioCmd::ListenAdvertising { channel },
                     // no change
-                    next_update: None,
+                    next_update: NextUpdate::Keep,
                 }
             }
         }
@@ -322,7 +321,7 @@ impl<L: Logger> LinkLayer<L> {
                     debug!(self.logger, "connection ended, standby");
                     self.state = State::Standby;
                     Cmd {
-                        next_update: None,
+                        next_update: NextUpdate::Disable,
                         radio: RadioCmd::Off,
                     }
                 }
@@ -360,7 +359,7 @@ impl<L: Logger> LinkLayer<L> {
 
                 Cmd {
                     radio: RadioCmd::ListenAdvertising { channel: *channel },
-                    next_update: Some(*interval),
+                    next_update: NextUpdate::In(*interval),
                 }
             }
             State::Connection(conn) => conn.timer_update(&mut self.logger),
@@ -381,6 +380,7 @@ impl<L: Logger> LinkLayer<L> {
 ///
 /// Specifies how the radio should be configured and when/if to call `LinkLayer::update` again.
 #[must_use]
+#[derive(Debug, Clone)]
 pub struct Cmd {
     /// Radio configuration request.
     pub radio: RadioCmd,
@@ -389,14 +389,26 @@ pub struct Cmd {
     ///
     /// If this is `None`, `update` doesn't need to be called because the Link-Layer is in Standby
     /// state.
-    pub next_update: Option<Duration>,
-    // FIXME This is used both as "if this is None, don't change the next update time" and "if this
-    // is None, don't call `update`"
+    pub next_update: NextUpdate,
+}
+
+/// Specifies when the Link Layer's `update` method should be called the next time.
+#[derive(Debug, Clone)]
+pub enum NextUpdate {
+    /// Disable timer and do not call `update`.
+    Disable,
+
+    /// Keep the previously configured time.
+    Keep,
+
+    /// Call `update` after a `Duration` expires.
+    In(Duration), // FIXME this should probably be an `Instant`-like thing
 }
 
 /// Specifies whether the radio should listen for transmissions.
 ///
 /// Returned by the Link-Layer update and processing methods to reconfigure the radio as needed.
+#[derive(Debug, Clone)]
 pub enum RadioCmd {
     /// Turn the radio off and don't call `LinkLayer::process_*` methods.
     ///

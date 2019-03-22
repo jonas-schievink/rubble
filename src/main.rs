@@ -12,7 +12,8 @@ use {
         ble::{
             beacon::Beacon,
             link::{
-                ad_structure::AdStructure, AddressKind, DeviceAddress, LinkLayer, MAX_PDU_SIZE,
+                ad_structure::AdStructure, AddressKind, DeviceAddress, LinkLayer, NextUpdate,
+                MAX_PDU_SIZE,
             },
         },
         radio::{BleRadio, PacketBuffer},
@@ -132,14 +133,7 @@ const APP: () = {
         };
         let device_address = DeviceAddress::new(devaddr, devaddr_type);
 
-        let mut ll = LinkLayer::with_logger(device_address, serial);
-        ll.start_advertise(
-            Duration::from_millis(200),
-            &[AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS")],
-        )
-        .unwrap();
-
-        let radio = BleRadio::new(device.RADIO, resources.BLE_TX_BUF, resources.BLE_RX_BUF);
+        let mut radio = BleRadio::new(device.RADIO, resources.BLE_TX_BUF, resources.BLE_RX_BUF);
 
         let beacon = Beacon::new(
             device_address,
@@ -147,9 +141,18 @@ const APP: () = {
         )
         .unwrap();
 
+        let mut ll = LinkLayer::with_logger(device_address, serial);
+
         if !TEST_BEACON {
-            // Queue first baseband update
-            cfg_timer(&device.TIMER0, Some(Duration::from_millis(1)));
+            // Send advertisement and set up regular interrupt
+            let next_update = ll
+                .start_advertise(
+                    Duration::from_millis(200),
+                    &[AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS")],
+                    &mut radio,
+                )
+                .unwrap();
+            cfg_timer(&device.TIMER0, next_update);
         }
 
         RADIO = radio;
@@ -161,9 +164,8 @@ const APP: () = {
 
     #[interrupt(resources = [BLE_TIMER, RADIO, BLE])]
     fn RADIO() {
-        if let Some(new_timeout) = resources.RADIO.recv_interrupt(&mut resources.BLE) {
-            cfg_timer(&resources.BLE_TIMER, Some(new_timeout));
-        }
+        let next_update = resources.RADIO.recv_interrupt(&mut resources.BLE);
+        cfg_timer(&resources.BLE_TIMER, next_update);
     }
 
     #[interrupt(resources = [BLE_TIMER, RADIO, BLE])]
@@ -190,20 +192,27 @@ const APP: () = {
 ///
 /// Note that if the timer has already queued an interrupt, the task will still be run after the
 /// timer is stopped by this function.
-fn cfg_timer(t: &pac::TIMER0, duration: Option<Duration>) {
+fn cfg_timer(t: &pac::TIMER0, next_update: NextUpdate) {
     // Timer activation code is also copied from the `nrf51-hal` crate.
-    if let Some(duration) = duration {
-        assert!(duration.as_secs() < ((u32::MAX - duration.subsec_micros()) / 1_000_000) as u64);
-        let us = (duration.as_secs() as u32) * 1_000_000 + duration.subsec_micros();
-        t.cc[0].write(|w| unsafe { w.bits(us) });
-        // acknowledge last compare event (FIXME unnecessary?)
-        t.events_compare[0].reset();
-        t.tasks_clear.write(|w| unsafe { w.bits(1) });
-        t.tasks_start.write(|w| unsafe { w.bits(1) });
-    } else {
-        t.tasks_stop.write(|w| unsafe { w.bits(1) });
-        t.tasks_clear.write(|w| unsafe { w.bits(1) });
-        // acknowledge last compare event (FIXME unnecessary?)
-        t.events_compare[0].reset();
+
+    match next_update {
+        NextUpdate::Keep => {}
+        NextUpdate::In(duration) => {
+            assert!(
+                duration.as_secs() < ((u32::MAX - duration.subsec_micros()) / 1_000_000) as u64
+            );
+            let us = (duration.as_secs() as u32) * 1_000_000 + duration.subsec_micros();
+            t.cc[0].write(|w| unsafe { w.bits(us) });
+            // acknowledge last compare event (FIXME unnecessary?)
+            t.events_compare[0].reset();
+            t.tasks_clear.write(|w| unsafe { w.bits(1) });
+            t.tasks_start.write(|w| unsafe { w.bits(1) });
+        }
+        NextUpdate::Disable => {
+            t.tasks_stop.write(|w| unsafe { w.bits(1) });
+            t.tasks_clear.write(|w| unsafe { w.bits(1) });
+            // acknowledge last compare event (FIXME unnecessary?)
+            t.events_compare[0].reset();
+        }
     }
 }

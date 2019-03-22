@@ -44,13 +44,12 @@
 use {
     crate::ble::{
         link::{
-            advertising, data, LinkLayer, RadioCmd, Transmitter, CRC_POLY, MAX_PAYLOAD_SIZE,
-            MAX_PDU_SIZE,
+            advertising, data, LinkLayer, NextUpdate, RadioCmd, Transmitter, CRC_POLY,
+            MAX_PAYLOAD_SIZE, MAX_PDU_SIZE,
         },
         log::Logger,
         phy::{AdvertisingChannel, DataChannel},
     },
-    core::time::Duration,
     nrf52810_hal::nrf52810_pac::{radio::state::STATER, RADIO},
 };
 
@@ -210,13 +209,12 @@ impl BleRadio {
 
     /// Call this when the `RADIO` interrupt fires.
     ///
-    /// Returns a duration if the BLE stack requested that the next update time be changed. Returns
-    /// `None` if the update time should stay as-is from the last `update` call.
-    ///
     /// Automatically reconfigures the radio according to the `RadioCmd` returned by the BLE stack.
-    pub fn recv_interrupt<L: Logger>(&mut self, ll: &mut LinkLayer<L>) -> Option<Duration> {
+    ///
+    /// Returns when the `update` method should be called the next time.
+    pub fn recv_interrupt<L: Logger>(&mut self, ll: &mut LinkLayer<L>) -> NextUpdate {
         if self.radio.events_disabled.read().bits() == 0 {
-            return None;
+            return NextUpdate::Keep;
         }
 
         // When we get here, the radio must have transitioned to DISABLED state.
@@ -237,7 +235,7 @@ impl BleRadio {
                 None => {
                     // `payload_length` is too large, ignore the packet
                     self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
-                    return None;
+                    return NextUpdate::Keep;
                 }
             };
             let cmd = ll.process_adv_packet(self, header, payload, crc_ok);
@@ -253,7 +251,7 @@ impl BleRadio {
                 None => {
                     // `payload_length` is too large, ignore the packet
                     self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
-                    return None;
+                    return NextUpdate::Keep;
                 }
             };
             let cmd = ll.process_data_packet(self, header, payload, crc_ok);
