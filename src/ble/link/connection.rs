@@ -1,8 +1,11 @@
-//! Link-Layer management when in Connection state.
+//! Link-Layer connection management.
 
 use crate::ble::{
-    link::{advertising::ConnectRequestData, SequenceNumber},
+    link::{
+        advertising::ConnectRequestData, data, Cmd, Logger, RadioCmd, SequenceNumber, Transmitter,
+    },
     phy::{ChannelMap, DataChannel},
+    utils::HexSlice,
 };
 
 /// Connection state.
@@ -27,8 +30,10 @@ pub struct Connection {
 
 impl Connection {
     /// Initializes a connection state according to the `LLData` contained in the `CONNECT_REQ` PDU.
-    pub fn new(lldata: &ConnectRequestData) -> Self {
-        Self {
+    ///
+    /// Returns the connection state and a `Cmd` to apply to the radio.
+    pub fn create(lldata: &ConnectRequestData) -> (Self, Cmd) {
+        let mut this = Self {
             access_address: lldata.access_address(),
             crc_init: lldata.crc_init().into(),
             channel_map: *lldata.channel_map(),
@@ -37,7 +42,41 @@ impl Connection {
             last_unmapped_channel: DataChannel::new(0),
             transmit_seq_num: SequenceNumber::zero(),
             next_expected_seq_num: SequenceNumber::zero(),
-        }
+        };
+
+        let cmd = Cmd {
+            next_update: None, // FIXME connection timeout
+            radio: RadioCmd::ListenData {
+                channel: this.hop_channel(),
+                access_address: this.access_address,
+                crc_init: this.crc_init,
+            },
+        };
+
+        (this, cmd)
+    }
+
+    /// Called when a data channel packet is received.
+    pub fn process_data_packet<T: Transmitter, L: Logger>(
+        &mut self,
+        _tx: &mut T,
+        logger: &mut L,
+        header: data::Header,
+        payload: &[u8],
+        crc_ok: bool,
+    ) -> Cmd {
+        trace!(
+            logger,
+            "DATA<- {}{:?}, {:?}",
+            if crc_ok { "" } else { "BADCRC" },
+            header,
+            HexSlice(payload)
+        );
+        unimplemented!()
+    }
+
+    pub fn timer_update<L: Logger>(&mut self, _logger: &mut L) -> Cmd {
+        unimplemented!()
     }
 
     /// Calculates the data channel on which the next connection event will take place, and hops to

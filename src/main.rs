@@ -40,8 +40,8 @@ const TEST_BEACON: bool = false;
 
 #[app(device = nrf52810_hal::nrf52810_pac)]
 const APP: () = {
-    static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE + 1];
-    static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE + 1];
+    static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
+    static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
     static mut BLE: LinkLayer<Logger> = ();
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();

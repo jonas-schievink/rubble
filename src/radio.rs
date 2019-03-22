@@ -55,15 +55,14 @@ use {
 };
 
 /// A packet buffer that can hold header and payload of any advertising or data channel packet.
-///
-/// The buffer has an extra Byte because the 16-bit PDU header needs to be split in 3 Bytes for the
-/// radio to understand it (S0 = pre-Length fields, Length, S1 = post-Length fields).
-pub type PacketBuffer = [u8; MAX_PDU_SIZE + 1];
+pub type PacketBuffer = [u8; MAX_PDU_SIZE];
 
 // BLE inter frame spacing in microseconds.
 //const BLE_TIFS: u8 = 150;
 
 pub struct BleRadio {
+    /// `true` if the radio is operating on an advertising channel, `false` if it's a data channel.
+    advertising: bool,
     radio: RADIO,
     tx_buf: &'static mut PacketBuffer,
 
@@ -144,6 +143,7 @@ impl BleRadio {
         // disabled state.
 
         Self {
+            advertising: false,
             radio,
             tx_buf,
             rx_buf: Some(rx_buf),
@@ -186,7 +186,25 @@ impl BleRadio {
                 // ...and enter RX mode
                 self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
             }
-            RadioCmd::ListenData { .. } => unimplemented!(),
+            RadioCmd::ListenData {
+                channel,
+                access_address,
+                crc_init,
+            } => {
+                self.prepare_txrx_data(channel, access_address, crc_init);
+
+                let rx_buf = (*self.rx_buf.as_mut().unwrap()) as *mut _ as u32;
+                self.radio.packetptr.write(|w| unsafe { w.bits(rx_buf) });
+
+                // Enable `DISABLED` interrupt (packet fully received)
+                self.radio.intenset.write(|w| w.disabled().set());
+
+                // Match on logical address 1 only
+                self.radio.rxaddresses.write(|w| w.addr1().enabled());
+
+                // ...and enter RX mode
+                self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
+            }
         }
     }
 
@@ -208,12 +226,13 @@ impl BleRadio {
         self.radio.events_disabled.reset();
 
         let crc_ok = self.radio.crcstatus.read().crcstatus().is_crcok();
-        let header = advertising::Header::parse(*self.rx_buf.as_ref().unwrap());
 
-        let cmd = {
-            // check that `payload_length` is sane
+        let cmd = if self.advertising {
+            let header = advertising::Header::parse(*self.rx_buf.as_ref().unwrap());
+
+            // check that `payload_length` is in bounds
             let rx_buf = self.rx_buf.take().unwrap();
-            let payload = match rx_buf.get(3..3 + header.payload_length() as usize) {
+            let payload = match rx_buf.get(2..2 + header.payload_length() as usize) {
                 Some(pl) => pl,
                 None => {
                     // `payload_length` is too large, ignore the packet
@@ -224,7 +243,24 @@ impl BleRadio {
             let cmd = ll.process_adv_packet(self, header, payload, crc_ok);
             self.rx_buf = Some(rx_buf);
             cmd
+        } else {
+            let header = data::Header::parse(*self.rx_buf.as_ref().unwrap());
+
+            // check that `payload_length` is in bounds
+            let rx_buf = self.rx_buf.take().unwrap();
+            let payload = match rx_buf.get(2..2 + header.payload_length() as usize) {
+                Some(pl) => pl,
+                None => {
+                    // `payload_length` is too large, ignore the packet
+                    self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
+                    return None;
+                }
+            };
+            let cmd = ll.process_data_packet(self, header, payload, crc_ok);
+            self.rx_buf = Some(rx_buf);
+            cmd
         };
+
         self.configure_receiver(cmd.radio);
         cmd.next_update
     }
@@ -242,6 +278,8 @@ impl BleRadio {
     ///
     /// Of course, other tasks may also be performed.
     fn prepare_txrx_advertising(&mut self, channel: AdvertisingChannel) {
+        self.advertising = true;
+
         unsafe {
             // Acknowledge left-over disable event
             self.radio.events_disabled.reset();
@@ -261,7 +299,7 @@ impl BleRadio {
         unsafe {
             self.radio
                 .pcnf0
-                .write(|w| w.s0len().bit(true).lflen().bits(6).s1len().bits(2));
+                .write(|w| w.s0len().bit(true).lflen().bits(8).s1len().bits(0));
 
             self.radio
                 .datawhiteiv
@@ -272,6 +310,48 @@ impl BleRadio {
             self.radio
                 .frequency
                 .write(|w| w.frequency().bits((channel.freq() - 2400) as u8));
+        }
+    }
+
+    fn prepare_txrx_data(&mut self, channel: DataChannel, access_address: u32, crc_init: u32) {
+        self.advertising = false;
+
+        unsafe {
+            // Acknowledge left-over disable event
+            self.radio.events_disabled.reset();
+
+            if !self.state().is_disabled() {
+                // In case we're currently receiving, stop that
+                self.radio.tasks_disable.write(|w| w.bits(1));
+
+                // Then wait until disable event is triggered
+                while self.radio.events_disabled.read().bits() == 0 {}
+            }
+        }
+
+        assert!(self.state().is_disabled());
+
+        // Now we can freely configure all registers we need
+        unsafe {
+            self.radio
+                .pcnf0
+                .write(|w| w.s0len().bit(true).lflen().bits(8).s1len().bits(0));
+
+            self.radio
+                .datawhiteiv
+                .write(|w| w.datawhiteiv().bits(channel.whitening_iv()));
+            self.radio
+                .crcinit
+                .write(|w| w.crcinit().bits(crc_init & 0x00ffffff));
+            self.radio
+                .frequency
+                .write(|w| w.frequency().bits((channel.freq() - 2400) as u8));
+
+            // Address #1 is our data channel access address
+            self.radio.base1.write(|w| w.bits(access_address << 8));
+            self.radio
+                .prefix0
+                .write(|w| w.ap1().bits((access_address >> 24) as u8));
         }
     }
 
@@ -306,19 +386,16 @@ impl BleRadio {
 
 impl Transmitter for BleRadio {
     fn tx_payload_buf(&mut self) -> &mut [u8] {
-        // Leave 3 Bytes for the data/advertising PDU header. The header is actually only 2 on-air
-        // Bytes, but because of the way the radio works, `Length` must get its own Byte in RAM.
-        &mut self.tx_buf[3..]
+        // Leave 2 Bytes for the data/advertising PDU header.
+        &mut self.tx_buf[2..]
     }
 
     fn transmit_advertising(&mut self, header: advertising::Header, channel: AdvertisingChannel) {
         let raw_header = header.to_u16();
         // S0 = 8 bits (LSB)
         self.tx_buf[0] = raw_header as u8;
-        // Length = 6 bits
+        // Length = 6 bits, followed by 2 RFU bits (0)
         self.tx_buf[1] = header.payload_length();
-        // S1 = 2 unused bits = 0
-        self.tx_buf[2] = 0;
 
         self.prepare_txrx_advertising(channel);
 
@@ -333,12 +410,25 @@ impl Transmitter for BleRadio {
 
     fn transmit_data(
         &mut self,
-        _access_address: u32,
-        _crc_iv: u32,
-        _header: data::Header,
-        _channel: DataChannel,
+        access_address: u32,
+        crc_iv: u32,
+        header: data::Header,
+        channel: DataChannel,
     ) {
-        unimplemented!();
-        //self.transmit(access_address, crc_iv, channel.whitening_iv(), channel.freq());
+        let raw_header = header.to_u16();
+        // S0 = 8 bits (LSB)
+        self.tx_buf[0] = raw_header as u8;
+        // Length = 8 bits (or fewer, for BT versions <4.2)
+        self.tx_buf[1] = header.payload_length();
+
+        self.prepare_txrx_data(channel, access_address, crc_iv);
+
+        // Set transmission address:
+        // Logical addr. 1 uses BASE1 + PREFIX1, which is set to the data channel address
+        self.radio
+            .txaddress
+            .write(|w| unsafe { w.txaddress().bits(1) });
+
+        self.transmit();
     }
 }

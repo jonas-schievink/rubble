@@ -273,7 +273,11 @@ impl<L: Logger> LinkLayer<L> {
                             debug!(self.logger, "-> SCAN RESP: {:?}", response);
                         }
                         Pdu::ConnectRequest { lldata, .. } => {
-                            self.state = State::Connection(Connection::new(&lldata));
+                            trace!(self.logger, "ADV<- CONN! {:?}", pdu);
+
+                            let (conn, cmd) = Connection::create(&lldata);
+                            self.state = State::Connection(conn);
+                            return cmd;
                         }
                         _ => {}
                     }
@@ -309,9 +313,13 @@ impl<L: Logger> LinkLayer<L> {
         tx: &mut T,
         header: data::Header,
         payload: &[u8],
+        crc_ok: bool,
     ) -> Cmd {
-        let _ = (tx, header, payload);
-        unimplemented!();
+        if let State::Connection(conn) = &mut self.state {
+            conn.process_data_packet(tx, &mut self.logger, header, payload, crc_ok)
+        } else {
+            unreachable!("received data channel PDU while not in connected state");
+        }
     }
 
     /// Update the Link-Layer state.
@@ -324,11 +332,11 @@ impl<L: Logger> LinkLayer<L> {
     /// * `tx`: A `Transmitter` for sending packets.
     /// * `elapsed`: Time since the last `update` call or creation of this `LinkLayer`.
     pub fn update<T: Transmitter>(&mut self, tx: &mut T) -> Cmd {
-        match self.state {
+        match &mut self.state {
             State::Advertising {
                 interval,
-                ref pdu,
-                ref mut channel,
+                pdu,
+                channel,
             } => {
                 *channel = channel.cycle();
                 let payload = pdu.payload();
@@ -342,10 +350,11 @@ impl<L: Logger> LinkLayer<L> {
 
                 Cmd {
                     radio: RadioCmd::ListenAdvertising { channel: *channel },
-                    next_update: Some(interval),
+                    next_update: Some(*interval),
                 }
             }
-            _ => unimplemented!(),
+            State::Connection(conn) => conn.timer_update(&mut self.logger),
+            State::Standby => unreachable!("LL in standby received timer event"),
         }
     }
 
