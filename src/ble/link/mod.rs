@@ -316,7 +316,17 @@ impl<L: Logger> LinkLayer<L> {
         crc_ok: bool,
     ) -> Cmd {
         if let State::Connection(conn) = &mut self.state {
-            conn.process_data_packet(tx, &mut self.logger, header, payload, crc_ok)
+            match conn.process_data_packet(tx, &mut self.logger, header, payload, crc_ok) {
+                Ok(cmd) => cmd,
+                Err(()) => {
+                    debug!(self.logger, "connection ended, standby");
+                    self.state = State::Standby;
+                    Cmd {
+                        next_update: None,
+                        radio: RadioCmd::Off,
+                    }
+                }
+            }
         } else {
             unreachable!("received data channel PDU while not in connected state");
         }

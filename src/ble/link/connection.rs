@@ -56,7 +56,9 @@ impl Connection {
         (this, cmd)
     }
 
-    /// Called when a data channel packet is received.
+    /// Called by the `LinkLayer` when a data channel packet is received.
+    ///
+    /// Returns `Err(())` when the connection is ended (not necessarily due to an error condition).
     pub fn process_data_packet<T: Transmitter, L: Logger>(
         &mut self,
         _tx: &mut T,
@@ -64,7 +66,7 @@ impl Connection {
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
-    ) -> Cmd {
+    ) -> Result<Cmd, ()> {
         trace!(
             logger,
             "DATA<- {}{:?}, {:?}",
