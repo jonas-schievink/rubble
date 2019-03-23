@@ -1,7 +1,7 @@
 //! Data Channel operations.
 
 use {
-    crate::ble::link::SequenceNumber,
+    crate::ble::{bytes::*, link::SequenceNumber, Error},
     byteorder::{ByteOrder, LittleEndian},
     core::fmt,
 };
@@ -64,10 +64,14 @@ use {
 pub struct Header(u16);
 
 impl Header {
-    pub fn new(len: u8, llid: Llid) -> Self {
-        Header((u16::from(len) << 8) | llid as u16)
+    /// Creates a header with the given LLID field and all other fields set to 0.
+    pub fn new(llid: Llid) -> Self {
+        Header(llid as u16)
     }
 
+    /// Parses a header from raw bytes.
+    ///
+    /// Panics when `raw` contains less than 2 Bytes.
     pub fn parse(raw: &[u8]) -> Self {
         Header(LittleEndian::read_u16(&raw))
     }
@@ -178,32 +182,131 @@ pub enum Llid {
     Control = 0b11,
 }
 
+/// Structured representation of a data channel PDU.
+#[derive(Debug)]
 pub enum Pdu<'a> {
+    /// Continuation of an L2CAP message (or empty PDU).
     DataCont { message: &'a [u8] },
 
+    /// Start of an L2CAP message (must not be empty).
     DataStart { message: &'a [u8] },
 
-    Control { data: &'a [u8] },
+    /// LL Control PDU for controlling the Link-Layer connection.
+    Control { data: BytesOr<'a, ControlPdu<'a>> },
 }
 
 impl<'a> Pdu<'a> {
     /// Creates an empty PDU that carries no message.
+    ///
+    /// This PDU can be sent whenever there's no actual data to be transferred.
     pub fn empty() -> Self {
         Pdu::DataCont { message: &[] }
     }
 
-    /// Returns a prefilled `Header` for this PDU.
-    ///
-    /// The `NESN`, `SN`, and `MD` fields are always set to `0`/`false` and must be filled in by the
-    /// link layer.
-    pub fn header(&self) -> Header {
-        let (llid, len) = match self {
-            Pdu::DataCont { message } => (Llid::DataCont, message.len()),
-            Pdu::DataStart { message } => (Llid::DataStart, message.len()),
-            Pdu::Control { data } => (Llid::Control, data.len()),
-        };
+    /// Returns the `LLID` field to use for this PDU.
+    pub fn llid(&self) -> Llid {
+        match self {
+            Pdu::DataCont { .. } => Llid::DataCont,
+            Pdu::DataStart { .. } => Llid::DataStart,
+            Pdu::Control { .. } => Llid::Control,
+        }
+    }
+}
 
-        assert!(len < 256);
-        Header::new(len as u8, llid)
+impl<'a> From<&'a ControlPdu<'a>> for Pdu<'a> {
+    fn from(c: &'a ControlPdu<'a>) -> Self {
+        Pdu::Control { data: c.into() }
+    }
+}
+
+/// Serializes the payload of the PDU to bytes.
+///
+/// The PDU header must be constructed using Link-Layer state (and `Pdu::llid`).
+impl<'a> ToBytes for Pdu<'a> {
+    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
+        match self {
+            Pdu::DataCont { message } | Pdu::DataStart { message } => buffer.write_slice(message),
+            Pdu::Control { data } => data.to_bytes(buffer),
+        }
+    }
+}
+
+/// A structured representation of LL Control PDUs.
+#[derive(Debug, Copy, Clone)]
+pub enum ControlPdu<'a> {
+    /// Response to unknown/unsupported LL Control PDUs.
+    ///
+    /// This is returned as a response to an incoming LL Control PDU when the opcode is
+    /// unimplemented or unknown, or when the `CtrData` is invalid for the opcode.
+    UnknownRsp {
+        /// Opcode of the unknown PDU.
+        unknown_type: ControlOpcode,
+    },
+
+    /// Catch-all variant for unsupported opcodes.
+    Unknown {
+        /// The opcode we don't support. This can also be the `Unknown` variant.
+        opcode: ControlOpcode,
+
+        /// Additional data depending on the opcode.
+        ctr_data: &'a [u8],
+    },
+}
+
+impl<'a> FromBytes<'a> for ControlPdu<'a> {
+    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+        let opcode = ControlOpcode::from(bytes.read_first()?);
+        Ok(match opcode {
+            _ => ControlPdu::Unknown {
+                opcode,
+                ctr_data: *bytes,
+            },
+        })
+    }
+}
+
+impl<'a> ToBytes for ControlPdu<'a> {
+    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
+        match self {
+            ControlPdu::UnknownRsp { unknown_type } => {
+                buffer.write_byte(ControlOpcode::UnknownRsp.into())?;
+                buffer.write_byte(u8::from(*unknown_type))?;
+                Ok(())
+            }
+            ControlPdu::Unknown { opcode, ctr_data } => {
+                buffer.write_byte(u8::from(*opcode))?;
+                buffer.write_slice(ctr_data)?;
+                Ok(())
+            }
+        }
+    }
+}
+
+enum_with_unknown! {
+    /// Enumerations of all known LL Control PDU opcodes (not all of which might be supported).
+    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    pub enum ControlOpcode(u8) {
+        ConnectionUpdateReq = 0x00,
+        ChannelMapReq = 0x01,
+        TerminateInd = 0x02,
+        EncReq = 0x03,
+        EncRsp = 0x04,
+        StartEncReq = 0x05,
+        StartEncRsp = 0x06,
+        UnknownRsp = 0x07,
+        FeatureReq = 0x08,
+        FeatureRsp = 0x09,
+        PauseEncReq = 0x0A,
+        PauseEncRsp = 0x0B,
+        VersionInd = 0x0C,
+        RejectInd = 0x0D,
+        SlaveFeatureReq = 0x0E,
+        ConnectionParamReq = 0x0F,
+        ConnectionParamRsp = 0x10,
+        RejectIndExt = 0x11,
+        PingReq = 0x12,
+        PingRsp = 0x13,
+        LengthReq = 0x14,
+        LengthRsp = 0x15,
     }
 }
