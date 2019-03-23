@@ -21,13 +21,6 @@ impl SequenceNumber {
     pub fn one() -> Self {
         SequenceNumber(true)
     }
-
-    /// Increments this number, wrapping around to zero.
-    #[must_use]
-    #[allow(unused)] // FIXME implement connections and remove this
-    pub fn increment(self) -> Self {
-        self + Self::one()
-    }
 }
 
 impl fmt::Display for SequenceNumber {
