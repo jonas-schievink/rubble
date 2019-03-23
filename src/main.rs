@@ -170,6 +170,17 @@ const APP: () = {
 
     #[interrupt(resources = [BLE_TIMER, RADIO, BLE])]
     fn TIMER0() {
+        if !resources.BLE_TIMER.events_compare[0]
+            .read()
+            .events_compare()
+            .is_generated()
+        {
+            // Event was canceled
+            return;
+        }
+
+        resources.BLE_TIMER.events_compare[0].reset();
+
         let cmd = resources.BLE.update(&mut *resources.RADIO);
         resources.RADIO.configure_receiver(cmd.radio);
 
