@@ -385,6 +385,16 @@ impl ConnectRequestData {
     pub fn hop(&self) -> u8 {
         self.hop
     }
+
+    /// Returns the end of the transmit window in µs from now.
+    pub fn end_of_tx_window(&self) -> u32 {
+        self.win_offset + self.win_size + 1250
+    }
+
+    /// Returns the connection event interval in µs.
+    pub fn interval(&self) -> u32 {
+        self.interval
+    }
 }
 
 impl FromBytes<'_> for ConnectRequestData {

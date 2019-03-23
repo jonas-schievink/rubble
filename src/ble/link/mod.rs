@@ -362,7 +362,17 @@ impl<L: Logger> LinkLayer<L> {
                     next_update: NextUpdate::In(*interval),
                 }
             }
-            State::Connection(conn) => conn.timer_update(&mut self.logger),
+            State::Connection(conn) => match conn.timer_update(&mut self.logger) {
+                Ok(cmd) => cmd,
+                Err(()) => {
+                    debug!(self.logger, "connection ended (timer), standby");
+                    self.state = State::Standby;
+                    Cmd {
+                        next_update: NextUpdate::Disable,
+                        radio: RadioCmd::Off,
+                    }
+                }
+            },
             State::Standby => unreachable!("LL in standby received timer event"),
         }
     }
