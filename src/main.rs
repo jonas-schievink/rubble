@@ -6,20 +6,21 @@ extern crate panic_semihosting;
 
 pub mod ble;
 mod radio;
+mod timer;
 
 use {
     crate::{
         ble::{
             beacon::Beacon,
             link::{
-                ad_structure::AdStructure, AddressKind, DeviceAddress, LinkLayer, NextUpdate,
-                MAX_PDU_SIZE,
+                ad_structure::AdStructure, AddressKind, DeviceAddress, LinkLayer, MAX_PDU_SIZE,
             },
         },
         radio::{BleRadio, PacketBuffer},
+        timer::BleTimer,
     },
     byteorder::{ByteOrder, LittleEndian},
-    core::{fmt::Write, time::Duration, u32},
+    core::{fmt::Write, time::Duration},
     cortex_m_semihosting::hprintln,
     nrf52810_hal::{
         self as hal,
@@ -43,11 +44,10 @@ const TEST_BEACON: bool = false;
 const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
     static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
-    static mut BLE: LinkLayer<Logger> = ();
+    static mut BLE: LinkLayer<Logger, BleTimer<pac::TIMER0>, BleRadio> = ();
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
     static mut BEACON_TIMER: pac::TIMER1 = ();
-    static BLE_TIMER: pac::TIMER0 = ();
 
     #[init(resources = [BLE_TX_BUF, BLE_RX_BUF])]
     fn init() {
@@ -64,22 +64,10 @@ const APP: () = {
             while device.CLOCK.events_hfclkstarted.read().bits() == 0 {}
         }
 
-        {
-            // TIMER0 cfg, 32 bit @ 1 MHz
-            device.TIMER0.bitmode.write(|w| w.bitmode()._32bit());
-            device
-                .TIMER0
-                .prescaler
-                .write(|w| unsafe { w.prescaler().bits(4) }); // 2^4 = µs resolution
-            device.TIMER0.intenset.write(|w| w.compare0().set());
-            device
-                .TIMER0
-                .shorts
-                .write(|w| w.compare0_clear().enabled().compare0_stop().enabled());
-        }
+        let ble_timer = timer::BleTimer::init(device.TIMER0);
 
         {
-            // Configure TIMER1 as the beacon timer. It's only a 16-bit timer.
+            // Configure TIMER1 as the beacon timer. It's only used as a 16-bit timer.
             let timer = &mut device.TIMER1;
             timer.bitmode.write(|w| w.bitmode()._16bit());
             // prescaler = 2^9    = 512
@@ -141,7 +129,7 @@ const APP: () = {
         )
         .unwrap();
 
-        let mut ll = LinkLayer::with_logger(device_address, serial);
+        let mut ll = LinkLayer::with_logger(device_address, ble_timer, serial);
 
         if !TEST_BEACON {
             // Send advertisement and set up regular interrupt
@@ -152,39 +140,33 @@ const APP: () = {
                     &mut radio,
                 )
                 .unwrap();
-            cfg_timer(&device.TIMER0, next_update);
+            ll.timer().configure_interrupt(next_update);
         }
 
         RADIO = radio;
         BLE = ll;
         BEACON = beacon;
         BEACON_TIMER = device.TIMER1;
-        BLE_TIMER = device.TIMER0;
     }
 
-    #[interrupt(resources = [BLE_TIMER, RADIO, BLE])]
+    #[interrupt(resources = [RADIO, BLE])]
     fn RADIO() {
         let next_update = resources.RADIO.recv_interrupt(&mut resources.BLE);
-        cfg_timer(&resources.BLE_TIMER, next_update);
+        resources.BLE.timer().configure_interrupt(next_update);
     }
 
-    #[interrupt(resources = [BLE_TIMER, RADIO, BLE])]
+    #[interrupt(resources = [RADIO, BLE])]
     fn TIMER0() {
-        if !resources.BLE_TIMER.events_compare[0]
-            .read()
-            .events_compare()
-            .is_generated()
-        {
-            // Event was canceled
+        let timer = resources.BLE.timer();
+        if !timer.is_interrupt_pending() {
             return;
         }
-
-        resources.BLE_TIMER.events_compare[0].reset();
+        timer.clear_interrupt();
 
         let cmd = resources.BLE.update(&mut *resources.RADIO);
         resources.RADIO.configure_receiver(cmd.radio);
 
-        cfg_timer(&resources.BLE_TIMER, cmd.next_update);
+        resources.BLE.timer().configure_interrupt(cmd.next_update);
     }
 
     /// Fire the beacon.
@@ -196,34 +178,3 @@ const APP: () = {
         resources.BEACON.broadcast(&mut *resources.RADIO);
     }
 };
-
-/// Reconfigures TIMER0 to raise an interrupt after `duration` has elapsed.
-///
-/// TIMER0 is stopped if `duration` is `None`.
-///
-/// Note that if the timer has already queued an interrupt, the task will still be run after the
-/// timer is stopped by this function.
-fn cfg_timer(t: &pac::TIMER0, next_update: NextUpdate) {
-    // Timer activation code is also copied from the `nrf51-hal` crate.
-
-    match next_update {
-        NextUpdate::Keep => {}
-        NextUpdate::In(duration) => {
-            assert!(
-                duration.as_secs() < ((u32::MAX - duration.subsec_micros()) / 1_000_000) as u64
-            );
-            let us = (duration.as_secs() as u32) * 1_000_000 + duration.subsec_micros();
-            t.cc[0].write(|w| unsafe { w.bits(us) });
-            // acknowledge last compare event (FIXME unnecessary?)
-            t.events_compare[0].reset();
-            t.tasks_clear.write(|w| unsafe { w.bits(1) });
-            t.tasks_start.write(|w| unsafe { w.bits(1) });
-        }
-        NextUpdate::Disable => {
-            t.tasks_stop.write(|w| unsafe { w.bits(1) });
-            t.tasks_clear.write(|w| unsafe { w.bits(1) });
-            // acknowledge last compare event (FIXME unnecessary?)
-            t.events_compare[0].reset();
-        }
-    }
-}

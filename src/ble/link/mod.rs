@@ -137,11 +137,12 @@ use {
         crc::ble_crc24,
         log::{Logger, NoopLogger},
         phy::{AdvertisingChannel, DataChannel, Radio},
+        time::{Instant, Timer},
         utils::HexSlice,
         Error,
     },
     byteorder::{ByteOrder, LittleEndian},
-    core::{ops::Range, time::Duration},
+    core::{marker::PhantomData, ops::Range, time::Duration},
 };
 
 /// The CRC polynomial to use for CRC24 generation.
@@ -197,27 +198,31 @@ enum State {
 /// Implementation of the BLE Link-Layer logic.
 ///
 /// Users of this struct must provide a way to send and receive Link-Layer PDUs via a `Transmitter`.
-pub struct LinkLayer<L: Logger> {
+pub struct LinkLayer<L: Logger, T: Timer, R: Transmitter> {
     dev_addr: DeviceAddress,
     state: State,
     logger: L,
+    timer: T,
+    _p: PhantomData<R>,
 }
 
-impl LinkLayer<NoopLogger> {
+impl<T: Timer, R: Transmitter> LinkLayer<NoopLogger, T, R> {
     /// Creates a new Link-Layer in standby state (ie. not transmitting or listening for data).
-    pub fn new(dev_addr: DeviceAddress) -> Self {
-        Self::with_logger(dev_addr, NoopLogger)
+    pub fn new(dev_addr: DeviceAddress, timer: T) -> Self {
+        Self::with_logger(dev_addr, timer, NoopLogger)
     }
 }
 
-impl<L: Logger> LinkLayer<L> {
+impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
     /// Creates a new Link-Layer with a custom logger.
-    pub fn with_logger(dev_addr: DeviceAddress, mut logger: L) -> Self {
+    pub fn with_logger(dev_addr: DeviceAddress, timer: T, mut logger: L) -> Self {
         trace!(logger, "new LinkLayer, dev={:?}", dev_addr);
         Self {
             dev_addr,
             logger,
+            timer,
             state: State::Standby,
+            _p: PhantomData,
         }
     }
 
@@ -225,12 +230,17 @@ impl<L: Logger> LinkLayer<L> {
         &mut self.logger
     }
 
+    /// Returns a reference to the timer instance used by the Link-Layer.
+    pub fn timer(&mut self) -> &mut T {
+        &mut self.timer
+    }
+
     /// Starts advertising this device, optionally sending data along with the advertising PDU.
-    pub fn start_advertise<T: Transmitter>(
+    pub fn start_advertise(
         &mut self,
         interval: Duration,
         data: &[AdStructure],
-        tx: &mut T,
+        tx: &mut R,
     ) -> Result<NextUpdate, Error> {
         // TODO tear down existing connection?
 
@@ -248,9 +258,9 @@ impl<L: Logger> LinkLayer<L> {
     /// Process an incoming packet from an advertising channel.
     ///
     /// The access address of the packet must be `ADVERTISING_ADDRESS`.
-    pub fn process_adv_packet<T: Transmitter>(
+    pub fn process_adv_packet(
         &mut self,
-        tx: &mut T,
+        tx: &mut R,
         header: advertising::Header,
         mut payload: &[u8],
         crc_ok: bool,
@@ -307,9 +317,9 @@ impl<L: Logger> LinkLayer<L> {
     }
 
     /// Process an incoming data channel packet.
-    pub fn process_data_packet<T: Transmitter>(
+    pub fn process_data_packet(
         &mut self,
-        tx: &mut T,
+        tx: &mut R,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
@@ -340,7 +350,7 @@ impl<L: Logger> LinkLayer<L> {
     ///
     /// * `tx`: A `Transmitter` for sending packets.
     /// * `elapsed`: Time since the last `update` call or creation of this `LinkLayer`.
-    pub fn update<T: Transmitter>(&mut self, tx: &mut T) -> Cmd {
+    pub fn update(&mut self, tx: &mut R) -> Cmd {
         match &mut self.state {
             State::Advertising {
                 interval,
@@ -413,9 +423,12 @@ pub enum NextUpdate {
 
     /// Call `update` after a `Duration` expires.
     In(Duration), // FIXME this should probably be an `Instant`-like thing
+
+    /// Call `update` at the given `Instant`.
+    At(Instant),
 }
 
-/// Specifies whether the radio should listen for transmissions.
+/// Specifies if and how the radio should listen for transmissions.
 ///
 /// Returned by the Link-Layer update and processing methods to reconfigure the radio as needed.
 #[derive(Debug, Clone)]

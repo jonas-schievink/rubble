@@ -49,6 +49,7 @@ use {
         },
         log::Logger,
         phy::{AdvertisingChannel, DataChannel},
+        time::Timer,
     },
     nrf52810_hal::nrf52810_pac::{radio::state::STATER, RADIO},
 };
@@ -212,7 +213,10 @@ impl BleRadio {
     /// Automatically reconfigures the radio according to the `RadioCmd` returned by the BLE stack.
     ///
     /// Returns when the `update` method should be called the next time.
-    pub fn recv_interrupt<L: Logger>(&mut self, ll: &mut LinkLayer<L>) -> NextUpdate {
+    pub fn recv_interrupt<L: Logger, T: Timer>(
+        &mut self,
+        ll: &mut LinkLayer<L, T, Self>,
+    ) -> NextUpdate {
         if self.radio.events_disabled.read().bits() == 0 {
             return NextUpdate::Keep;
         }

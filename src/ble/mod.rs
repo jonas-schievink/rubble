@@ -13,6 +13,7 @@ mod crc;
 mod error;
 pub mod link;
 pub mod phy;
+pub mod time;
 pub mod uuid;
 
 pub use self::error::Error;
