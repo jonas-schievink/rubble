@@ -5,10 +5,11 @@ use {
         link::NextUpdate,
         time::{Instant, Timer},
     },
+    core::mem,
     nrf52810_hal::nrf52810_pac::{TIMER0, TIMER1, TIMER2},
 };
 
-/// Implements rubble's `Timer` trait for a timer on the nRF chip.
+/// Implements rubble's `Timer` trait for the timers on the nRF chip.
 pub struct BleTimer<T: NrfTimer> {
     inner: T,
     next: Instant,
@@ -29,7 +30,8 @@ impl<T: NrfTimer> BleTimer<T> {
     pub fn configure_interrupt(&mut self, next: NextUpdate) {
         match next {
             NextUpdate::Keep => {
-                // Don't call `set_interrupt` when the interrupt is already configured
+                // Don't call `set_interrupt` when the interrupt is already configured, since that
+                // might result in races (it resets the event)
                 if !self.interrupt_enabled {
                     self.inner.set_interrupt(self.next);
                     self.interrupt_enabled = true;
@@ -58,9 +60,27 @@ impl<T: NrfTimer> BleTimer<T> {
     pub fn inner(&mut self) -> &mut T {
         &mut self.inner
     }
+
+    /// Creates a new `StampSource` using this timer.
+    pub fn create_stamp_source(&self) -> StampSource<T> {
+        StampSource {
+            inner: unsafe { self.inner.duplicate() },
+        }
+    }
 }
 
 impl<T: NrfTimer> Timer for BleTimer<T> {
+    fn now(&self) -> Instant {
+        self.inner.now()
+    }
+}
+
+/// A timer interface that only allows reading the current time stamp.
+pub struct StampSource<T: NrfTimer> {
+    inner: T,
+}
+
+impl<T: NrfTimer> Timer for StampSource<T> {
     fn now(&self) -> Instant {
         self.inner.now()
     }
@@ -70,6 +90,8 @@ impl<T: NrfTimer> Timer for BleTimer<T> {
 ///
 /// We use `CC[0]` to read the counter value, and `CC[1]` to set timer interrupts.
 pub trait NrfTimer: Timer {
+    unsafe fn duplicate(&self) -> Self;
+
     /// Initialize the timer so that it counts at a rate of 1 MHz.
     fn init(&mut self);
 
@@ -88,6 +110,10 @@ pub trait NrfTimer: Timer {
 macro_rules! impl_timer {
     ($ty:ident) => {
         impl NrfTimer for $ty {
+            unsafe fn duplicate(&self) -> Self {
+                mem::transmute_copy(self)
+            }
+
             fn init(&mut self) {
                 self.bitmode.write(|w| w.bitmode()._32bit());
                 // 2^4 = 16

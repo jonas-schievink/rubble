@@ -5,6 +5,7 @@
 extern crate panic_semihosting;
 
 pub mod ble;
+mod logger;
 mod radio;
 mod timer;
 
@@ -17,6 +18,7 @@ use {
             },
             time::{Duration, Timer},
         },
+        logger::StampedLogger,
         radio::{BleRadio, PacketBuffer},
         timer::BleTimer,
     },
@@ -33,7 +35,7 @@ use {
     rtfm::app,
 };
 
-type Logger = Uarte<UARTE0>;
+type Logger = StampedLogger<timer::StampSource<pac::TIMER0>, Uarte<UARTE0>>;
 
 /// Whether to broadcast a beacon or to establish a proper connection.
 ///
@@ -130,7 +132,12 @@ const APP: () = {
         )
         .unwrap();
 
-        let mut ll = LinkLayer::with_logger(device_address, ble_timer, serial);
+        let log_stamper = ble_timer.create_stamp_source();
+        let mut ll = LinkLayer::with_logger(
+            device_address,
+            ble_timer,
+            StampedLogger::new(serial, log_stamper),
+        );
 
         if !TEST_BEACON {
             // Send advertisement and set up regular interrupt
