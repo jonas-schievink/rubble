@@ -73,7 +73,7 @@ impl Connection {
 
         let cmd = Cmd {
             next_update: NextUpdate::In(Duration::from_micros(u64::from(
-                lldata.end_of_tx_window(),
+                lldata.end_of_tx_window() + 1000,
             ))),
             radio: RadioCmd::ListenData {
                 channel: this.channel,
@@ -104,17 +104,24 @@ impl Connection {
             false
         };
 
-        if self.received_packet && (header.nesn() == self.transmit_seq_num || !crc_ok) {
+        if header.nesn() == self.transmit_seq_num || !crc_ok {
             // Last packet not acknowledged, resend.
             // If CRC is bad, this bit could be flipped, so we always retransmit in that case.
-            self.last_header.set_nesn(self.next_expected_seq_num);
-            tx.transmit_data(
-                self.access_address,
-                self.crc_init,
-                self.last_header,
-                self.channel,
-            );
-            trace!(logger, "<<RESEND>>");
+            if self.received_packet {
+                self.last_header.set_nesn(self.next_expected_seq_num);
+                tx.transmit_data(
+                    self.access_address,
+                    self.crc_init,
+                    self.last_header,
+                    self.channel,
+                );
+                trace!(logger, "<<RESEND>>");
+            } else {
+                // We've never received (and thus sent) a data packet before, so we can't
+                // *re*transmit anything. Send empty PDU instead.
+                self.received_packet = true;
+                self.send(Pdu::empty(), tx, logger);
+            }
         } else {
             self.received_packet = true;
             // Here we'll always send a new packet (which might be empty if we don't have anything
