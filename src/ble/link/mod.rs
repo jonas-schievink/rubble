@@ -137,12 +137,12 @@ use {
         crc::ble_crc24,
         log::{Logger, NoopLogger},
         phy::{AdvertisingChannel, DataChannel, Radio},
-        time::{Instant, Timer},
+        time::{Duration, Instant, Timer},
         utils::HexSlice,
         Error,
     },
     byteorder::{ByteOrder, LittleEndian},
-    core::{marker::PhantomData, ops::Range, time::Duration},
+    core::{marker::PhantomData, ops::Range},
 };
 
 /// The CRC polynomial to use for CRC24 generation.
@@ -168,8 +168,13 @@ pub const MAX_PDU_SIZE: usize = MAX_PAYLOAD_SIZE + 2; // data & adv. have a 16-b
 /// Max. total Link-Layer packet size in octets.
 pub const MAX_PACKET_SIZE: usize = 1 /* preamble */ + 4 /* access addr */ + MAX_PDU_SIZE + 3 /* crc */;
 
+pub struct HwInterface<L: Logger, T: Timer> {
+    pub logger: L,
+    pub timer: T,
+}
+
 /// Link-Layer state machine, according to the Bluetooth spec.
-enum State {
+enum State<L: Logger, T: Timer> {
     /// Radio silence: Not listening, not transmitting anything.
     Standby,
 
@@ -181,6 +186,7 @@ enum State {
     Advertising {
         /// Advertising interval.
         // TODO: check spec for allowed/recommended values and check for them
+        next_adv: Instant,
         interval: Duration,
 
         /// Precomputed PDU payload to copy into the transmitter's buffer.
@@ -192,7 +198,7 @@ enum State {
     },
 
     /// Connected with another device.
-    Connection(Connection),
+    Connection(Connection<L, T>),
 }
 
 /// Implementation of the BLE Link-Layer logic.
@@ -200,9 +206,8 @@ enum State {
 /// Users of this struct must provide a way to send and receive Link-Layer PDUs via a `Transmitter`.
 pub struct LinkLayer<L: Logger, T: Timer, R: Transmitter> {
     dev_addr: DeviceAddress,
-    state: State,
-    logger: L,
-    timer: T,
+    state: State<L, T>,
+    hw: HwInterface<L, T>,
     _p: PhantomData<R>,
 }
 
@@ -219,20 +224,19 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
         trace!(logger, "new LinkLayer, dev={:?}", dev_addr);
         Self {
             dev_addr,
-            logger,
-            timer,
+            hw: HwInterface { logger, timer },
             state: State::Standby,
             _p: PhantomData,
         }
     }
 
     pub fn logger(&mut self) -> &mut L {
-        &mut self.logger
+        &mut self.hw.logger
     }
 
     /// Returns a reference to the timer instance used by the Link-Layer.
     pub fn timer(&mut self) -> &mut T {
-        &mut self.timer
+        &mut self.hw.timer
     }
 
     /// Starts advertising this device, optionally sending data along with the advertising PDU.
@@ -245,9 +249,10 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
         // TODO tear down existing connection?
 
         let pdu = PduBuf::discoverable(self.dev_addr, data)?;
-        debug!(self.logger, "start_advertise: adv_data = {:?}", data);
-        debug!(self.logger, "start_advertise: PDU = {:?}", pdu);
+        debug!(self.logger(), "start_advertise: adv_data = {:?}", data);
+        debug!(self.logger(), "start_advertise: PDU = {:?}", pdu);
         self.state = State::Advertising {
+            next_adv: self.timer().now(),
             interval,
             pdu,
             channel: AdvertisingChannel::first(),
@@ -260,6 +265,7 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
     /// The access address of the packet must be `ADVERTISING_ADDRESS`.
     pub fn process_adv_packet(
         &mut self,
+        rx_end: Instant,
         tx: &mut R,
         header: advertising::Header,
         mut payload: &[u8],
@@ -279,12 +285,12 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
                             tx.transmit_advertising(response.header(), *channel);
 
                             // Log after responding to meet timing
-                            debug!(self.logger, "-> SCAN RESP: {:?}", response);
+                            debug!(self.logger(), "-> SCAN RESP: {:?}", response);
                         }
                         Pdu::ConnectRequest { lldata, .. } => {
-                            trace!(self.logger, "ADV<- CONN! {:?}", pdu);
+                            trace!(self.logger(), "ADV<- CONN! {:?}", pdu);
 
-                            let (conn, cmd) = Connection::create(&lldata);
+                            let (conn, cmd) = Connection::create(&lldata, rx_end);
                             self.state = State::Connection(conn);
                             return cmd;
                         }
@@ -295,7 +301,7 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
         }
 
         trace!(
-            self.logger,
+            self.logger(),
             "ADV<- {}{:?}, {:?}\n{:?}\n",
             if crc_ok { "" } else { "BADCRC " },
             header,
@@ -325,10 +331,10 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
         crc_ok: bool,
     ) -> Cmd {
         if let State::Connection(conn) = &mut self.state {
-            match conn.process_data_packet(tx, &mut self.logger, header, payload, crc_ok) {
+            match conn.process_data_packet(tx, &mut self.hw, header, payload, crc_ok) {
                 Ok(cmd) => cmd,
                 Err(()) => {
-                    debug!(self.logger, "connection ended, standby");
+                    debug!(self.logger(), "connection ended, standby");
                     self.state = State::Standby;
                     Cmd {
                         next_update: NextUpdate::Disable,
@@ -353,6 +359,7 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
     pub fn update(&mut self, tx: &mut R) -> Cmd {
         match &mut self.state {
             State::Advertising {
+                next_adv,
                 interval,
                 pdu,
                 channel,
@@ -367,15 +374,17 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
                 //trace!(self.logger, "->[ADV] {} MHz", channel.freq());
                 tx.transmit_advertising(pdu.header(), *channel);
 
+                *next_adv += *interval;
+
                 Cmd {
                     radio: RadioCmd::ListenAdvertising { channel: *channel },
-                    next_update: NextUpdate::In(*interval),
+                    next_update: NextUpdate::At(*next_adv),
                 }
             }
-            State::Connection(conn) => match conn.timer_update(&mut self.logger) {
+            State::Connection(conn) => match conn.timer_update(&mut self.hw) {
                 Ok(cmd) => cmd,
                 Err(()) => {
-                    debug!(self.logger, "connection ended (timer), standby");
+                    debug!(self.logger(), "connection ended (timer), standby");
                     self.state = State::Standby;
                     Cmd {
                         next_update: NextUpdate::Disable,
@@ -421,10 +430,9 @@ pub enum NextUpdate {
     /// Keep the previously configured time.
     Keep,
 
-    /// Call `update` after a `Duration` expires.
-    In(Duration), // FIXME this should probably be an `Instant`-like thing
-
     /// Call `update` at the given `Instant`.
+    ///
+    /// If `Instant` is in the past, this is a bug and the implementation may panic.
     At(Instant),
 }
 

@@ -17,18 +17,18 @@ pub struct Duration(u32);
 
 impl Duration {
     /// Creates a `Duration` from a number of microseconds.
-    pub fn from_micros<M: Into<u32>>(micros: M) -> Self {
-        Duration(micros.into())
+    pub fn from_micros(micros: u32) -> Self {
+        Duration(micros)
     }
 
     /// Creates a `Duration` representing the given number of milliseconds.
-    pub fn from_millis<M: Into<u16>>(millis: M) -> Self {
-        Duration(millis.into() as u32 * 1_000)
+    pub fn from_millis(millis: u16) -> Self {
+        Duration(u32::from(millis) * 1_000)
     }
 
     /// Creates a `Duration` representing a number of seconds.
-    pub fn from_secs<S: Into<u16>>(secs: S) -> Self {
-        Duration(secs.into() as u32 * 1_000_000)
+    pub fn from_secs(secs: u16) -> Self {
+        Duration(u32::from(secs) * 1_000_000)
     }
 
     /// Returns the number of whole seconds that fit in `self`.

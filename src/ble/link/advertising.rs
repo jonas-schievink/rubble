@@ -15,6 +15,7 @@ use {
     crate::ble::{
         bytes::*,
         phy::ChannelMap,
+        time::Duration,
         utils::{Hex, HexSlice},
         Error,
     },
@@ -386,9 +387,10 @@ impl ConnectRequestData {
         self.hop
     }
 
-    /// Returns the end of the transmit window in µs from now.
-    pub fn end_of_tx_window(&self) -> u32 {
-        self.win_offset + self.win_size + 1250
+    /// Returns the end of the transmit window from reception of the `CONNECT_REQ` containing
+    /// `self`.
+    pub fn end_of_tx_window(&self) -> Duration {
+        Duration::from_micros(self.win_offset + self.win_size + 1250)
     }
 
     /// Returns the connection event interval in µs.

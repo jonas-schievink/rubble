@@ -49,7 +49,7 @@ use {
         },
         log::Logger,
         phy::{AdvertisingChannel, DataChannel},
-        time::Timer,
+        time::{Instant, Timer},
     },
     nrf52810_hal::nrf52810_pac::{radio::state::STATER, RADIO},
 };
@@ -215,6 +215,7 @@ impl BleRadio {
     /// Returns when the `update` method should be called the next time.
     pub fn recv_interrupt<L: Logger, T: Timer>(
         &mut self,
+        timestamp: Instant,
         ll: &mut LinkLayer<L, T, Self>,
     ) -> NextUpdate {
         if self.radio.events_disabled.read().bits() == 0 {
@@ -242,7 +243,7 @@ impl BleRadio {
                     return NextUpdate::Keep;
                 }
             };
-            let cmd = ll.process_adv_packet(self, header, payload, crc_ok);
+            let cmd = ll.process_adv_packet(timestamp, self, header, payload, crc_ok);
             self.rx_buf = Some(rx_buf);
             cmd
         } else {

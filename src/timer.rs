@@ -3,7 +3,7 @@
 use {
     crate::ble::{
         link::NextUpdate,
-        time::{Duration, Instant, Timer},
+        time::{Instant, Timer},
     },
     nrf52810_hal::nrf52810_pac::{TIMER0, TIMER1, TIMER2},
 };
@@ -40,15 +40,6 @@ impl<T: NrfTimer> BleTimer<T> {
                 self.interrupt_enabled = false;
             }
             NextUpdate::At(instant) => {
-                self.inner.set_interrupt(instant);
-                self.interrupt_enabled = true;
-            }
-            NextUpdate::In(duration) => {
-                // FIXME: temporary conversion from core's duration to ours
-                let micros = duration.as_micros();
-                assert!(micros <= u32::max_value() as u128);
-                let duration2 = Duration::from_micros(micros as u32);
-                let instant = self.now() + duration2;
                 self.inner.set_interrupt(instant);
                 self.interrupt_enabled = true;
             }

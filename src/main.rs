@@ -15,12 +15,13 @@ use {
             link::{
                 ad_structure::AdStructure, AddressKind, DeviceAddress, LinkLayer, MAX_PDU_SIZE,
             },
+            time::{Duration, Timer},
         },
         radio::{BleRadio, PacketBuffer},
         timer::BleTimer,
     },
     byteorder::{ByteOrder, LittleEndian},
-    core::{fmt::Write, time::Duration},
+    core::fmt::Write,
     cortex_m_semihosting::hprintln,
     nrf52810_hal::{
         self as hal,
@@ -151,7 +152,9 @@ const APP: () = {
 
     #[interrupt(resources = [RADIO, BLE])]
     fn RADIO() {
-        let next_update = resources.RADIO.recv_interrupt(&mut resources.BLE);
+        let next_update = resources
+            .RADIO
+            .recv_interrupt(resources.BLE.timer().now(), &mut resources.BLE);
         resources.BLE.timer().configure_interrupt(next_update);
     }
 
