@@ -18,7 +18,7 @@ impl<T: Timer, L: fmt::Write> fmt::Write for StampedLogger<T, L> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for (i, line) in s.split('\n').enumerate() {
             if i != 0 {
-                write!(self.inner, "\n{:10} - ", self.timer.now())?;
+                write!(self.inner, "\n{} - ", self.timer.now())?;
             }
 
             self.inner.write_str(line)?;
