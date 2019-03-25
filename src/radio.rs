@@ -259,7 +259,7 @@ impl BleRadio {
                     return NextUpdate::Keep;
                 }
             };
-            let cmd = ll.process_data_packet(self, header, payload, crc_ok);
+            let cmd = ll.process_data_packet(timestamp, self, header, payload, crc_ok);
             self.rx_buf = Some(rx_buf);
             cmd
         };

@@ -263,6 +263,14 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
     /// Process an incoming packet from an advertising channel.
     ///
     /// The access address of the packet must be `ADVERTISING_ADDRESS`.
+    ///
+    /// # Parameters
+    ///
+    /// * **`rx_end`**: A timestamp indicating when the packet was fully received.
+    /// * **`tx`**: A packet transmitter.
+    /// * **`header`**: The header of the received packet.
+    /// * **`payload`**: The packet payload following the header.
+    /// * **`crc_ok`**: Whether the packet's CRC is correct.
     pub fn process_adv_packet(
         &mut self,
         rx_end: Instant,
@@ -325,13 +333,14 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
     /// Process an incoming data channel packet.
     pub fn process_data_packet(
         &mut self,
+        rx_end: Instant,
         tx: &mut R,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
     ) -> Cmd {
         if let State::Connection(conn) = &mut self.state {
-            match conn.process_data_packet(tx, &mut self.hw, header, payload, crc_ok) {
+            match conn.process_data_packet(rx_end, tx, &mut self.hw, header, payload, crc_ok) {
                 Ok(cmd) => cmd,
                 Err(()) => {
                     debug!(self.logger(), "connection ended, standby");

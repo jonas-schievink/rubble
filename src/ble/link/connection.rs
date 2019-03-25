@@ -106,6 +106,7 @@ impl<L: Logger, T: Timer> Connection<L, T> {
     /// Returns `Err(())` when the connection is ended (not necessarily due to an error condition).
     pub fn process_data_packet<R: Transmitter>(
         &mut self,
+        _rx_end: Instant,
         tx: &mut R,
         hw: &mut HwInterface<L, T>,
         header: data::Header,
