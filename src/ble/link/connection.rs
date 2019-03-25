@@ -106,7 +106,7 @@ impl<L: Logger, T: Timer> Connection<L, T> {
     /// Returns `Err(())` when the connection is ended (not necessarily due to an error condition).
     pub fn process_data_packet<R: Transmitter>(
         &mut self,
-        _rx_end: Instant,
+        rx_end: Instant,
         tx: &mut R,
         hw: &mut HwInterface<L, T>,
         header: data::Header,
@@ -126,13 +126,20 @@ impl<L: Logger, T: Timer> Connection<L, T> {
             // If CRC is bad, this bit could be flipped, so we always retransmit in that case.
             if self.received_packet {
                 self.last_header.set_nesn(self.next_expected_seq_num);
+                let d = hw.timer.now().duration_since(rx_end);
                 tx.transmit_data(
                     self.access_address,
                     self.crc_init,
                     self.last_header,
                     self.channel,
                 );
-                trace!(hw.logger, "<<RESEND>>");
+                let before_log = hw.timer.now();
+                trace!(hw.logger, "<<RESEND {} after RX>>", d);
+                trace!(
+                    hw.logger,
+                    "<<That LOG took {}>>",
+                    hw.timer.now().duration_since(before_log)
+                );
             } else {
                 // We've never received (and thus sent) a data packet before, so we can't
                 // *re*transmit anything. Send empty PDU instead.
