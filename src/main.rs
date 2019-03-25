@@ -18,10 +18,11 @@ use {
             },
             time::{Duration, Timer},
         },
-        logger::StampedLogger,
+        logger::{BbqLogger, StampedLogger},
         radio::{BleRadio, PacketBuffer},
         timer::BleTimer,
     },
+    bbqueue::{bbq, BBQueue, Consumer},
     byteorder::{ByteOrder, LittleEndian},
     core::fmt::Write,
     cortex_m_semihosting::hprintln,
@@ -35,7 +36,7 @@ use {
     rtfm::app,
 };
 
-type Logger = StampedLogger<timer::StampSource<pac::TIMER0>, Uarte<UARTE0>>;
+type Logger = StampedLogger<timer::StampSource<pac::TIMER0>, BbqLogger>;
 
 /// Whether to broadcast a beacon or to establish a proper connection.
 ///
@@ -51,6 +52,8 @@ const APP: () = {
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
     static mut BEACON_TIMER: pac::TIMER1 = ();
+    static mut SERIAL: Uarte<UARTE0> = ();
+    static mut LOG_SINK: Consumer = ();
 
     #[init(resources = [BLE_TX_BUF, BLE_RX_BUF])]
     fn init() {
@@ -133,11 +136,11 @@ const APP: () = {
         .unwrap();
 
         let log_stamper = ble_timer.create_stamp_source();
-        let mut ll = LinkLayer::with_logger(
-            device_address,
-            ble_timer,
-            StampedLogger::new(serial, log_stamper),
-        );
+        let logq = bbq!(2048).unwrap();
+        let (tx, rx) = logq.split();
+        let logger = StampedLogger::new(BbqLogger::new(tx), log_stamper);
+
+        let mut ll = LinkLayer::with_logger(device_address, ble_timer, logger);
 
         if !TEST_BEACON {
             // Send advertisement and set up regular interrupt
@@ -155,6 +158,8 @@ const APP: () = {
         BLE = ll;
         BEACON = beacon;
         BEACON_TIMER = device.TIMER1;
+        SERIAL = serial;
+        LOG_SINK = rx;
     }
 
     #[interrupt(resources = [RADIO, BLE])]
@@ -186,5 +191,19 @@ const APP: () = {
         resources.BEACON_TIMER.events_compare[0].reset();
 
         resources.BEACON.broadcast(&mut *resources.RADIO);
+    }
+
+    #[idle(resources = [LOG_SINK, SERIAL])]
+    fn idle() -> ! {
+        // Drain the logging buffer through the serial connection
+        loop {
+            if let Ok(grant) = resources.LOG_SINK.read() {
+                for chunk in grant.buf().chunks(255) {
+                    resources.SERIAL.write(chunk).unwrap();
+                }
+
+                resources.LOG_SINK.release(grant.buf().len(), grant);
+            }
+        }
     }
 };
