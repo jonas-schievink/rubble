@@ -353,7 +353,7 @@ pub struct ConnectRequestData {
     /// Slave latency (number of connection events).
     latency: u16,
     /// Connection timeout.
-    timeout: u32,
+    timeout: Duration,
     chm: ChannelMap,
     hop: u8,
     sca: SleepClockAccuracy,
@@ -397,6 +397,19 @@ impl ConnectRequestData {
     pub fn interval(&self) -> u32 {
         self.interval
     }
+
+    /// Returns the slave latency (as the number of connection events).
+    pub fn slave_latency(&self) -> u16 {
+        self.latency
+    }
+
+    /// Returns the connection supervision timeout (`connSupervisionTimeout`) to use for this
+    /// connection.
+    ///
+    /// If no data packet is received for this duration, the connection should be considered lost.
+    pub fn supervision_timeout(&self) -> Duration {
+        self.timeout
+    }
 }
 
 impl FromBytes<'_> for ConnectRequestData {
@@ -417,8 +430,8 @@ impl FromBytes<'_> for ConnectRequestData {
             interval: u32::from(bytes.read_u16::<LittleEndian>()?) * 1250,
             // connSlaveLatency in no. of events
             latency: bytes.read_u16::<LittleEndian>()?,
-            // timeout in 10 ms steps
-            timeout: bytes.read_u16::<LittleEndian>()? as u32 * 10,
+            // supervision timeout in 10 ms steps
+            timeout: Duration::from_micros(bytes.read_u16::<LittleEndian>()? as u32 * 10_000),
             chm: ChannelMap::from_raw(bytes.read_array()?),
             hop: {
                 let hop_and_sca = bytes.read_u8()?;

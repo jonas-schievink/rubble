@@ -60,6 +60,12 @@ impl<L: Logger, T: Timer> Connection<L, T> {
     /// * **`lldata`**: Data contained in the `CONNECT_REQ` advertising PDU.
     /// * **`rx_end`**: Instant at which the `CONNECT_REQ` PDU was fully received.
     pub fn create(lldata: &ConnectRequestData, rx_end: Instant) -> (Self, Cmd) {
+        assert_eq!(
+            lldata.slave_latency(),
+            0,
+            "slave latency is not implemented"
+        );
+
         let mut this = Self {
             access_address: lldata.access_address(),
             crc_init: lldata.crc_init().into(),
