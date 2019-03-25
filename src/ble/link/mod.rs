@@ -131,7 +131,7 @@ use {
         ad_structure::AdStructure,
         advertising::{Pdu, PduBuf},
         connection::Connection,
-        seq_num::SequenceNumber,
+        seq_num::SeqNum,
     },
     crate::ble::{
         crc::ble_crc24,

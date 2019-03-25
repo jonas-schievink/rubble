@@ -6,7 +6,7 @@ use {
         link::{
             advertising::ConnectRequestData,
             data::{self, Header, Llid, Pdu},
-            Cmd, HwInterface, Logger, NextUpdate, RadioCmd, SequenceNumber, Transmitter,
+            Cmd, HwInterface, Logger, NextUpdate, RadioCmd, SeqNum, Transmitter,
         },
         phy::{ChannelMap, DataChannel},
         time::{Duration, Instant, Timer},
@@ -37,8 +37,8 @@ pub struct Connection<L: Logger, T: Timer> {
 
     // Acknowledgement / Flow Control state
     /// `SN` bit to be used
-    transmit_seq_num: SequenceNumber,
-    next_expected_seq_num: SequenceNumber,
+    transmit_seq_num: SeqNum,
+    next_expected_seq_num: SeqNum,
 
     /// Header of the last transmitted packet, used for retransmission.
     last_header: data::Header,
@@ -70,8 +70,8 @@ impl<L: Logger, T: Timer> Connection<L, T> {
             unmapped_channel: DataChannel::new(0),
             channel: DataChannel::new(0),
 
-            transmit_seq_num: SequenceNumber::zero(),
-            next_expected_seq_num: SequenceNumber::zero(),
+            transmit_seq_num: SeqNum::ZERO,
+            next_expected_seq_num: SeqNum::ZERO,
             last_header: Header::new(Llid::DataCont),
             received_packet: false,
 
@@ -108,7 +108,7 @@ impl<L: Logger, T: Timer> Connection<L, T> {
     ) -> Result<Cmd, ()> {
         let _needs_processing = if header.sn() == self.next_expected_seq_num && crc_ok {
             // New (non-resent) PDU, acknowledge it
-            self.next_expected_seq_num += SequenceNumber::one();
+            self.next_expected_seq_num += SeqNum::ONE;
             true
         } else {
             false
@@ -138,7 +138,7 @@ impl<L: Logger, T: Timer> Connection<L, T> {
             // to say). If `needs_processing` is set, we'll also process the received PDU before
             // sending.
 
-            self.transmit_seq_num += SequenceNumber::one();
+            self.transmit_seq_num += SeqNum::ONE;
 
             // Send a new packet
             self.send(Pdu::empty(), tx, &mut hw.logger);

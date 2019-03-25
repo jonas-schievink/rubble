@@ -1,7 +1,7 @@
 //! Data Channel operations.
 
 use {
-    crate::ble::{bytes::*, link::SequenceNumber, Error},
+    crate::ble::{bytes::*, link::SeqNum, Error},
     byteorder::{ByteOrder, LittleEndian},
     core::fmt,
 };
@@ -101,18 +101,18 @@ impl Header {
     }
 
     /// Returns the value of the `NESN` field (Next Expected Sequence Number).
-    pub fn nesn(&self) -> SequenceNumber {
+    pub fn nesn(&self) -> SeqNum {
         let bit = self.0 & 0b0100;
         if bit == 0 {
-            SequenceNumber::zero()
+            SeqNum::ZERO
         } else {
-            SequenceNumber::one()
+            SeqNum::ONE
         }
     }
 
     /// Sets the value of the `NESN` field.
-    pub fn set_nesn(&mut self, nesn: SequenceNumber) {
-        if nesn == SequenceNumber::one() {
+    pub fn set_nesn(&mut self, nesn: SeqNum) {
+        if nesn == SeqNum::ONE {
             self.0 |= 0b0100;
         } else {
             self.0 &= !0b0100;
@@ -120,18 +120,18 @@ impl Header {
     }
 
     /// Returns the value of the `SN` field (Sequence Number).
-    pub fn sn(&self) -> SequenceNumber {
+    pub fn sn(&self) -> SeqNum {
         let bit = self.0 & 0b1000;
         if bit == 0 {
-            SequenceNumber::zero()
+            SeqNum::ZERO
         } else {
-            SequenceNumber::one()
+            SeqNum::ONE
         }
     }
 
     /// Sets the value of the `SN` field.
-    pub fn set_sn(&mut self, sn: SequenceNumber) {
-        if sn == SequenceNumber::one() {
+    pub fn set_sn(&mut self, sn: SeqNum) {
+        if sn == SeqNum::ONE {
             self.0 |= 0b1000;
         } else {
             self.0 &= !0b1000;
