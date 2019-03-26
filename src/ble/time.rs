@@ -277,6 +277,6 @@ pub trait Timer {
     /// Obtain the current time as an `Instant`.
     ///
     /// The `Instant`s returned by this function must never move backwards in time, except when the
-    /// underlying value wraps around. The returned `Instant` must
+    /// underlying value wraps around.
     fn now(&self) -> Instant;
 }
