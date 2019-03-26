@@ -24,8 +24,8 @@ pub struct Connection<L: Logger, T: Timer> {
     /// Number of (unmapped) channels to hop between each connection event.
     hop: u8,
 
-    /// Connection event interval in µs.
-    conn_interval: u32,
+    /// Connection event interval (duration between the start of 2 subsequent connection events).
+    conn_interval: Duration,
 
     /// Unmapped data channel on which the next connection event will take place.
     ///
@@ -220,7 +220,7 @@ impl<L: Logger, T: Timer> Connection<L, T> {
 
     fn conn_event_timeout(&self) -> Duration {
         // Time out ~500µs after the anchor point of the next conn event.
-        Duration::from_micros(self.conn_interval + 500)
+        self.conn_interval + Duration::from_micros(500)
     }
 
     /// Whether we want to send more data during this connection event.

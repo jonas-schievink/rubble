@@ -345,11 +345,11 @@ pub struct ConnectRequestData {
     access_address: Hex<u32>,
     crc_init: Hex<u24>,
     /// Transmit window size in µs.
-    win_size: u32,
+    win_size: Duration,
     /// Transmit window offset in µs.
-    win_offset: u32,
+    win_offset: Duration,
     /// Connection interval in µs.
-    interval: u32,
+    interval: Duration,
     /// Slave latency (number of connection events).
     latency: u16,
     /// Connection timeout.
@@ -390,11 +390,11 @@ impl ConnectRequestData {
     /// Returns the end of the transmit window from reception of the `CONNECT_REQ` containing
     /// `self`.
     pub fn end_of_tx_window(&self) -> Duration {
-        Duration::from_micros(self.win_offset + self.win_size + 1250)
+        self.win_offset + self.win_size + Duration::from_micros(1250)
     }
 
     /// Returns the connection event interval in µs.
-    pub fn interval(&self) -> u32 {
+    pub fn interval(&self) -> Duration {
         self.interval
     }
 
@@ -423,11 +423,11 @@ impl FromBytes<'_> for ConnectRequestData {
                 Hex(u24::new(u32::from_le_bytes(le_bytes)))
             },
             // transmitWindowSize in 1.25 ms steps
-            win_size: u32::from(bytes.read_u8()?) * 1250,
+            win_size: Duration::from_micros(u32::from(bytes.read_u8()?) * 1250),
             // transmitWindowOffset in 1.25 ms steps
-            win_offset: u32::from(bytes.read_u16::<LittleEndian>()?) * 1250,
+            win_offset: Duration::from_micros(u32::from(bytes.read_u16::<LittleEndian>()?) * 1250),
             // connInterval in 1.25 ms steps
-            interval: u32::from(bytes.read_u16::<LittleEndian>()?) * 1250,
+            interval: Duration::from_micros(u32::from(bytes.read_u16::<LittleEndian>()?) * 1250),
             // connSlaveLatency in no. of events
             latency: bytes.read_u16::<LittleEndian>()?,
             // supervision timeout in 10 ms steps
