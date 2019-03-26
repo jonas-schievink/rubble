@@ -414,10 +414,10 @@ impl Transmitter for BleRadio {
 
     fn transmit_data(
         &mut self,
-        access_address: u32,
-        crc_iv: u32,
+        _access_address: u32,
+        _crc_iv: u32,
         header: data::Header,
-        channel: DataChannel,
+        _channel: DataChannel,
     ) {
         let raw_header = header.to_u16();
         // S0 = 8 bits (LSB)
