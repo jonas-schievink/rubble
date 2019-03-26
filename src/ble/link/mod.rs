@@ -174,7 +174,7 @@ pub struct HwInterface<L: Logger, T: Timer> {
 }
 
 /// Link-Layer state machine, according to the Bluetooth spec.
-enum State<L: Logger, T: Timer> {
+enum State<L: Logger, T: Timer, R: Transmitter> {
     /// Radio silence: Not listening, not transmitting anything.
     Standby,
 
@@ -198,7 +198,7 @@ enum State<L: Logger, T: Timer> {
     },
 
     /// Connected with another device.
-    Connection(Connection<L, T>),
+    Connection(Connection<L, T, R>),
 }
 
 /// Implementation of the BLE Link-Layer logic.
@@ -206,7 +206,7 @@ enum State<L: Logger, T: Timer> {
 /// Users of this struct must provide a way to send and receive Link-Layer PDUs via a `Transmitter`.
 pub struct LinkLayer<L: Logger, T: Timer, R: Transmitter> {
     dev_addr: DeviceAddress,
-    state: State<L, T>,
+    state: State<L, T, R>,
     hw: HwInterface<L, T>,
     _p: PhantomData<R>,
 }

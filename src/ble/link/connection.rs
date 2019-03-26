@@ -16,7 +16,7 @@ use {
 };
 
 /// Connection state.
-pub struct Connection<L: Logger, T: Timer> {
+pub struct Connection<L: Logger, T: Timer, R: Transmitter> {
     access_address: u32,
     crc_init: u32,
     channel_map: ChannelMap,
@@ -46,10 +46,10 @@ pub struct Connection<L: Logger, T: Timer> {
     /// Whether we have ever received a data packet in this connection.
     received_packet: bool,
 
-    _p: PhantomData<(L, T)>,
+    _p: PhantomData<(L, T, R)>,
 }
 
-impl<L: Logger, T: Timer> Connection<L, T> {
+impl<L: Logger, T: Timer, R: Transmitter> Connection<L, T, R> {
     /// Initializes a connection state according to the `LLData` contained in the `CONNECT_REQ`
     /// advertising PDU.
     ///
@@ -104,7 +104,7 @@ impl<L: Logger, T: Timer> Connection<L, T> {
     /// Called by the `LinkLayer` when a data channel packet is received.
     ///
     /// Returns `Err(())` when the connection is ended (not necessarily due to an error condition).
-    pub fn process_data_packet<R: Transmitter>(
+    pub fn process_data_packet(
         &mut self,
         rx_end: Instant,
         tx: &mut R,
@@ -144,7 +144,7 @@ impl<L: Logger, T: Timer> Connection<L, T> {
                 // We've never received (and thus sent) a data packet before, so we can't
                 // *re*transmit anything. Send empty PDU instead.
                 self.received_packet = true;
-                self.send(Pdu::empty(), tx, &mut hw.logger);
+                self.send(Pdu::empty(), tx, hw);
             }
         } else {
             self.received_packet = true;
@@ -155,7 +155,7 @@ impl<L: Logger, T: Timer> Connection<L, T> {
             self.transmit_seq_num += SeqNum::ONE;
 
             // Send a new packet
-            self.send(Pdu::empty(), tx, &mut hw.logger);
+            self.send(Pdu::empty(), tx, hw);
         }
 
         let last_channel = self.channel;
@@ -249,7 +249,7 @@ impl<L: Logger, T: Timer> Connection<L, T> {
     }
 
     /// Sends a new PDU to the connected device (ie. a non-retransmitted PDU).
-    fn send<R: Transmitter>(&mut self, pdu: Pdu<'_>, tx: &mut R, logger: &mut L) {
+    fn send(&mut self, pdu: Pdu<'_>, tx: &mut R, hw: &mut HwInterface<L, T>) {
         let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
         // Serialize PDU. This should never fail, because the upper layers are supposed to fragment
         // packets so they always fit.
@@ -264,6 +264,6 @@ impl<L: Logger, T: Timer> Connection<L, T> {
 
         tx.transmit_data(self.access_address, self.crc_init, header, self.channel);
 
-        trace!(logger, "DATA->{:?}, {:?}", header, pdu);
+        trace!(hw.logger, "DATA->{:?}, {:?}", header, pdu);
     }
 }
