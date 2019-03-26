@@ -49,7 +49,7 @@ use {
         },
         log::Logger,
         phy::{AdvertisingChannel, DataChannel},
-        time::{Instant, Timer},
+        time::{Duration, Instant, Timer},
     },
     nrf52810_hal::nrf52810_pac::{radio::state::STATER, RADIO},
 };
@@ -193,6 +193,20 @@ impl BleRadio {
             } => {
                 self.prepare_txrx_data(channel, access_address, crc_init);
 
+                // Enforce T_IFS in hardware and enable the required shortcuts.
+                // The radio will go into `TXIDLE` state automatically after receiving a packet.
+                self.radio
+                    .tifs
+                    .write(|w| unsafe { w.bits(Duration::T_IFS.as_micros()) });
+                self.radio.shorts.write(|w| {
+                    w.end_disable()
+                        .enabled()
+                        .disabled_txen()
+                        .enabled()
+                        .ready_start()
+                        .enabled()
+                });
+
                 let rx_buf = (*self.rx_buf.as_mut().unwrap()) as *mut _ as u32;
                 self.radio.packetptr.write(|w| unsafe { w.bits(rx_buf) });
 
@@ -222,15 +236,15 @@ impl BleRadio {
             return NextUpdate::Keep;
         }
 
-        // When we get here, the radio must have transitioned to DISABLED state.
-        assert!(self.state().is_disabled());
-
         // Acknowledge DISABLED event:
         self.radio.events_disabled.reset();
 
         let crc_ok = self.radio.crcstatus.read().crcstatus().is_crcok();
 
         let cmd = if self.advertising {
+            // When we get here, the radio must have transitioned to DISABLED state.
+            assert!(self.state().is_disabled());
+
             let header = advertising::Header::parse(*self.rx_buf.as_ref().unwrap());
 
             // check that `payload_length` is in bounds
@@ -247,6 +261,9 @@ impl BleRadio {
             self.rx_buf = Some(rx_buf);
             cmd
         } else {
+            // Important! Turn ready->start off before TXREADY is reached (in ~150µs)
+            self.radio.shorts.modify(|_, w| w.ready_start().disabled());
+
             let header = data::Header::parse(*self.rx_buf.as_ref().unwrap());
 
             // check that `payload_length` is in bounds
@@ -319,22 +336,6 @@ impl BleRadio {
     fn prepare_txrx_data(&mut self, channel: DataChannel, access_address: u32, crc_init: u32) {
         self.advertising = false;
 
-        unsafe {
-            // Acknowledge left-over disable event
-            self.radio.events_disabled.reset();
-
-            if !self.state().is_disabled() {
-                // In case we're currently receiving, stop that
-                self.radio.tasks_disable.write(|w| w.bits(1));
-
-                // Then wait until disable event is triggered
-                while self.radio.events_disabled.read().bits() == 0 {}
-            }
-        }
-
-        assert!(self.state().is_disabled());
-
-        // Now we can freely configure all registers we need
         unsafe {
             self.radio
                 .pcnf0
@@ -424,14 +425,21 @@ impl Transmitter for BleRadio {
         // Length = 8 bits (or fewer, for BT versions <4.2)
         self.tx_buf[1] = header.payload_length();
 
-        self.prepare_txrx_data(channel, access_address, crc_iv);
-
         // Set transmission address:
         // Logical addr. 1 uses BASE1 + PREFIX1, which is set to the data channel address
         self.radio
             .txaddress
             .write(|w| unsafe { w.txaddress().bits(1) });
 
-        self.transmit();
+        // "The CPU should reconfigure this pointer every time before the RADIO is started via
+        // the START task."
+        self.radio
+            .packetptr
+            .write(|w| unsafe { w.bits(self.tx_buf as *const _ as u32) });
+
+        // ...and kick off the transmission
+        self.radio
+            .shorts
+            .write(|w| w.ready_start().enabled().end_disable().enabled());
     }
 }
