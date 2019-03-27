@@ -160,8 +160,6 @@ const APP: () = {
                 timer: ble_timer,
                 logger,
             },
-            tx_cons,
-            rx_prod,
         );
 
         if !TEST_BEACON {
@@ -171,6 +169,8 @@ const APP: () = {
                     Duration::from_millis(200),
                     &[AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS")],
                     &mut radio,
+                    tx_cons,
+                    rx_prod,
                 )
                 .unwrap();
             ll.timer().configure_interrupt(next_update);

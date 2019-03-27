@@ -193,11 +193,7 @@ enum State<HW: HardwareInterface> {
     /// Radio silence: Not listening, not transmitting anything.
     Standby,
 
-    /// Device is an advertiser. Periodic transmission of advertising packets and (optionally)
-    /// listening for responses.
-    ///
-    /// Note that this does not imply that the device wants to establish a *connection* with another
-    /// device: The device could also be a beacon that's broadcasting advertising packets with data.
+    /// Device is advertising and wants to establish a connection.
     Advertising {
         /// Advertising interval.
         // TODO: check spec for allowed/recommended values and check for them
@@ -210,6 +206,8 @@ enum State<HW: HardwareInterface> {
         /// Next advertising channel to use for a message.
         // FIXME: spec check; no idea what order or change delay
         channel: AdvertisingChannel,
+
+        data_queues: Option<(Consumer, Producer)>,
     },
 
     /// Connected with another device.
@@ -224,7 +222,6 @@ pub struct LinkLayer<HW: HardwareInterface> {
     dev_addr: DeviceAddress,
     state: State<HW>,
     hw: Hw<HW>,
-    chan: Option<(Consumer, Producer)>,
 }
 
 impl<HW: HardwareInterface> LinkLayer<HW> {
@@ -236,13 +233,12 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
     /// * **`hw`**: Hardware interface consisting of a `Timer` and a `Logger`.
     /// * **`tx`**: Input queue of packets to transmit when connected.
     /// * **`rx`**: Output queue of received packets when connected.
-    pub fn new(dev_addr: DeviceAddress, mut hw: Hw<HW>, tx: Consumer, rx: Producer) -> Self {
+    pub fn new(dev_addr: DeviceAddress, mut hw: Hw<HW>) -> Self {
         trace!(hw.logger, "new LinkLayer, dev={:?}", dev_addr);
         Self {
             dev_addr,
             state: State::Standby,
             hw,
-            chan: Some((tx, rx)),
         }
     }
 
@@ -260,7 +256,9 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
         &mut self,
         interval: Duration,
         data: &[AdStructure],
-        tx: &mut HW::Tx,
+        transmitter: &mut HW::Tx,
+        tx: Consumer,
+        rx: Producer,
     ) -> Result<NextUpdate, Error> {
         // TODO tear down existing connection?
 
@@ -272,8 +270,9 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
             interval,
             pdu,
             channel: AdvertisingChannel::first(),
+            data_queues: Some((tx, rx)),
         };
-        Ok(self.update(tx).next_update)
+        Ok(self.update(transmitter).next_update)
     }
 
     /// Process an incoming packet from an advertising channel.
@@ -299,7 +298,12 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
         let pdu = advertising::Pdu::from_header_and_payload(header, &mut payload);
 
         if let Ok(pdu) = pdu {
-            if let State::Advertising { channel, .. } = &self.state {
+            if let State::Advertising {
+                channel,
+                data_queues,
+                ..
+            } = &mut self.state
+            {
                 if crc_ok && pdu.receiver() == Some(&self.dev_addr) {
                     // Got a packet addressed at us, can be a scan or connect request
                     match pdu {
@@ -309,12 +313,12 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
                             tx.transmit_advertising(response.header(), *channel);
 
                             // Log after responding to meet timing
-                            debug!(self.logger(), "-> SCAN RESP: {:?}", response);
+                            debug!(self.hw.logger, "-> SCAN RESP: {:?}", response);
                         }
                         Pdu::ConnectRequest { lldata, .. } => {
-                            trace!(self.logger(), "ADV<- CONN! {:?}", pdu);
+                            trace!(self.hw.logger, "ADV<- CONN! {:?}", pdu);
 
-                            let (tx, rx) = self.chan.take().unwrap();
+                            let (tx, rx) = data_queues.take().unwrap();
                             let (conn, cmd) = Connection::create(&lldata, rx_end, tx, rx);
                             self.state = State::Connection(conn);
                             return cmd;
@@ -389,6 +393,7 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
                 interval,
                 pdu,
                 channel,
+                ..
             } => {
                 *channel = channel.cycle();
                 let payload = pdu.payload();
