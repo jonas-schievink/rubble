@@ -216,9 +216,10 @@ enum State<HW: HardwareInterface> {
     Connection(Connection<HW>),
 }
 
-/// Implementation of the BLE Link-Layer logic.
+/// Implementation of the real-time BLE Link-Layer logic.
 ///
-/// Users of this struct must provide a way to send and receive Link-Layer PDUs via a `Transmitter`.
+/// Users of this struct must provide an interface to the platform's hardware by implementing
+/// `HardwareInterface`.
 pub struct LinkLayer<HW: HardwareInterface> {
     dev_addr: DeviceAddress,
     state: State<HW>,
@@ -228,6 +229,13 @@ pub struct LinkLayer<HW: HardwareInterface> {
 
 impl<HW: HardwareInterface> LinkLayer<HW> {
     /// Creates a new Link-Layer.
+    ///
+    /// # Parameters
+    ///
+    /// * **`dev_addr`**: The device address to broadcast as.
+    /// * **`hw`**: Hardware interface consisting of a `Timer` and a `Logger`.
+    /// * **`tx`**: Input queue of packets to transmit when connected.
+    /// * **`rx`**: Output queue of received packets when connected.
     pub fn new(dev_addr: DeviceAddress, mut hw: Hw<HW>, tx: Consumer, rx: Producer) -> Self {
         trace!(hw.logger, "new LinkLayer, dev={:?}", dev_addr);
         Self {
@@ -623,21 +631,3 @@ impl<R: Radio> Transmitter for RawTransmitter<R> {
         );
     }
 }
-
-/*
-
-Stack API
-
-When connected, user code is expected to...
-
-* Listen for transmissions (filtered by Access Address, probably)
-* Forward PDUs of matched transmissions to the stack
-* While the stack does its thing, give it the ability to transmit PDUs
-
-Actually, it seems that the same applies when in any other Link-Layer state except `Standby`.
-
-TODO: what about inter frame spacing?
-
-TODO: make AccessAddress type with support for validation and generation
-
-*/
