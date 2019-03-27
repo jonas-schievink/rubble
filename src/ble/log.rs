@@ -17,6 +17,13 @@ impl Write for NoopLogger {
 // trace and debug are exactly the same right now
 
 macro_rules! trace {
+    // Special-case when not using any formatting (this is *much* faster than going through
+    // `core::fmt`)
+    ($logger:expr, $s:literal) => {{
+        #[allow(unused_imports)]
+        use core::fmt::Write as _;
+        $logger.write_str(concat!($s, "\n")).unwrap();
+    }};
     ($logger:expr, $($t:tt)+) => {{
         writeln!($logger, $($t)+).unwrap();
     }};
@@ -24,6 +31,6 @@ macro_rules! trace {
 
 macro_rules! debug {
     ($logger:expr, $($t:tt)+) => {{
-        writeln!($logger, $($t)+).unwrap();
+        trace!($logger, $($t)+);
     }};
 }
