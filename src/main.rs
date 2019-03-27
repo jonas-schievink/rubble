@@ -219,7 +219,7 @@ const APP: () = {
     fn idle() -> ! {
         // Drain the logging buffer through the serial connection
         loop {
-            if let Ok(grant) = resources.LOG_SINK.read() {
+            while let Ok(grant) = resources.LOG_SINK.read() {
                 for chunk in grant.buf().chunks(255) {
                     resources.SERIAL.write(chunk).unwrap();
                 }
