@@ -6,7 +6,7 @@ use {
         link::{
             advertising::ConnectRequestData,
             data::{self, Header, Llid, Pdu},
-            Cmd, HwInterface, Logger, NextUpdate, RadioCmd, SeqNum, Transmitter,
+            Cmd, HardwareInterface, Hw, NextUpdate, RadioCmd, SeqNum, Transmitter,
         },
         phy::{ChannelMap, DataChannel},
         time::{Duration, Instant, Timer},
@@ -16,7 +16,7 @@ use {
 };
 
 /// Connection state.
-pub struct Connection<L: Logger, T: Timer, R: Transmitter> {
+pub struct Connection<HW: HardwareInterface> {
     access_address: u32,
     crc_init: u32,
     channel_map: ChannelMap,
@@ -46,10 +46,10 @@ pub struct Connection<L: Logger, T: Timer, R: Transmitter> {
     /// Whether we have ever received a data packet in this connection.
     received_packet: bool,
 
-    _p: PhantomData<(L, T, R)>,
+    _p: PhantomData<HW>,
 }
 
-impl<L: Logger, T: Timer, R: Transmitter> Connection<L, T, R> {
+impl<HW: HardwareInterface> Connection<HW> {
     /// Initializes a connection state according to the `LLData` contained in the `CONNECT_REQ`
     /// advertising PDU.
     ///
@@ -107,8 +107,8 @@ impl<L: Logger, T: Timer, R: Transmitter> Connection<L, T, R> {
     pub fn process_data_packet(
         &mut self,
         rx_end: Instant,
-        tx: &mut R,
-        hw: &mut HwInterface<L, T>,
+        tx: &mut HW::Tx,
+        hw: &mut Hw<HW>,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
@@ -187,7 +187,7 @@ impl<L: Logger, T: Timer, R: Transmitter> Connection<L, T, R> {
         })
     }
 
-    pub fn timer_update(&mut self, hw: &mut HwInterface<L, T>) -> Result<Cmd, ()> {
+    pub fn timer_update(&mut self, hw: &mut Hw<HW>) -> Result<Cmd, ()> {
         if self.received_packet {
             // No packet from master, skip this connection event and listen on the next channel
 
@@ -249,7 +249,7 @@ impl<L: Logger, T: Timer, R: Transmitter> Connection<L, T, R> {
     }
 
     /// Sends a new PDU to the connected device (ie. a non-retransmitted PDU).
-    fn send(&mut self, pdu: Pdu<'_>, tx: &mut R, hw: &mut HwInterface<L, T>) {
+    fn send(&mut self, pdu: Pdu<'_>, tx: &mut HW::Tx, hw: &mut Hw<HW>) {
         let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
         // Serialize PDU. This should never fail, because the upper layers are supposed to fragment
         // packets so they always fit.

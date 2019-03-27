@@ -135,14 +135,14 @@ use {
     },
     crate::ble::{
         crc::ble_crc24,
-        log::{Logger, NoopLogger},
+        log::Logger,
         phy::{AdvertisingChannel, DataChannel, Radio},
         time::{Duration, Instant, Timer},
         utils::HexSlice,
         Error,
     },
     byteorder::{ByteOrder, LittleEndian},
-    core::{marker::PhantomData, ops::Range},
+    core::ops::Range,
 };
 
 /// The CRC polynomial to use for CRC24 generation.
@@ -168,13 +168,26 @@ pub const MAX_PDU_SIZE: usize = MAX_PAYLOAD_SIZE + 2; // data & adv. have a 16-b
 /// Max. total Link-Layer packet size in octets.
 pub const MAX_PACKET_SIZE: usize = 1 /* preamble */ + 4 /* access addr */ + MAX_PDU_SIZE + 3 /* crc */;
 
-pub struct HwInterface<L: Logger, T: Timer> {
-    pub logger: L,
-    pub timer: T,
+/// Groups hardware interface data that is owned by the link layer.
+pub struct Hw<HW: HardwareInterface> {
+    pub logger: HW::Logger,
+    pub timer: HW::Timer,
+}
+
+/// Defines types that provide platform-dependent functionality.
+pub trait HardwareInterface {
+    /// The logger to use (mostly useful for debugging).
+    type Logger: Logger;
+
+    /// A timesource with microsecond accuracy.
+    type Timer: Timer;
+
+    /// The BLE packet transmitter.
+    type Tx: Transmitter;
 }
 
 /// Link-Layer state machine, according to the Bluetooth spec.
-enum State<L: Logger, T: Timer, R: Transmitter> {
+enum State<HW: HardwareInterface> {
     /// Radio silence: Not listening, not transmitting anything.
     Standby,
 
@@ -198,44 +211,35 @@ enum State<L: Logger, T: Timer, R: Transmitter> {
     },
 
     /// Connected with another device.
-    Connection(Connection<L, T, R>),
+    Connection(Connection<HW>),
 }
 
 /// Implementation of the BLE Link-Layer logic.
 ///
 /// Users of this struct must provide a way to send and receive Link-Layer PDUs via a `Transmitter`.
-pub struct LinkLayer<L: Logger, T: Timer, R: Transmitter> {
+pub struct LinkLayer<HW: HardwareInterface> {
     dev_addr: DeviceAddress,
-    state: State<L, T, R>,
-    hw: HwInterface<L, T>,
-    _p: PhantomData<R>,
+    state: State<HW>,
+    hw: Hw<HW>,
 }
 
-impl<T: Timer, R: Transmitter> LinkLayer<NoopLogger, T, R> {
-    /// Creates a new Link-Layer in standby state (ie. not transmitting or listening for data).
-    pub fn new(dev_addr: DeviceAddress, timer: T) -> Self {
-        Self::with_logger(dev_addr, timer, NoopLogger)
-    }
-}
-
-impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
-    /// Creates a new Link-Layer with a custom logger.
-    pub fn with_logger(dev_addr: DeviceAddress, timer: T, mut logger: L) -> Self {
-        trace!(logger, "new LinkLayer, dev={:?}", dev_addr);
+impl<HW: HardwareInterface> LinkLayer<HW> {
+    /// Creates a new Link-Layer.
+    pub fn new(dev_addr: DeviceAddress, mut hw: Hw<HW>) -> Self {
+        trace!(hw.logger, "new LinkLayer, dev={:?}", dev_addr);
         Self {
             dev_addr,
-            hw: HwInterface { logger, timer },
             state: State::Standby,
-            _p: PhantomData,
+            hw,
         }
     }
 
-    pub fn logger(&mut self) -> &mut L {
+    pub fn logger(&mut self) -> &mut HW::Logger {
         &mut self.hw.logger
     }
 
     /// Returns a reference to the timer instance used by the Link-Layer.
-    pub fn timer(&mut self) -> &mut T {
+    pub fn timer(&mut self) -> &mut HW::Timer {
         &mut self.hw.timer
     }
 
@@ -244,7 +248,7 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
         &mut self,
         interval: Duration,
         data: &[AdStructure],
-        tx: &mut R,
+        tx: &mut HW::Tx,
     ) -> Result<NextUpdate, Error> {
         // TODO tear down existing connection?
 
@@ -274,7 +278,7 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
     pub fn process_adv_packet(
         &mut self,
         rx_end: Instant,
-        tx: &mut R,
+        tx: &mut HW::Tx,
         header: advertising::Header,
         mut payload: &[u8],
         crc_ok: bool,
@@ -334,7 +338,7 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
     pub fn process_data_packet(
         &mut self,
         rx_end: Instant,
-        tx: &mut R,
+        tx: &mut HW::Tx,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
@@ -365,7 +369,7 @@ impl<L: Logger, T: Timer, R: Transmitter> LinkLayer<L, T, R> {
     ///
     /// * `tx`: A `Transmitter` for sending packets.
     /// * `elapsed`: Time since the last `update` call or creation of this `LinkLayer`.
-    pub fn update(&mut self, tx: &mut R) -> Cmd {
+    pub fn update(&mut self, tx: &mut HW::Tx) -> Cmd {
         match &mut self.state {
             State::Advertising {
                 next_adv,

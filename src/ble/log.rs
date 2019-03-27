@@ -25,6 +25,8 @@ macro_rules! trace {
         $logger.write_str(concat!($s, "\n")).unwrap();
     }};
     ($logger:expr, $($t:tt)+) => {{
+        #[allow(unused_imports)]
+        use core::fmt::Write as _;
         writeln!($logger, $($t)+).unwrap();
     }};
 }

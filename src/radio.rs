@@ -44,12 +44,11 @@
 use {
     crate::ble::{
         link::{
-            advertising, data, LinkLayer, NextUpdate, RadioCmd, Transmitter, CRC_POLY,
-            MAX_PAYLOAD_SIZE, MAX_PDU_SIZE,
+            advertising, data, HardwareInterface, LinkLayer, NextUpdate, RadioCmd, Transmitter,
+            CRC_POLY, MAX_PAYLOAD_SIZE, MAX_PDU_SIZE,
         },
-        log::Logger,
         phy::{AdvertisingChannel, DataChannel},
-        time::{Duration, Instant, Timer},
+        time::{Duration, Instant},
     },
     nrf52810_hal::nrf52810_pac::{radio::state::STATER, RADIO},
 };
@@ -227,10 +226,10 @@ impl BleRadio {
     /// Automatically reconfigures the radio according to the `RadioCmd` returned by the BLE stack.
     ///
     /// Returns when the `update` method should be called the next time.
-    pub fn recv_interrupt<L: Logger, T: Timer>(
+    pub fn recv_interrupt<HW: HardwareInterface<Tx = Self>>(
         &mut self,
         timestamp: Instant,
-        ll: &mut LinkLayer<L, T, Self>,
+        ll: &mut LinkLayer<HW>,
     ) -> NextUpdate {
         if self.radio.events_disabled.read().bits() == 0 {
             return NextUpdate::Keep;

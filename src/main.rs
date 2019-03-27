@@ -14,7 +14,8 @@ use {
         ble::{
             beacon::Beacon,
             link::{
-                ad_structure::AdStructure, AddressKind, DeviceAddress, LinkLayer, MAX_PDU_SIZE,
+                ad_structure::AdStructure, AddressKind, DeviceAddress, HardwareInterface, Hw,
+                LinkLayer, MAX_PDU_SIZE,
             },
             time::{Duration, Timer},
         },
@@ -38,6 +39,15 @@ use {
 
 type Logger = StampedLogger<timer::StampSource<pac::TIMER0>, BbqLogger>;
 
+/// Hardware interface for the BLE stack (nRF52810 implementation).
+pub struct HwNRf52810 {}
+
+impl HardwareInterface for HwNRf52810 {
+    type Logger = Logger;
+    type Timer = BleTimer<pac::TIMER0>;
+    type Tx = BleRadio;
+}
+
 /// Whether to broadcast a beacon or to establish a proper connection.
 ///
 /// This is just used to test different code paths. Note that you can't do both
@@ -48,7 +58,7 @@ const TEST_BEACON: bool = false;
 const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
     static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
-    static mut BLE: LinkLayer<Logger, BleTimer<pac::TIMER0>, BleRadio> = ();
+    static mut BLE: LinkLayer<HwNRf52810> = ();
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
     static mut BEACON_TIMER: pac::TIMER1 = ();
@@ -140,7 +150,13 @@ const APP: () = {
         let (tx, rx) = logq.split();
         let logger = StampedLogger::new(BbqLogger::new(tx), log_stamper);
 
-        let mut ll = LinkLayer::with_logger(device_address, ble_timer, logger);
+        let mut ll = LinkLayer::<HwNRf52810>::new(
+            device_address,
+            Hw {
+                timer: ble_timer,
+                logger,
+            },
+        );
 
         if !TEST_BEACON {
             // Send advertisement and set up regular interrupt
