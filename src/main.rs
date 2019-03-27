@@ -14,8 +14,8 @@ use {
         ble::{
             beacon::Beacon,
             link::{
-                ad_structure::AdStructure, AddressKind, DeviceAddress, HardwareInterface, Hw,
-                LinkLayer, MAX_PDU_SIZE,
+                ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
+                Hw, LinkLayer, MAX_PDU_SIZE,
             },
             time::{Duration, Timer},
         },
@@ -146,16 +146,22 @@ const APP: () = {
         .unwrap();
 
         let log_stamper = ble_timer.create_stamp_source();
-        let logq = bbq!(2048).unwrap();
-        let (tx, rx) = logq.split();
+        let (tx, log_sink) = bbq![2048].unwrap().split();
         let logger = StampedLogger::new(BbqLogger::new(tx), log_stamper);
 
+        // Create TX/RX queues
+        let (_tx, tx_cons) = queue::create(bbq![1024].unwrap());
+        let (rx_prod, _rx) = queue::create(bbq![1024].unwrap());
+
+        // Create the actual BLE stack objects
         let mut ll = LinkLayer::<HwNRf52810>::new(
             device_address,
             Hw {
                 timer: ble_timer,
                 logger,
             },
+            tx_cons,
+            rx_prod,
         );
 
         if !TEST_BEACON {
@@ -175,7 +181,7 @@ const APP: () = {
         BEACON = beacon;
         BEACON_TIMER = device.TIMER1;
         SERIAL = serial;
-        LOG_SINK = rx;
+        LOG_SINK = log_sink;
     }
 
     #[interrupt(resources = [RADIO, BLE])]

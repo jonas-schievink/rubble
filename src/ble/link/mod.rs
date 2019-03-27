@@ -122,6 +122,7 @@ pub mod advertising;
 mod connection;
 pub mod data;
 mod device_address;
+pub mod queue;
 mod seq_num;
 
 pub use self::device_address::*;
@@ -131,6 +132,7 @@ use {
         ad_structure::AdStructure,
         advertising::{Pdu, PduBuf},
         connection::Connection,
+        queue::{Consumer, Producer},
         seq_num::SeqNum,
     },
     crate::ble::{
@@ -221,16 +223,18 @@ pub struct LinkLayer<HW: HardwareInterface> {
     dev_addr: DeviceAddress,
     state: State<HW>,
     hw: Hw<HW>,
+    chan: Option<(Consumer, Producer)>,
 }
 
 impl<HW: HardwareInterface> LinkLayer<HW> {
     /// Creates a new Link-Layer.
-    pub fn new(dev_addr: DeviceAddress, mut hw: Hw<HW>) -> Self {
+    pub fn new(dev_addr: DeviceAddress, mut hw: Hw<HW>, tx: Consumer, rx: Producer) -> Self {
         trace!(hw.logger, "new LinkLayer, dev={:?}", dev_addr);
         Self {
             dev_addr,
             state: State::Standby,
             hw,
+            chan: Some((tx, rx)),
         }
     }
 
@@ -302,7 +306,8 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
                         Pdu::ConnectRequest { lldata, .. } => {
                             trace!(self.logger(), "ADV<- CONN! {:?}", pdu);
 
-                            let (conn, cmd) = Connection::create(&lldata, rx_end);
+                            let (tx, rx) = self.chan.take().unwrap();
+                            let (conn, cmd) = Connection::create(&lldata, rx_end, tx, rx);
                             self.state = State::Connection(conn);
                             return cmd;
                         }

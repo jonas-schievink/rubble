@@ -64,7 +64,8 @@ use {
 pub struct Header(u16);
 
 impl Header {
-    /// Creates a header with the given LLID field and all other fields set to 0.
+    /// Creates a header with the given LLID field and all other fields set to 0 (including the
+    /// payload length).
     pub fn new(llid: Llid) -> Self {
         Header(llid as u16)
     }
@@ -201,6 +202,18 @@ impl<'a> Pdu<'a> {
     /// This PDU can be sent whenever there's no actual data to be transferred.
     pub fn empty() -> Self {
         Pdu::DataCont { message: &[] }
+    }
+
+    /// Parses a PDU from a `Header` and raw payload.
+    pub fn parse(header: Header, mut payload: &'a [u8]) -> Result<Self, Error> {
+        match header.llid() {
+            Llid::DataCont => Ok(Pdu::DataCont { message: payload }),
+            Llid::DataStart => Ok(Pdu::DataStart { message: payload }),
+            Llid::Control => Ok(Pdu::Control {
+                data: BytesOr::from_bytes(&mut payload)?,
+            }),
+            Llid::Reserved => Err(Error::InvalidValue),
+        }
     }
 
     /// Returns the `LLID` field to use for this PDU.

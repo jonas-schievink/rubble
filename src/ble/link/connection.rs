@@ -6,6 +6,7 @@ use {
         link::{
             advertising::ConnectRequestData,
             data::{self, Header, Llid, Pdu},
+            queue::{Consumer, Producer},
             Cmd, HardwareInterface, Hw, NextUpdate, RadioCmd, SeqNum, Transmitter,
         },
         phy::{ChannelMap, DataChannel},
@@ -46,6 +47,9 @@ pub struct Connection<HW: HardwareInterface> {
     /// Whether we have ever received a data packet in this connection.
     received_packet: bool,
 
+    tx: Consumer,
+    rx: Producer,
+
     _p: PhantomData<HW>,
 }
 
@@ -59,7 +63,14 @@ impl<HW: HardwareInterface> Connection<HW> {
     ///
     /// * **`lldata`**: Data contained in the `CONNECT_REQ` advertising PDU.
     /// * **`rx_end`**: Instant at which the `CONNECT_REQ` PDU was fully received.
-    pub fn create(lldata: &ConnectRequestData, rx_end: Instant) -> (Self, Cmd) {
+    /// * **`tx`**: Channel for packets to transmit.
+    /// * **`rx`**: Channel for received packets.
+    pub fn create(
+        lldata: &ConnectRequestData,
+        rx_end: Instant,
+        tx: Consumer,
+        rx: Producer,
+    ) -> (Self, Cmd) {
         assert_eq!(
             lldata.slave_latency(),
             0,
@@ -80,6 +91,9 @@ impl<HW: HardwareInterface> Connection<HW> {
             next_expected_seq_num: SeqNum::ZERO,
             last_header: Header::new(Llid::DataCont),
             received_packet: false,
+
+            tx,
+            rx,
 
             _p: PhantomData,
         };
@@ -106,47 +120,36 @@ impl<HW: HardwareInterface> Connection<HW> {
     /// Returns `Err(())` when the connection is ended (not necessarily due to an error condition).
     pub fn process_data_packet(
         &mut self,
-        rx_end: Instant,
+        _rx_end: Instant,
         tx: &mut HW::Tx,
         hw: &mut Hw<HW>,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
     ) -> Result<Cmd, ()> {
-        let _needs_processing = if header.sn() == self.next_expected_seq_num && crc_ok {
-            // New (non-resent) PDU, acknowledge it
-            self.next_expected_seq_num += SeqNum::ONE;
-            true
-        } else {
-            false
-        };
+        let is_new = header.sn() == self.next_expected_seq_num && crc_ok;
+        let acknowledged = header.nesn() == self.transmit_seq_num + SeqNum::ONE && crc_ok;
 
-        if header.nesn() == self.transmit_seq_num || !crc_ok {
-            // Last packet not acknowledged, resend.
-            // If CRC is bad, this bit could be flipped, so we always retransmit in that case.
-            if self.received_packet {
-                self.last_header.set_nesn(self.next_expected_seq_num);
-                let d = hw.timer.now().duration_since(rx_end);
-                tx.transmit_data(
-                    self.access_address,
-                    self.crc_init,
-                    self.last_header,
-                    self.channel,
-                );
-                let before_log = hw.timer.now();
-                trace!(hw.logger, "<<RESEND {} after RX>>", d);
-                trace!(
-                    hw.logger,
-                    "<<That LOG took {}>>",
-                    hw.timer.now().duration_since(before_log)
-                );
+        let is_empty = header.llid() == Llid::DataCont && payload.is_empty();
+
+        if is_new {
+            if is_empty {
+                // Always acknowledge empty packets, no need to process them
+                self.next_expected_seq_num += SeqNum::ONE;
             } else {
-                // We've never received (and thus sent) a data packet before, so we can't
-                // *re*transmit anything. Send empty PDU instead.
-                self.received_packet = true;
-                self.send(Pdu::empty(), tx, hw);
+                // Try to buffer the packet. If it fails, we don't acknowledge it, so it will be resent
+                // until we have space.
+
+                if self.rx.produce_raw(header, payload).is_ok() {
+                    // Acknowledge the packet
+                    self.next_expected_seq_num += SeqNum::ONE;
+                } else {
+                    trace!(hw.logger, "NACK (no space in rx buffer)");
+                }
             }
-        } else {
+        }
+
+        if acknowledged {
             self.received_packet = true;
             // Here we'll always send a new packet (which might be empty if we don't have anything
             // to say). If `needs_processing` is set, we'll also process the received PDU before
@@ -154,8 +157,42 @@ impl<HW: HardwareInterface> Connection<HW> {
 
             self.transmit_seq_num += SeqNum::ONE;
 
-            // Send a new packet
-            self.send(Pdu::empty(), tx, hw);
+            // Send a new packet.
+
+            // Write payload data. Try to acquire PDU from the tx queue, fall back to an empty PDU.
+            let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
+            let header = match self.tx.consume_raw_with(|header, pl| {
+                payload_writer.write_slice(pl).expect("TX buf out of space");
+                header
+            }) {
+                Ok(h) => h,
+                Err(_) => Header::new(Llid::DataCont),
+            };
+
+            self.send(header, tx, hw);
+        } else {
+            // Last packet not acknowledged, resend.
+            // If CRC is bad, this bit could be flipped, so we always retransmit in that case.
+            if self.received_packet {
+                self.last_header.set_nesn(self.next_expected_seq_num);
+                tx.transmit_data(
+                    self.access_address,
+                    self.crc_init,
+                    self.last_header,
+                    self.channel,
+                );
+                trace!(hw.logger, "<<RESENT>>");
+            } else {
+                // We've never received (and thus sent) a data packet before, so we can't
+                // *re*transmit anything. Send empty PDU instead.
+                // (this should not really happen, though!)
+                self.received_packet = true;
+
+                let pdu = Pdu::empty();
+                let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
+                pdu.to_bytes(&mut payload_writer).unwrap();
+                self.send(Header::new(pdu.llid()), tx, hw);
+            }
         }
 
         let last_channel = self.channel;
@@ -249,14 +286,7 @@ impl<HW: HardwareInterface> Connection<HW> {
     }
 
     /// Sends a new PDU to the connected device (ie. a non-retransmitted PDU).
-    fn send(&mut self, pdu: Pdu<'_>, tx: &mut HW::Tx, hw: &mut Hw<HW>) {
-        let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
-        // Serialize PDU. This should never fail, because the upper layers are supposed to fragment
-        // packets so they always fit.
-        pdu.to_bytes(&mut payload_writer)
-            .expect("EOF when serializing data PDU");
-
-        let mut header = Header::new(pdu.llid());
+    fn send(&mut self, mut header: Header, tx: &mut HW::Tx, hw: &mut Hw<HW>) {
         header.set_md(self.has_more_data());
         header.set_nesn(self.next_expected_seq_num);
         header.set_sn(self.transmit_seq_num);
@@ -264,6 +294,6 @@ impl<HW: HardwareInterface> Connection<HW> {
 
         tx.transmit_data(self.access_address, self.crc_init, header, self.channel);
 
-        trace!(hw.logger, "DATA->{:?}, {:?}", header, pdu);
+        trace!(hw.logger, "DATA->{:?}", header);
     }
 }
