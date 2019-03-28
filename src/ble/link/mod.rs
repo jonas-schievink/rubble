@@ -88,14 +88,14 @@
 //! +-----------+----------------------+ - - - - - +
 //! ```
 //!
-//! Header layout:
+//! Layout (in Bluetooth 4.2):
 //!
 //! ```notrust
-//! LSB                                                                           MSB
-//! +----------+---------+---------+---------+------------+--------------+----------+
-//! |   LLID   |  NESN   |   SN    |   MD    |     -      |    Length    |    -     |
-//! | (2 bits) | (1 bit) | (1 bit) | (1 bit) |  (3 bits)  |   (5 bits)   | (3 bits) |
-//! +----------+---------+---------+---------+------------+--------------+----------+
+//! LSB                                                                MSB
+//! +----------+---------+---------+---------+------------+--------------+
+//! |   LLID   |  NESN   |   SN    |   MD    |     -      |    Length    |
+//! | (2 bits) | (1 bit) | (1 bit) | (1 bit) |  (3 bits)  |   (8 bits)   |
+//! +----------+---------+---------+---------+------------+--------------+
 //! ```
 //!
 //! Payload format depends on the value of the 2-bit `LLID` field:
@@ -112,10 +112,9 @@
 //! The `MD` field specifies that the device sending the packet has more data to send. When both
 //! slave and master send a packet with the `MD` bit set to 0, the connection is closed.
 //!
-//! The `Length` field specifies the length of payload **and `MIC`**. Its maximum value is 31,
-//! resulting in a 27 octet Payload (the maximum) and a 32-bit `MIC`.
-//!
-//! Note that the `Length` field is 1 bit shorter than for Advertising Channel PDUs.
+//! The `Length` field specifies the length of payload **and `MIC`**. For Bluetooth versions <4.2,
+//! its maximum value is 31, resulting in a 27 octet Payload (the maximum) and a 32-bit `MIC`. 4.2
+//! added the possibility of larger packets.
 
 pub mod ad_structure;
 pub mod advertising;
