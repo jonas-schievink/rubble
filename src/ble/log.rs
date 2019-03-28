@@ -1,3 +1,5 @@
+//! Temporary logging infrastructure that will be replaced by `log` eventually.
+
 use core::fmt::{self, Write};
 
 /// Trait for embedded loggers.

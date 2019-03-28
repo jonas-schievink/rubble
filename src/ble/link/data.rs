@@ -1,4 +1,4 @@
-//! Data Channel operations.
+//! Data Channel structures.
 
 use {
     crate::ble::{bytes::*, link::SeqNum, Error},

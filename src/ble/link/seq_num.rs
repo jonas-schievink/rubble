@@ -6,8 +6,7 @@ use core::{
 /// A 1-bit data packet sequence number.
 ///
 /// This type implements wrapping arithmetic (although only `+` and `+=` operators are supported)
-/// and also provides an `increment` method for use by the connection management code in the link
-/// layer.
+/// matching the expected behaviour of the BLE Link Layer.
 #[derive(PartialEq, Eq, Copy, Clone, Default)]
 pub struct SeqNum(bool);
 
