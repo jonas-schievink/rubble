@@ -1,4 +1,10 @@
-use {crate::ble::time::Timer, bbqueue::Producer, core::fmt};
+use {
+    crate::ble::time::Timer,
+    bbqueue::Producer,
+    core::{cell::RefCell, fmt},
+    cortex_m::interrupt::{self, Mutex},
+    log::{Log, Metadata, Record},
+};
 
 /// A `fmt::Write` adapter that prints a timestamp before each line.
 pub struct StampedLogger<T: Timer, L: fmt::Write> {
@@ -56,4 +62,36 @@ impl fmt::Write for BbqLogger {
 
         Ok(())
     }
+}
+
+/// Wraps a `fmt::Write` implementor and forwards the `log` crates logging macros to it.
+///
+/// The inner `fmt::Write` is made `Sync` by wrapping it in a `Mutex` from the `cortex_m` crate.
+pub struct WriteLogger<W: fmt::Write + Send> {
+    writer: Mutex<RefCell<W>>,
+}
+
+impl<W: fmt::Write + Send> WriteLogger<W> {
+    pub fn new(writer: W) -> Self {
+        Self {
+            writer: Mutex::new(RefCell::new(writer)),
+        }
+    }
+}
+
+impl<W: fmt::Write + Send> Log for WriteLogger<W> {
+    fn enabled(&self, _metadata: &Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &Record) {
+        if self.enabled(record.metadata()) {
+            interrupt::free(|cs| {
+                let mut writer = self.writer.borrow(cs).borrow_mut();
+                writeln!(writer, "{} - {}", record.level(), record.args()).unwrap();
+            })
+        }
+    }
+
+    fn flush(&self) {}
 }

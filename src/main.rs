@@ -17,6 +17,7 @@ use {
                 ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
                 Hw, LinkLayer, MAX_PDU_SIZE,
             },
+            log::NoopLogger,
             time::{Duration, Timer},
             Responder,
         },
@@ -28,6 +29,7 @@ use {
     byteorder::{ByteOrder, LittleEndian},
     core::fmt::Write,
     cortex_m_semihosting::hprintln,
+    log::{info, LevelFilter},
     nrf52810_hal::{
         self as hal,
         gpio::Level,
@@ -44,7 +46,7 @@ type Logger = StampedLogger<timer::StampSource<pac::TIMER0>, BbqLogger>;
 pub struct HwNRf52810 {}
 
 impl HardwareInterface for HwNRf52810 {
-    type Logger = Logger;
+    type Logger = NoopLogger;
     type Timer = BleTimer<pac::TIMER0>;
     type Tx = BleRadio;
 }
@@ -54,6 +56,9 @@ impl HardwareInterface for HwNRf52810 {
 /// This is just used to test different code paths. Note that you can't do both
 /// at the same time unless you also generate separate device addresses.
 const TEST_BEACON: bool = false;
+
+/// Stores the global logger used by the `log` crate.
+static mut LOGGER: Option<logger::WriteLogger<Logger>> = None;
 
 #[app(device = nrf52810_hal::nrf52810_pac)]
 const APP: () = {
@@ -151,6 +156,16 @@ const APP: () = {
         let (tx, log_sink) = bbq![2048].unwrap().split();
         let logger = StampedLogger::new(BbqLogger::new(tx), log_stamper);
 
+        let log = logger::WriteLogger::new(logger);
+        // Safe, since we're the only thread and interrupts are off
+        unsafe {
+            LOGGER = Some(log);
+            log::set_logger_racy(LOGGER.as_ref().unwrap()).unwrap();
+        }
+        log::set_max_level(LevelFilter::max());
+
+        info!("READY");
+
         // Create TX/RX queues
         let (tx, tx_cons) = queue::create(bbq![1024].unwrap());
         let (rx_prod, rx) = queue::create(bbq![1024].unwrap());
@@ -160,7 +175,7 @@ const APP: () = {
             device_address,
             Hw {
                 timer: ble_timer,
-                logger,
+                logger: NoopLogger,
             },
         );
 
