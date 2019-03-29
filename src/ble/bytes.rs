@@ -224,6 +224,32 @@ impl<'a> ByteWriter<'a> {
         self.write_slice(&bytes)
     }
 
+    /// Writes a `u32` to `self`, using byte order `B`.
+    ///
+    /// If `self` does not have enough space left, an error will be returned and no bytes will be
+    /// written to `self`.
+    pub fn write_u32<'b, B: ByteOrder>(&'b mut self, value: u32) -> Result<(), Error>
+    where
+        'a: 'b,
+    {
+        let mut bytes = [0; 4];
+        B::write_u32(&mut bytes, value);
+        self.write_slice(&bytes)
+    }
+
+    /// Writes a `u64` to `self`, using byte order `B`.
+    ///
+    /// If `self` does not have enough space left, an error will be returned and no bytes will be
+    /// written to `self`.
+    pub fn write_u64<'b, B: ByteOrder>(&'b mut self, value: u64) -> Result<(), Error>
+    where
+        'a: 'b,
+    {
+        let mut bytes = [0; 8];
+        B::write_u64(&mut bytes, value);
+        self.write_slice(&bytes)
+    }
+
     /// Splits off the next byte in the buffer.
     ///
     /// The writer will be advanced to point to the rest of the underlying buffer.
@@ -271,6 +297,7 @@ pub trait BytesExt<'a> {
     fn read_u8(&mut self) -> Result<u8, Error>;
     fn read_u16<B: ByteOrder>(&mut self) -> Result<u16, Error>;
     fn read_u32<B: ByteOrder>(&mut self) -> Result<u32, Error>;
+    fn read_u64<B: ByteOrder>(&mut self) -> Result<u64, Error>;
 }
 
 impl<'a> BytesExt<'a> for &'a [u8] {
@@ -286,6 +313,11 @@ impl<'a> BytesExt<'a> for &'a [u8] {
     fn read_u32<B: ByteOrder>(&mut self) -> Result<u32, Error> {
         let arr = self.read_array::<[u8; 4]>()?;
         Ok(B::read_u32(&arr))
+    }
+
+    fn read_u64<B: ByteOrder>(&mut self) -> Result<u64, Error> {
+        let arr = self.read_array::<[u8; 8]>()?;
+        Ok(B::read_u64(&arr))
     }
 }
 

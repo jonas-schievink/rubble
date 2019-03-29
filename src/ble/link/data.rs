@@ -1,7 +1,11 @@
 //! Data Channel structures.
 
 use {
-    crate::ble::{bytes::*, link::SeqNum, Error},
+    crate::ble::{
+        bytes::*,
+        link::{FeatureSet, SeqNum},
+        Error,
+    },
     byteorder::{ByteOrder, LittleEndian},
     core::fmt,
 };
@@ -254,13 +258,25 @@ impl<'a> ToBytes for Pdu<'a> {
 /// A structured representation of LL Control PDUs.
 #[derive(Debug, Copy, Clone)]
 pub enum ControlPdu<'a> {
-    /// Response to unknown/unsupported LL Control PDUs.
+    /// `0x07`/`LL_UNKNOWN_RSP` - Response to unknown/unsupported LL Control PDUs.
     ///
     /// This is returned as a response to an incoming LL Control PDU when the opcode is
     /// unimplemented or unknown, or when the `CtrData` is invalid for the opcode.
     UnknownRsp {
         /// Opcode of the unknown PDU.
         unknown_type: ControlOpcode,
+    },
+
+    /// `0x08`/`LL_FEATURE_REQ` - Master requests slave's features.
+    FeatureReq {
+        /// Supported feature set of the master.
+        master_features: FeatureSet,
+    },
+
+    /// `0x09`/`LL_FEATURE_RSP` - Slave answers `LL_FEATURE_REQ` with own feature set.
+    FeatureRsp {
+        /// Supported feature set of the slave device.
+        slave_features: FeatureSet,
     },
 
     /// Catch-all variant for unsupported opcodes.
@@ -278,6 +294,8 @@ impl ControlPdu<'_> {
     pub fn opcode(&self) -> ControlOpcode {
         match self {
             ControlPdu::UnknownRsp { .. } => ControlOpcode::UnknownRsp,
+            ControlPdu::FeatureReq { .. } => ControlOpcode::FeatureReq,
+            ControlPdu::FeatureRsp { .. } => ControlOpcode::FeatureRsp,
             ControlPdu::Unknown { opcode, .. } => *opcode,
         }
     }
@@ -287,6 +305,15 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         let opcode = ControlOpcode::from(bytes.read_first()?);
         Ok(match opcode {
+            ControlOpcode::UnknownRsp => ControlPdu::UnknownRsp {
+                unknown_type: ControlOpcode::from(bytes.read_first()?),
+            },
+            ControlOpcode::FeatureReq => ControlPdu::FeatureReq {
+                master_features: FeatureSet::from_bytes(bytes)?,
+            },
+            ControlOpcode::FeatureRsp => ControlPdu::FeatureRsp {
+                slave_features: FeatureSet::from_bytes(bytes)?,
+            },
             _ => ControlPdu::Unknown {
                 opcode,
                 ctr_data: {
@@ -301,14 +328,15 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
 
 impl<'a> ToBytes for ControlPdu<'a> {
     fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
+        buffer.write_byte(self.opcode().into())?;
         match self {
             ControlPdu::UnknownRsp { unknown_type } => {
-                buffer.write_byte(ControlOpcode::UnknownRsp.into())?;
                 buffer.write_byte(u8::from(*unknown_type))?;
                 Ok(())
             }
-            ControlPdu::Unknown { opcode, ctr_data } => {
-                buffer.write_byte(u8::from(*opcode))?;
+            ControlPdu::FeatureReq { master_features } => master_features.to_bytes(buffer),
+            ControlPdu::FeatureRsp { slave_features } => slave_features.to_bytes(buffer),
+            ControlPdu::Unknown { ctr_data, .. } => {
                 buffer.write_slice(ctr_data)?;
                 Ok(())
             }

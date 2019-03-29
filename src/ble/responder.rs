@@ -1,9 +1,13 @@
-use crate::ble::{
-    link::{
-        data::{ControlPdu, Pdu},
-        queue::{Consume, Consumer, Producer},
+use {
+    crate::ble::{
+        link::{
+            data::{ControlPdu, Pdu},
+            queue::{Consume, Consumer, Producer},
+            FeatureSet,
+        },
+        Error,
     },
-    Error,
+    log::info,
 };
 
 /// Data channel packet processor.
@@ -39,13 +43,26 @@ impl Responder {
         self.with_rx(|rx, this| {
             rx.consume_pdu_with(|_, pdu| match pdu {
                 Pdu::Control { data } => {
-                    // We don't support any LL Control PDU right now :(
+                    // The only LL Control PDU we have to support is `LL_FEATURE_REQ` (at least
+                    // Android doesn't like if it's unsupported; I haven't found anything in the
+                    // spec that says it has to be supported).
+
+                    // We don't support any other LL Control PDU right now. Also see:
                     // https://github.com/jonas-schievink/rubble/issues/26
 
+                    let pdu = data.read();
+                    info!("LL Control PDU: {:?}", pdu);
+                    let response = match pdu {
+                        ControlPdu::FeatureReq { .. } => ControlPdu::FeatureRsp {
+                            slave_features: FeatureSet::supported(),
+                        },
+                        _ => ControlPdu::UnknownRsp {
+                            unknown_type: pdu.opcode(),
+                        },
+                    };
+
                     // Consume the LL Control PDU iff we can fit the response in the TX buffer:
-                    Consume::on_success(this.tx.produce_pdu(Pdu::from(&ControlPdu::UnknownRsp {
-                        unknown_type: data.read().opcode(),
-                    })))
+                    Consume::on_success(this.tx.produce_pdu(Pdu::from(&response)))
                 }
                 _ => unimplemented!(),
             })

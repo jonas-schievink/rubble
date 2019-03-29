@@ -121,10 +121,12 @@ pub mod advertising;
 mod connection;
 pub mod data;
 mod device_address;
+mod features;
 pub mod queue;
 mod seq_num;
 
 pub use self::device_address::*;
+pub use self::features::*;
 
 use {
     self::{
