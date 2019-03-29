@@ -29,7 +29,7 @@ use {
 /// Data channel packets use a preset shared when initiating the connection.
 ///
 /// (as with `CRC_POLY`, only the least significant 24 bits count)
-pub const CRC_PRESET: u32 = 0x555555;
+pub const CRC_PRESET: u32 = 0x0055_5555;
 
 /// Max. advertising PDU payload size in Bytes.
 ///
@@ -37,7 +37,7 @@ pub const CRC_PRESET: u32 = 0x555555;
 pub const MAX_PAYLOAD_SIZE: usize = 37;
 
 /// Access Address to use for all advertising channel packets.
-pub const ACCESS_ADDRESS: u32 = 0x8E89BED6;
+pub const ACCESS_ADDRESS: u32 = 0x8E89_BED6;
 
 /// A parsed advertising channel PDU.
 #[derive(Debug, Copy, Clone)]
@@ -431,7 +431,7 @@ impl FromBytes<'_> for ConnectRequestData {
             // connSlaveLatency in no. of events
             latency: bytes.read_u16::<LittleEndian>()?,
             // supervision timeout in 10 ms steps
-            timeout: Duration::from_micros(bytes.read_u16::<LittleEndian>()? as u32 * 10_000),
+            timeout: Duration::from_micros(u32::from(bytes.read_u16::<LittleEndian>()?) * 10_000),
             chm: ChannelMap::from_raw(bytes.read_array()?),
             hop: {
                 let hop_and_sca = bytes.read_u8()?;
@@ -700,7 +700,7 @@ const RXADD_MASK: u16 = 0b00000000_10000000;
 impl Header {
     /// Creates a new Advertising Channel PDU header specifying the Payload type `ty`.
     pub fn new(ty: PduType) -> Self {
-        Header(u8::from(ty) as u16)
+        Header(u16::from(u8::from(ty)))
     }
 
     pub fn parse(raw: &[u8]) -> Self {

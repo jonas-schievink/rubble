@@ -569,9 +569,9 @@ impl<R: Radio> RawTransmitter<R> {
 
     fn transmit(&mut self, access_address: u32, payload_length: u8, crc_iv: u32, freq: u16) {
         let preamble = if access_address & 1 == 1 {
-            0b01010101
+            0b0101_0101
         } else {
-            0b10101010
+            0b1010_1010
         };
         self.tx_buf[0] = preamble;
 

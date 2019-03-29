@@ -246,11 +246,11 @@ bitflags! {
     ///
     /// This is mandatory for most devices and can only be omitted if all flags are 0.
     pub struct Flags: u8 {
-        const LE_LIMITED_DISCOVERABLE = 0b00000001;
-        const LE_GENERAL_DISCOVERABLE = 0b00000010;
-        const BR_EDR_NOT_SUPPORTED    = 0b00000100;
-        const SIMUL_LE_BR_CONTROLLER  = 0b00001000;
-        const SIMUL_LE_BR_HOST        = 0b00010000;
+        const LE_LIMITED_DISCOVERABLE = 0b0000_0001;
+        const LE_GENERAL_DISCOVERABLE = 0b0000_0010;
+        const BR_EDR_NOT_SUPPORTED    = 0b0000_0100;
+        const SIMUL_LE_BR_CONTROLLER  = 0b0000_1000;
+        const SIMUL_LE_BR_HOST        = 0b0001_0000;
     }
 }
 
@@ -272,7 +272,7 @@ impl Flags {
     }
 
     /// Returns the raw representation of the flags.
-    pub fn to_u8(&self) -> u8 {
+    pub fn to_u8(self) -> u8 {
         self.bits()
     }
 
