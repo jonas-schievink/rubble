@@ -28,5 +28,31 @@
 /// * `0x0007`: Classic Bluetooth Security Manager protocol.
 /// * `0x0008`-`0x003E`: Reserved.
 /// * `0x003F`: AMP test manager (not relevant for Classic and LE Bluetooth).
+///
+/// For BLE, channels `0x0040`-`0x007F` are dynamically allocated, while `0x0080` and beyond are
+/// reserved and should not be used (as of *Bluetooth 4.2*).
+///
+/// For classic Bluetooth, all channels `0x0040`-`0xFFFF` are available for dynamic allocation.
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub struct Channel(u16);
+
+impl Channel {
+    pub const NULL: Self = Channel(0x0000);
+
+    /// Returns whether this channel is connection-oriented.
+    ///
+    /// L2CAP PDUs addressed to connection-oriented channels are called *B-frames*.
+    pub fn is_connection_oriented(&self) -> bool {
+        !self.is_connectionless()
+    }
+
+    /// Returns whether this channel is connectionless.
+    ///
+    /// L2CAP PDUs addressed to connectionless channels are called *G-frames*.
+    pub fn is_connectionless(&self) -> bool {
+        match self.0 {
+            0x0002 | 0x0001 | 0x0005 => true,
+            _ => false,
+        }
+    }
+}
