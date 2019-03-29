@@ -7,13 +7,14 @@ use {
             advertising::ConnectRequestData,
             data::{self, Header, Llid, Pdu},
             queue::{Consume, Consumer, Producer},
-            Cmd, HardwareInterface, Hw, NextUpdate, RadioCmd, SeqNum, Transmitter,
+            Cmd, HardwareInterface, NextUpdate, RadioCmd, SeqNum, Transmitter,
         },
         phy::{ChannelMap, DataChannel},
         time::{Duration, Instant, Timer},
         utils::HexSlice,
     },
     core::marker::PhantomData,
+    log::trace,
 };
 
 /// Connection state.
@@ -122,7 +123,7 @@ impl<HW: HardwareInterface> Connection<HW> {
         &mut self,
         _rx_end: Instant,
         tx: &mut HW::Tx,
-        hw: &mut Hw<HW>,
+        timer: &mut HW::Timer,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
@@ -144,7 +145,7 @@ impl<HW: HardwareInterface> Connection<HW> {
                     // Acknowledge the packet
                     self.next_expected_seq_num += SeqNum::ONE;
                 } else {
-                    trace!(hw.logger, "NACK (no space in rx buffer)");
+                    trace!("NACK (no space in rx buffer)");
                 }
             }
         }
@@ -169,7 +170,7 @@ impl<HW: HardwareInterface> Connection<HW> {
                 Err(_) => Header::new(Llid::DataCont),
             };
 
-            self.send(header, tx, hw);
+            self.send(header, tx);
         } else {
             // Last packet not acknowledged, resend.
             // If CRC is bad, this bit could be flipped, so we always retransmit in that case.
@@ -181,7 +182,7 @@ impl<HW: HardwareInterface> Connection<HW> {
                     self.last_header,
                     self.channel,
                 );
-                trace!(hw.logger, "<<RESENT>>");
+                trace!("<<RESENT>>");
             } else {
                 // We've never received (and thus sent) a data packet before, so we can't
                 // *re*transmit anything. Send empty PDU instead.
@@ -191,7 +192,7 @@ impl<HW: HardwareInterface> Connection<HW> {
                 let pdu = Pdu::empty();
                 let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
                 pdu.to_bytes(&mut payload_writer).unwrap();
-                self.send(Header::new(pdu.llid()), tx, hw);
+                self.send(Header::new(pdu.llid()), tx);
             }
         }
 
@@ -205,7 +206,6 @@ impl<HW: HardwareInterface> Connection<HW> {
         }
 
         trace!(
-            hw.logger,
             "DATA({}->{})<- {}{:?}, {:?}",
             last_channel.index(),
             self.channel.index(),
@@ -215,7 +215,7 @@ impl<HW: HardwareInterface> Connection<HW> {
         );
 
         Ok(Cmd {
-            next_update: NextUpdate::At(hw.timer.now() + self.conn_event_timeout()),
+            next_update: NextUpdate::At(timer.now() + self.conn_event_timeout()),
             radio: RadioCmd::ListenData {
                 channel: self.channel,
                 access_address: self.access_address,
@@ -224,21 +224,20 @@ impl<HW: HardwareInterface> Connection<HW> {
         })
     }
 
-    pub fn timer_update(&mut self, hw: &mut Hw<HW>) -> Result<Cmd, ()> {
+    pub fn timer_update(&mut self, timer: &mut HW::Timer) -> Result<Cmd, ()> {
         if self.received_packet {
             // No packet from master, skip this connection event and listen on the next channel
 
             let last_channel = self.channel;
             self.hop_channel();
             trace!(
-                hw.logger,
                 "DATA({}->{}): missed conn event",
                 last_channel.index(),
                 self.channel.index()
             );
 
             Ok(Cmd {
-                next_update: NextUpdate::At(hw.timer.now() + self.conn_event_timeout()),
+                next_update: NextUpdate::At(timer.now() + self.conn_event_timeout()),
                 radio: RadioCmd::ListenData {
                     channel: self.channel,
                     access_address: self.access_address,
@@ -250,7 +249,7 @@ impl<HW: HardwareInterface> Connection<HW> {
 
             // TODO: Move the transmit window forward by the `connInterval`.
 
-            trace!(hw.logger, "missed transmit window");
+            trace!("missed transmit window");
             Err(())
         }
     }
@@ -286,7 +285,7 @@ impl<HW: HardwareInterface> Connection<HW> {
     }
 
     /// Sends a new PDU to the connected device (ie. a non-retransmitted PDU).
-    fn send(&mut self, mut header: Header, tx: &mut HW::Tx, hw: &mut Hw<HW>) {
+    fn send(&mut self, mut header: Header, tx: &mut HW::Tx) {
         header.set_md(self.has_more_data());
         header.set_nesn(self.next_expected_seq_num);
         header.set_sn(self.transmit_seq_num);
@@ -295,6 +294,6 @@ impl<HW: HardwareInterface> Connection<HW> {
         tx.transmit_data(self.access_address, self.crc_init, header, self.channel);
 
         let pl = &tx.tx_payload_buf()[..usize::from(header.payload_length())];
-        trace!(hw.logger, "DATA->{:?}, {:?}", header, HexSlice(pl));
+        trace!("DATA->{:?}, {:?}", header, HexSlice(pl));
     }
 }

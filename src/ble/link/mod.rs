@@ -136,7 +136,6 @@ use {
     },
     crate::ble::{
         crc::ble_crc24,
-        log::Logger,
         phy::{AdvertisingChannel, DataChannel, Radio},
         time::{Duration, Instant, Timer},
         utils::HexSlice,
@@ -144,6 +143,7 @@ use {
     },
     byteorder::{ByteOrder, LittleEndian},
     core::ops::Range,
+    log::{debug, trace},
 };
 
 /// The CRC polynomial to use for CRC24 generation.
@@ -169,17 +169,8 @@ pub const MAX_PDU_SIZE: usize = MAX_PAYLOAD_SIZE + 2; // data & adv. have a 16-b
 /// Max. total Link-Layer packet size in octets.
 pub const MAX_PACKET_SIZE: usize = 1 /* preamble */ + 4 /* access addr */ + MAX_PDU_SIZE + 3 /* crc */;
 
-/// Groups hardware interface data that is owned by the link layer.
-pub struct Hw<HW: HardwareInterface> {
-    pub logger: HW::Logger,
-    pub timer: HW::Timer,
-}
-
 /// Defines types that provide platform-dependent functionality.
 pub trait HardwareInterface {
-    /// The logger to use (mostly useful for debugging).
-    type Logger: Logger;
-
     /// A timesource with microsecond accuracy.
     type Timer: Timer;
 
@@ -220,7 +211,7 @@ enum State<HW: HardwareInterface> {
 pub struct LinkLayer<HW: HardwareInterface> {
     dev_addr: DeviceAddress,
     state: State<HW>,
-    hw: Hw<HW>,
+    timer: HW::Timer,
 }
 
 impl<HW: HardwareInterface> LinkLayer<HW> {
@@ -229,25 +220,21 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
     /// # Parameters
     ///
     /// * **`dev_addr`**: The device address to broadcast as.
-    /// * **`hw`**: Hardware interface consisting of a `Timer` and a `Logger`.
+    /// * **`timer`**: A `Timer` implementation.
     /// * **`tx`**: Input queue of packets to transmit when connected.
     /// * **`rx`**: Output queue of received packets when connected.
-    pub fn new(dev_addr: DeviceAddress, mut hw: Hw<HW>) -> Self {
-        trace!(hw.logger, "new LinkLayer, dev={:?}", dev_addr);
+    pub fn new(dev_addr: DeviceAddress, timer: HW::Timer) -> Self {
+        trace!("new LinkLayer, dev={:?}", dev_addr);
         Self {
             dev_addr,
             state: State::Standby,
-            hw,
+            timer,
         }
-    }
-
-    pub fn logger(&mut self) -> &mut HW::Logger {
-        &mut self.hw.logger
     }
 
     /// Returns a reference to the timer instance used by the Link-Layer.
     pub fn timer(&mut self) -> &mut HW::Timer {
-        &mut self.hw.timer
+        &mut self.timer
     }
 
     /// Starts advertising this device, optionally sending data along with the advertising PDU.
@@ -262,8 +249,8 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
         // TODO tear down existing connection?
 
         let pdu = PduBuf::discoverable(self.dev_addr, data)?;
-        debug!(self.logger(), "start_advertise: adv_data = {:?}", data);
-        debug!(self.logger(), "start_advertise: PDU = {:?}", pdu);
+        debug!("start_advertise: adv_data = {:?}", data);
+        debug!("start_advertise: PDU = {:?}", pdu);
         self.state = State::Advertising {
             next_adv: self.timer().now(),
             interval,
@@ -312,10 +299,10 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
                             tx.transmit_advertising(response.header(), *channel);
 
                             // Log after responding to meet timing
-                            debug!(self.hw.logger, "-> SCAN RESP: {:?}", response);
+                            debug!("-> SCAN RESP: {:?}", response);
                         }
                         Pdu::ConnectRequest { lldata, .. } => {
-                            trace!(self.hw.logger, "ADV<- CONN! {:?}", pdu);
+                            trace!("ADV<- CONN! {:?}", pdu);
 
                             let (tx, rx) = data_queues.take().unwrap();
                             let (conn, cmd) = Connection::create(&lldata, rx_end, tx, rx);
@@ -329,7 +316,6 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
         }
 
         trace!(
-            self.logger(),
             "ADV<- {}{:?}, {:?}\n{:?}\n",
             if crc_ok { "" } else { "BADCRC " },
             header,
@@ -360,10 +346,10 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
         crc_ok: bool,
     ) -> Cmd {
         if let State::Connection(conn) = &mut self.state {
-            match conn.process_data_packet(rx_end, tx, &mut self.hw, header, payload, crc_ok) {
+            match conn.process_data_packet(rx_end, tx, &mut self.timer, header, payload, crc_ok) {
                 Ok(cmd) => cmd,
                 Err(()) => {
-                    debug!(self.logger(), "connection ended, standby");
+                    debug!("connection ended, standby");
                     self.state = State::Standby;
                     Cmd {
                         next_update: NextUpdate::Disable,
@@ -411,10 +397,10 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
                     next_update: NextUpdate::At(*next_adv),
                 }
             }
-            State::Connection(conn) => match conn.timer_update(&mut self.hw) {
+            State::Connection(conn) => match conn.timer_update(&mut self.timer) {
                 Ok(cmd) => cmd,
                 Err(()) => {
-                    debug!(self.logger(), "connection ended (timer), standby");
+                    debug!("connection ended (timer), standby");
                     self.state = State::Standby;
                     Cmd {
                         next_update: NextUpdate::Disable,

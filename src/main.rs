@@ -15,9 +15,8 @@ use {
             beacon::Beacon,
             link::{
                 ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
-                Hw, LinkLayer, MAX_PDU_SIZE,
+                LinkLayer, MAX_PDU_SIZE,
             },
-            log::NoopLogger,
             time::{Duration, Timer},
             Responder,
         },
@@ -46,7 +45,6 @@ type Logger = StampedLogger<timer::StampSource<pac::TIMER0>, BbqLogger>;
 pub struct HwNRf52810 {}
 
 impl HardwareInterface for HwNRf52810 {
-    type Logger = NoopLogger;
     type Timer = BleTimer<pac::TIMER0>;
     type Tx = BleRadio;
 }
@@ -171,13 +169,7 @@ const APP: () = {
         let (rx_prod, rx) = queue::create(bbq![1024].unwrap());
 
         // Create the actual BLE stack objects
-        let mut ll = LinkLayer::<HwNRf52810>::new(
-            device_address,
-            Hw {
-                timer: ble_timer,
-                logger: NoopLogger,
-            },
-        );
+        let mut ll = LinkLayer::<HwNRf52810>::new(device_address, ble_timer);
 
         let resp = Responder::new(tx, rx);
 
