@@ -18,6 +18,7 @@ use {
                 Hw, LinkLayer, MAX_PDU_SIZE,
             },
             time::{Duration, Timer},
+            Responder,
         },
         logger::{BbqLogger, StampedLogger},
         radio::{BleRadio, PacketBuffer},
@@ -58,7 +59,8 @@ const TEST_BEACON: bool = false;
 const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
     static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
-    static mut BLE: LinkLayer<HwNRf52810> = ();
+    static mut BLE_LL: LinkLayer<HwNRf52810> = ();
+    static mut BLE_R: Responder = ();
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
     static mut BEACON_TIMER: pac::TIMER1 = ();
@@ -150,8 +152,8 @@ const APP: () = {
         let logger = StampedLogger::new(BbqLogger::new(tx), log_stamper);
 
         // Create TX/RX queues
-        let (_tx, tx_cons) = queue::create(bbq![1024].unwrap());
-        let (rx_prod, _rx) = queue::create(bbq![1024].unwrap());
+        let (tx, tx_cons) = queue::create(bbq![1024].unwrap());
+        let (rx_prod, rx) = queue::create(bbq![1024].unwrap());
 
         // Create the actual BLE stack objects
         let mut ll = LinkLayer::<HwNRf52810>::new(
@@ -161,6 +163,8 @@ const APP: () = {
                 logger,
             },
         );
+
+        let resp = Responder::new(tx, rx);
 
         if !TEST_BEACON {
             // Send advertisement and set up regular interrupt
@@ -177,33 +181,37 @@ const APP: () = {
         }
 
         RADIO = radio;
-        BLE = ll;
+        BLE_LL = ll;
+        BLE_R = resp;
         BEACON = beacon;
         BEACON_TIMER = device.TIMER1;
         SERIAL = serial;
         LOG_SINK = log_sink;
     }
 
-    #[interrupt(resources = [RADIO, BLE])]
+    #[interrupt(resources = [RADIO, BLE_LL])]
     fn RADIO() {
         let next_update = resources
             .RADIO
-            .recv_interrupt(resources.BLE.timer().now(), &mut resources.BLE);
-        resources.BLE.timer().configure_interrupt(next_update);
+            .recv_interrupt(resources.BLE_LL.timer().now(), &mut resources.BLE_LL);
+        resources.BLE_LL.timer().configure_interrupt(next_update);
     }
 
-    #[interrupt(resources = [RADIO, BLE])]
+    #[interrupt(resources = [RADIO, BLE_LL])]
     fn TIMER0() {
-        let timer = resources.BLE.timer();
+        let timer = resources.BLE_LL.timer();
         if !timer.is_interrupt_pending() {
             return;
         }
         timer.clear_interrupt();
 
-        let cmd = resources.BLE.update(&mut *resources.RADIO);
+        let cmd = resources.BLE_LL.update(&mut *resources.RADIO);
         resources.RADIO.configure_receiver(cmd.radio);
 
-        resources.BLE.timer().configure_interrupt(cmd.next_update);
+        resources
+            .BLE_LL
+            .timer()
+            .configure_interrupt(cmd.next_update);
     }
 
     /// Fire the beacon.
@@ -215,7 +223,7 @@ const APP: () = {
         resources.BEACON.broadcast(&mut *resources.RADIO);
     }
 
-    #[idle(resources = [LOG_SINK, SERIAL])]
+    #[idle(resources = [LOG_SINK, SERIAL, BLE_R])]
     fn idle() -> ! {
         // Drain the logging buffer through the serial connection
         loop {
@@ -225,6 +233,10 @@ const APP: () = {
                 }
 
                 resources.LOG_SINK.release(grant.buf().len(), grant);
+            }
+
+            if resources.BLE_R.has_work() {
+                resources.BLE_R.process_one().unwrap();
             }
         }
     }

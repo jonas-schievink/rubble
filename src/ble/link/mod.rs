@@ -5,7 +5,7 @@
 //! BLE Link-Layers: Take whatever your hardware can do, supplement it with a few condiments from
 //! this module, and you get a (hopefully) working Link-Layer.
 //!
-//! Refer to the Link Layer Specification for details and more graphics and tables.
+//! Refer to the official *Link Layer Specification* for details and more graphics and tables.
 //!
 //! All following graphics are based on the Bluetooth specification. If a field is marked with `-`,
 //! it should be set to 0 when sending such a packet, and ignored when receiving it (the spec calls

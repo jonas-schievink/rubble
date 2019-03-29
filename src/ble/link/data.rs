@@ -89,6 +89,13 @@ impl Header {
         ((self.0 & 0b11111111_00000000) >> 8) as u8
     }
 
+    /// Sets the payload length field to `len`.
+    ///
+    /// Note that BLE <4.2 is restricted to 5-bit payload lengths.
+    pub fn set_payload_length(&mut self, len: u8) {
+        self.0 = (u16::from(len) << 8) | (self.0 & 0x00ff);
+    }
+
     /// Returns the `LLID` field (PDU type).
     pub fn llid(&self) -> Llid {
         let bits = self.0 & 0b11;
@@ -266,13 +273,27 @@ pub enum ControlPdu<'a> {
     },
 }
 
+impl ControlPdu<'_> {
+    /// Returns the opcode of this LL Control PDU.
+    pub fn opcode(&self) -> ControlOpcode {
+        match self {
+            ControlPdu::UnknownRsp { .. } => ControlOpcode::UnknownRsp,
+            ControlPdu::Unknown { opcode, .. } => *opcode,
+        }
+    }
+}
+
 impl<'a> FromBytes<'a> for ControlPdu<'a> {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         let opcode = ControlOpcode::from(bytes.read_first()?);
         Ok(match opcode {
             _ => ControlPdu::Unknown {
                 opcode,
-                ctr_data: *bytes,
+                ctr_data: {
+                    let rest = *bytes;
+                    *bytes = &[];
+                    rest
+                },
             },
         })
     }

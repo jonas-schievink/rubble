@@ -6,7 +6,7 @@ use {
         link::{
             advertising::ConnectRequestData,
             data::{self, Header, Llid, Pdu},
-            queue::{Consumer, Producer},
+            queue::{Consume, Consumer, Producer},
             Cmd, HardwareInterface, Hw, NextUpdate, RadioCmd, SeqNum, Transmitter,
         },
         phy::{ChannelMap, DataChannel},
@@ -163,7 +163,7 @@ impl<HW: HardwareInterface> Connection<HW> {
             let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
             let header = match self.tx.consume_raw_with(|header, pl| {
                 payload_writer.write_slice(pl).expect("TX buf out of space");
-                header
+                Consume::always(Ok(header))
             }) {
                 Ok(h) => h,
                 Err(_) => Header::new(Llid::DataCont),
@@ -294,6 +294,7 @@ impl<HW: HardwareInterface> Connection<HW> {
 
         tx.transmit_data(self.access_address, self.crc_init, header, self.channel);
 
-        trace!(hw.logger, "DATA->{:?}", header);
+        let pl = &tx.tx_payload_buf()[..usize::from(header.payload_length())];
+        trace!(hw.logger, "DATA->{:?}, {:?}", header, HexSlice(pl));
     }
 }
