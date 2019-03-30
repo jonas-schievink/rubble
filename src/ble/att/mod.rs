@@ -15,6 +15,6 @@ impl AttributeServer {
 
 impl Protocol for AttributeServer {
     fn process_message(&mut self, _message: &[u8], _responder: L2CAPResponder) -> Consume<()> {
-        unimplemented!()
+        Consume::always(Ok(()))
     }
 }
