@@ -9,26 +9,26 @@ use core::fmt;
 macro_rules! enum_with_unknown {
     (
         $( #[$enum_attr:meta] )*
-        pub enum $name:ident($ty:ty) {
+        $v:vis enum $name:ident($ty:ty) {
             $(
               $( #[$variant_attr:meta] )*
               $variant:ident = $value:expr $(,)*
-            ),+
+            ),*
         }
     ) => {
         $( #[$enum_attr] )*
-        pub enum $name {
+        $v enum $name {
             $(
               $( #[$variant_attr] )*
-              $variant
-            ),*,
+              $variant,
+            )*
             Unknown($ty)
         }
 
         impl ::core::convert::From<$ty> for $name {
             fn from(value: $ty) -> Self {
                 match value {
-                    $( $value => $name::$variant ),*,
+                    $( $value => $name::$variant, )*
                     other => $name::Unknown(other)
                 }
             }
@@ -37,7 +37,7 @@ macro_rules! enum_with_unknown {
         impl ::core::convert::From<$name> for $ty {
             fn from(value: $name) -> Self {
                 match value {
-                    $( $name::$variant => $value ),*,
+                    $( $name::$variant => $value, )*
                     $name::Unknown(other) => other
                 }
             }
