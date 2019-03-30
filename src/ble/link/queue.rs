@@ -20,11 +20,19 @@ impl Producer {
         self.inner.grant(space).is_ok()
     }
 
+    /// Returns the size of the largest contiguous free space in the queue (in Bytes).
+    pub fn free_space(&mut self) -> usize {
+        match self.inner.grant_max(usize::max_value()) {
+            Ok(grant) => grant.len(),
+            Err(_) => 0,
+        }
+    }
+
     /// Enqueues a data channel PDU.
     ///
     /// Returns `Error::Eof` when the queue does not have enough free space for both header and
     /// payload.
-    pub fn produce_pdu(&mut self, payload: data::Pdu) -> Result<(), Error> {
+    pub fn produce_pdu<L: ToBytes>(&mut self, payload: data::Pdu<L>) -> Result<(), Error> {
         // Problem: We don't know the PDU size before encoding it, but it needs to go into the
         // header.
 
@@ -100,7 +108,7 @@ impl Consumer {
     /// parsing the data fails).
     pub fn consume_pdu_with<R>(
         &mut self,
-        f: impl FnOnce(data::Header, data::Pdu) -> Consume<R>,
+        f: impl FnOnce(data::Header, data::Pdu<&[u8]>) -> Consume<R>,
     ) -> Result<R, Error> {
         self.consume_raw_with(|header, raw| {
             let pdu = match data::Pdu::parse(header, raw) {

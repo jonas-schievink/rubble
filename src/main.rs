@@ -13,6 +13,7 @@ use {
     crate::{
         ble::{
             beacon::Beacon,
+            l2cap::{BleChannelMap, L2CAPState},
             link::{
                 ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
                 LinkLayer, MAX_PDU_SIZE,
@@ -63,7 +64,7 @@ const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
     static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
     static mut BLE_LL: LinkLayer<HwNRf52810> = ();
-    static mut BLE_R: Responder = ();
+    static mut BLE_R: Responder<BleChannelMap> = ();
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
     static mut BEACON_TIMER: pac::TIMER1 = ();
@@ -171,7 +172,7 @@ const APP: () = {
         // Create the actual BLE stack objects
         let mut ll = LinkLayer::<HwNRf52810>::new(device_address, ble_timer);
 
-        let resp = Responder::new(tx, rx);
+        let resp = Responder::new(tx, rx, L2CAPState::new(BleChannelMap::new()));
 
         if !TEST_BEACON {
             // Send advertisement and set up regular interrupt

@@ -292,6 +292,24 @@ pub trait FromBytes<'a>: Sized {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error>;
 }
 
+impl ToBytes for [u8] {
+    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+        writer.write_slice(self)
+    }
+}
+
+impl<'a> ToBytes for &'a [u8] {
+    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+        writer.write_slice(*self)
+    }
+}
+
+impl<'a> FromBytes<'a> for &'a [u8] {
+    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+        Ok(mem::replace(bytes, &[]))
+    }
+}
+
 /// Extensions on `&'a [u8]` that expose byteorder methods.
 pub trait BytesExt<'a> {
     fn read_u8(&mut self) -> Result<u8, Error>;

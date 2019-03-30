@@ -5,6 +5,7 @@
 
 #[macro_use]
 mod utils;
+pub mod att;
 pub mod beacon;
 mod bytes;
 mod crc;

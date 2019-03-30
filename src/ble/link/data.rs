@@ -196,37 +196,27 @@ pub enum Llid {
 
 /// Structured representation of a data channel PDU.
 #[derive(Debug)]
-pub enum Pdu<'a> {
+pub enum Pdu<'a, L> {
     /// Continuation of an L2CAP message (or empty PDU).
-    DataCont { message: &'a [u8] },
+    DataCont { message: L },
 
     /// Start of an L2CAP message (must not be empty).
-    DataStart { message: &'a [u8] },
+    DataStart { message: L },
 
     /// LL Control PDU for controlling the Link-Layer connection.
     Control { data: BytesOr<'a, ControlPdu<'a>> },
 }
 
-impl<'a> Pdu<'a> {
+impl<'a> Pdu<'a, &'a [u8]> {
     /// Creates an empty PDU that carries no message.
     ///
     /// This PDU can be sent whenever there's no actual data to be transferred.
     pub fn empty() -> Self {
         Pdu::DataCont { message: &[] }
     }
+}
 
-    /// Parses a PDU from a `Header` and raw payload.
-    pub fn parse(header: Header, mut payload: &'a [u8]) -> Result<Self, Error> {
-        match header.llid() {
-            Llid::DataCont => Ok(Pdu::DataCont { message: payload }),
-            Llid::DataStart => Ok(Pdu::DataStart { message: payload }),
-            Llid::Control => Ok(Pdu::Control {
-                data: BytesOr::from_bytes(&mut payload)?,
-            }),
-            Llid::Reserved => Err(Error::InvalidValue),
-        }
-    }
-
+impl<'a, L> Pdu<'a, L> {
     /// Returns the `LLID` field to use for this PDU.
     pub fn llid(&self) -> Llid {
         match self {
@@ -237,7 +227,25 @@ impl<'a> Pdu<'a> {
     }
 }
 
-impl<'a> From<&'a ControlPdu<'a>> for Pdu<'a> {
+impl<'a, L: FromBytes<'a> + ?Sized> Pdu<'a, L> {
+    /// Parses a PDU from a `Header` and raw payload.
+    pub fn parse(header: Header, mut payload: &'a [u8]) -> Result<Self, Error> {
+        match header.llid() {
+            Llid::DataCont => Ok(Pdu::DataCont {
+                message: L::from_bytes(&mut payload)?,
+            }),
+            Llid::DataStart => Ok(Pdu::DataStart {
+                message: L::from_bytes(&mut payload)?,
+            }),
+            Llid::Control => Ok(Pdu::Control {
+                data: BytesOr::from_bytes(&mut payload)?,
+            }),
+            Llid::Reserved => Err(Error::InvalidValue),
+        }
+    }
+}
+
+impl<'a> From<&'a ControlPdu<'a>> for Pdu<'a, &'a [u8]> {
     fn from(c: &'a ControlPdu<'a>) -> Self {
         Pdu::Control { data: c.into() }
     }
@@ -246,10 +254,10 @@ impl<'a> From<&'a ControlPdu<'a>> for Pdu<'a> {
 /// Serializes the payload of the PDU to bytes.
 ///
 /// The PDU header must be constructed using Link-Layer state (and `Pdu::llid`).
-impl<'a> ToBytes for Pdu<'a> {
+impl<'a, L: ToBytes> ToBytes for Pdu<'a, L> {
     fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
         match self {
-            Pdu::DataCont { message } | Pdu::DataStart { message } => buffer.write_slice(message),
+            Pdu::DataCont { message } | Pdu::DataStart { message } => message.to_bytes(buffer),
             Pdu::Control { data } => data.to_bytes(buffer),
         }
     }

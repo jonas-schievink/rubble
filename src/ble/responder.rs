@@ -1,10 +1,12 @@
 use {
     crate::ble::{
+        l2cap::{ChannelMapper, L2CAPState},
         link::{
             data::{ControlPdu, Pdu},
             queue::{Consume, Consumer, Producer},
             FeatureSet,
         },
+        utils::HexSlice,
         Error,
     },
     log::info,
@@ -18,14 +20,19 @@ use {
 ///
 /// Data channel PDUs can either contain L2CAP data or an LL Control PDU. This responder handles
 /// both, which is why it's neither placed in the `link` nor `l2cap` modules.
-pub struct Responder {
+pub struct Responder<M: ChannelMapper> {
     tx: Producer,
     rx: Option<Consumer>,
+    l2cap: L2CAPState<M>,
 }
 
-impl Responder {
-    pub fn new(tx: Producer, rx: Consumer) -> Self {
-        Self { tx, rx: Some(rx) }
+impl<M: ChannelMapper> Responder<M> {
+    pub fn new(tx: Producer, rx: Consumer, l2cap: L2CAPState<M>) -> Self {
+        Self {
+            tx,
+            rx: Some(rx),
+            l2cap,
+        }
     }
 
     /// Returns `true` when this responder has work to do.
@@ -36,7 +43,7 @@ impl Responder {
         self.with_rx(|rx, _| rx.has_data())
     }
 
-    /// Processes a single incoming packets in the packet queue.
+    /// Processes a single incoming packet in the packet queue.
     ///
     /// Returns `Error::Eof` if there are no incoming packets in the RX queue.
     pub fn process_one(&mut self) -> Result<(), Error> {
@@ -64,7 +71,14 @@ impl Responder {
                     // Consume the LL Control PDU iff we can fit the response in the TX buffer:
                     Consume::on_success(this.tx.produce_pdu(Pdu::from(&response)))
                 }
-                _ => unimplemented!(),
+                Pdu::DataStart { message } => {
+                    info!("L2start: {:?}", HexSlice(message));
+                    this.l2cap.process_start(message, &mut this.tx)
+                }
+                Pdu::DataCont { message } => {
+                    info!("L2cont {:?}", HexSlice(message));
+                    this.l2cap.process_cont(message, &mut this.tx)
+                }
             })
         })
     }
