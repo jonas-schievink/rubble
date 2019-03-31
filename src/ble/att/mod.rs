@@ -1,4 +1,10 @@
 //! Implementation of the Attribute Protocol (ATT).
+//!
+//! ATT always runs over L2CAP channel `0x0004`, which is connected by default as soon as the
+//! Link-Layer connection is established.
+//!
+//! ATT is used by GATT, the *Generic Attribute Profile*, which introduces the concept of *Services*
+//! and *Characteristics* which can all be accessed and discovered over the Attribute Protocol.
 
 use {
     crate::ble::{
