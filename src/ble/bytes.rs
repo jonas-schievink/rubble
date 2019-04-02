@@ -6,6 +6,8 @@ use {
     core::{fmt, iter, mem},
 };
 
+pub use byteorder::LittleEndian;
+
 /// Reference to a `T`, or to a byte slice that can be decoded as a `T`.
 pub struct BytesOr<'a, T: ?Sized>(Inner<'a, T>);
 
@@ -179,6 +181,41 @@ impl<'a> ByteWriter<'a> {
         self.0
     }
 
+    /// Returns the raw buffer this `ByteWriter` would write to.
+    ///
+    /// Combined with `skip`, this method allows advanced operations on the underlying byte buffer.
+    pub fn rest(&mut self) -> &mut [u8] {
+        self.0
+    }
+
+    /// Skips the given number of bytes in the output data without writing anything there.
+    ///
+    /// This is a potentially dangerous operation that should only be used when necessary (eg. when
+    /// the skipped data will be filled in by other code). If the skipped bytes are *not* written,
+    /// they will probably contain garbage data from an earlier use of the underlying buffer.
+    pub fn skip(&mut self, bytes: usize) -> Result<(), Error> {
+        eof_unless!(self.space_left() >= bytes);
+        let this = mem::replace(&mut self.0, &mut []);
+        self.0 = &mut this[bytes..];
+        Ok(())
+    }
+
+    /// Creates another `ByteWriter` that can write to the next `len` Bytes in the buffer.
+    ///
+    /// `self` will be modified to point after the split-off bytes.
+    ///
+    /// Note that if the created `ByteWriter` is not used, the bytes will contain whatever contents
+    /// they had before creating `self` (ie. most likely garbage data left over from earlier use).
+    /// If you want that, `skip` is a more explicit way of doing that.
+    #[must_use]
+    pub fn split_off(&mut self, len: usize) -> Result<Self, Error> {
+        eof_unless!(self.space_left() >= len);
+        let this = mem::replace(&mut self.0, &mut []);
+        let (head, tail) = this.split_at_mut(len);
+        self.0 = tail;
+        Ok(ByteWriter::new(head))
+    }
+
     /// Returns the number of bytes that can be written to `self` until it is full.
     pub fn space_left(&self) -> usize {
         self.0.len()
@@ -307,6 +344,12 @@ impl<'a> ToBytes for &'a [u8] {
 impl<'a> FromBytes<'a> for &'a [u8] {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         Ok(mem::replace(bytes, &[]))
+    }
+}
+
+impl<'a> FromBytes<'a> for u8 {
+    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+        bytes.read_u8()
     }
 }
 
