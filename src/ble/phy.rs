@@ -19,7 +19,7 @@ fn rf_channel_freq(rf_channel: u8) -> u16 {
 /// Returns the data whitening IV for a channel index (not RF channel).
 fn whitening_iv(channel_idx: u8) -> u8 {
     debug_assert!(channel_idx <= 39);
-    0b0100000 | channel_idx
+    0b01000000 | channel_idx
 }
 
 /// One of the three advertising channels (channel indices 37, 38 or 39).

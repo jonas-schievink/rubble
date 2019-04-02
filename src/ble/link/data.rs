@@ -159,7 +159,7 @@ impl Header {
     /// Sets the value of the `MD` field.
     pub fn set_md(&mut self, md: bool) {
         if md {
-            self.0 |= 0b0000;
+            self.0 |= 0b10000;
         } else {
             self.0 &= !0b10000;
         }

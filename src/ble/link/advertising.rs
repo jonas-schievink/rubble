@@ -37,7 +37,7 @@ pub const CRC_PRESET: u32 = 0x00555555;
 pub const MAX_PAYLOAD_SIZE: usize = 37;
 
 /// Access Address to use for all advertising channel packets.
-pub const ACCESS_ADDRESS: u32 = 0x8E89_BED6;
+pub const ACCESS_ADDRESS: u32 = 0x8E89BED6;
 
 /// A parsed advertising channel PDU.
 #[derive(Debug, Copy, Clone)]
@@ -694,8 +694,8 @@ impl fmt::Debug for PduBuf {
 #[derive(Copy, Clone)]
 pub struct Header(u16);
 
-const TXADD_MASK: u16 = 0b0000000001000000;
-const RXADD_MASK: u16 = 0b0000000010000000;
+const TXADD_MASK: u16 = 0b00000000_01000000;
+const RXADD_MASK: u16 = 0b00000000_10000000;
 
 impl Header {
     /// Creates a new Advertising Channel PDU header specifying the Payload type `ty`.
