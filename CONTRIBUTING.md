@@ -17,7 +17,7 @@ Issues should generally be opened when:
   refactoring, or is just too massive to do it all at once
 * You don't know how to do what you want to do, or don't have time to do it
 
-If none of these applies, you can just directly send a PR if you want.
+If none of these apply, you can just directly send a PR if you want.
 
 ## What should I work on?
 
