@@ -1,9 +1,8 @@
 # rubble
 
-> A WIP Rust BLE stack
+> A Bluetooth Low-Energy stack for embedded Rust
 
 [![Build Status](https://travis-ci.org/jonas-schievink/rubble.svg?branch=master)](https://travis-ci.org/jonas-schievink/rubble)
-[![Line Count](https://tokei.rs/b1/github/jonas-schievink/rubble)](https://github.com/XAMPPRocky/tokei)
 
 This will hopefully eventually become a Bluetooth® Low Energy compatible
 protocol stack.
@@ -13,7 +12,7 @@ not be used in commercial products!**
 
 ## Contributing
 
-See [CONTRIBUTING](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
