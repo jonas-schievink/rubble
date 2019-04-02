@@ -9,9 +9,24 @@ install:
   - rustup target add $TARGET_BUILD
   - rustup component add rustfmt
 
-script:
-  - cargo fmt --all -- --check
-  - cargo check --target $TARGET_BUILD
+stages:
+  - test
+  - name: deploy
+    if: branch = master AND type = push
+
+jobs:
+  include:
+    - stage: test
+      script:
+        - cargo fmt --all -- --check
+        - cargo check --target $TARGET_BUILD
+    - stage: deploy
+      script:
+        - cargo doc
+        - echo "<meta http-equiv=refresh content=0;url=rubble/ble/index.html>" > target/$TARGET_BUILD/doc/index.html
+        - sudo pip install ghp-import
+        - ghp-import -n target/$TARGET_BUILD/doc
+        - git push -qf https://${GH_TOKEN}@github.com/jonas-schievink/rubble.git gh-pages
 
 notifications:
   email:
