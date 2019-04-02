@@ -103,7 +103,7 @@ impl BleRadio {
             });
             radio
                 .crcpoly
-                .write(|w| w.crcpoly().bits(CRC_POLY & 0xFFFFFF));
+                .write(|w| w.crcpoly().bits(CRC_POLY & 0x00FFFFFF));
 
             // Configure logical address 0 as the canonical advertising address.
             // Base addresses are up to 32 bits in size. However, an 8 bit Address Prefix is
@@ -345,7 +345,7 @@ impl BleRadio {
                 .write(|w| w.datawhiteiv().bits(channel.whitening_iv()));
             self.radio
                 .crcinit
-                .write(|w| w.crcinit().bits(crc_init & 0x00ffffff));
+                .write(|w| w.crcinit().bits(crc_init & 0x00FFFFFF));
             self.radio
                 .frequency
                 .write(|w| w.frequency().bits((channel.freq() - 2400) as u8));

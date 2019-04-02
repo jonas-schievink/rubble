@@ -31,7 +31,7 @@ impl<'a, T: ?Sized> Clone for Inner<'a, T> {
 
 impl<'a, T: ?Sized> Clone for BytesOr<'a, T> {
     fn clone(&self) -> Self {
-        BytesOr(self.0.clone())
+        BytesOr(self.0)
     }
 }
 

@@ -272,7 +272,7 @@ impl Flags {
     }
 
     /// Returns the raw representation of the flags.
-    pub fn to_u8(&self) -> u8 {
+    pub fn to_u8(self) -> u8 {
         self.bits()
     }
 
