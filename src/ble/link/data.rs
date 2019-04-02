@@ -152,16 +152,16 @@ impl Header {
 
     /// Returns whether the `MD` field is set (More Data).
     pub fn md(&self) -> bool {
-        let bit = self.0 & 0b1_0000;
+        let bit = self.0 & 0b10000;
         bit != 0
     }
 
     /// Sets the value of the `MD` field.
     pub fn set_md(&mut self, md: bool) {
         if md {
-            self.0 |= 0b1_0000;
+            self.0 |= 0b0000;
         } else {
-            self.0 &= !0b1_0000;
+            self.0 &= !0b10000;
         }
     }
 }

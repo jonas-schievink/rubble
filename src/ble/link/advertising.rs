@@ -29,7 +29,7 @@ use {
 /// Data channel packets use a preset shared when initiating the connection.
 ///
 /// (as with `CRC_POLY`, only the least significant 24 bits count)
-pub const CRC_PRESET: u32 = 0x0055_5555;
+pub const CRC_PRESET: u32 = 0x00555555;
 
 /// Max. advertising PDU payload size in Bytes.
 ///
@@ -694,8 +694,8 @@ impl fmt::Debug for PduBuf {
 #[derive(Copy, Clone)]
 pub struct Header(u16);
 
-const TXADD_MASK: u16 = 0b00000000_01000000;
-const RXADD_MASK: u16 = 0b00000000_10000000;
+const TXADD_MASK: u16 = 0b0000000001000000;
+const RXADD_MASK: u16 = 0b0000000010000000;
 
 impl Header {
     /// Creates a new Advertising Channel PDU header specifying the Payload type `ty`.

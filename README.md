@@ -1,14 +1,13 @@
-# rubble
+# rubble \*WIP\*
 
-> A Bluetooth Low-Energy stack for embedded Rust
+A BLE stack for embedded Rust
 
 [![Build Status](https://travis-ci.org/jonas-schievink/rubble.svg?branch=master)](https://travis-ci.org/jonas-schievink/rubble)
 
 This will hopefully eventually become a Bluetooth® Low Energy compatible
 protocol stack.
 
-**NOTE: None of this has passed the Bluetooth Qualification Process, so it must
-not be used in commercial products!**
+**NOTE: None of this has passed the Bluetooth® Qualification Process, so it cannot be used in commercial products!**
 
 ## Contributing
 
