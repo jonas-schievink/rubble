@@ -41,6 +41,10 @@ impl Producer {
         }
     }
 
+    /// Enqueue a new data channel PDU by passing a `ByteWriter` to a closure.
+    ///
+    /// The closure has to write the PDU payload into the `ByteWriter` and must return the `Llid` to
+    /// set in the header. The payload size is determined and written to the header automatically.
     pub fn produce_with(
         &mut self,
         f: impl FnOnce(&mut ByteWriter) -> Result<Llid, Error>,
