@@ -23,10 +23,10 @@
 
 use {
     crate::ble::{
-        att::AttributeServer,
+        att::{AttributeServer, Attributes, NoAttributes},
         bytes::*,
         link::{
-            data,
+            data::Llid,
             queue::{Consume, Producer},
         },
         utils::HexSlice,
@@ -34,13 +34,13 @@ use {
     },
     byteorder::LittleEndian,
     core::fmt,
-    log::warn,
+    log::{debug, warn},
 };
 
 /// An L2CAP channel identifier (CID).
 ///
 /// Channels are basically like TCP ports. A `Protocol` can listen on a channel and is connected to
-/// a channel on the other device.
+/// a channel on the other device to which all responses are addressed.
 ///
 /// A number of channel identifiers are reserved for predefined functions:
 ///
@@ -130,10 +130,36 @@ pub struct ChannelData<'a> {
     ///
     /// For fixed, predefined channels, this is always the same value for both devices, but
     /// dynamically allocated channels can have different CIDs on both devices.
-    pub response_channel: Channel,
+    response_channel: Channel,
 
     /// The protocol listening on this channel.
-    pub protocol: &'a mut Protocol,
+    protocol: &'a mut ProtocolObj,
+
+    rsp_pdu: u8,
+}
+
+impl<'a> ChannelData<'a> {
+    /// Returns the `Channel` to which the response should be sent.
+    pub fn response_channel(&self) -> Channel {
+        self.response_channel
+    }
+
+    /// Returns the protocol response size in Bytes.
+    ///
+    /// This is the minimal size in Bytes the protocol needs to have provided for its responses.
+    /// `Protocol` implementations may make use of additional space as well, but this is the very
+    /// minimum.
+    ///
+    /// The L2CAP implementation will not forward PDUs to the protocol unless this amount of space
+    /// is available in the TX buffer.
+    pub fn response_pdu_size(&self) -> u8 {
+        self.rsp_pdu
+    }
+
+    /// Returns the protocol connected to the channel.
+    pub fn protocol(&mut self) -> &mut ProtocolObj {
+        self.protocol
+    }
 }
 
 /// A fixed BLE channel map that provides only the required channel endpoints and does not allow
@@ -144,24 +170,29 @@ pub struct ChannelData<'a> {
 /// * `0x0004`: Attribute protocol (ATT).
 /// * `0x0005`: LE L2CAP signaling channel.
 /// * `0x0006`: LE Security Manager protocol.
-pub struct BleChannelMap {
-    att: AttributeServer,
+pub struct BleChannelMap<A: Attributes> {
+    att: AttributeServer<A>,
 }
 
-impl BleChannelMap {
-    pub fn new() -> Self {
+impl BleChannelMap<NoAttributes> {
+    /// Creates a new channel map with no backing data for the connected protocols.
+    ///
+    /// This means:
+    /// * The attribute server on channel `0x0004` will host an empty attribute set.
+    pub fn empty() -> Self {
         Self {
             att: AttributeServer::empty(),
         }
     }
 }
 
-impl ChannelMapper for BleChannelMap {
+impl<A: Attributes> ChannelMapper for BleChannelMap<A> {
     fn lookup(&mut self, channel: Channel) -> Option<ChannelData> {
         match channel {
             Channel::ATT => Some(ChannelData {
                 response_channel: Channel::ATT,
                 protocol: &mut self.att,
+                rsp_pdu: AttributeServer::<A>::RSP_PDU_SIZE,
             }),
             // FIXME implement the rest
             _ => None,
@@ -169,47 +200,90 @@ impl ChannelMapper for BleChannelMap {
     }
 }
 
-/// Trait for protocols that sit on top of L2CAP.
+/// Trait for protocols that sit on top of L2CAP (object-safe part).
 ///
-/// A `Protocol` can be connected to an L2CAP channel.
-pub trait Protocol {
+/// A protocol can be connected to an L2CAP channel via a `ChannelMapper`.
+pub trait ProtocolObj {
     /// Process a message sent to the protocol.
     ///
-    /// The message is reassembled by L2CAP already.
-    fn process_message(&mut self, message: &[u8], responder: L2CAPResponder) -> Consume<()>;
+    /// The message is reassembled by L2CAP already, and the `responder` is guaranteed to fit a
+    /// protocol payload of at least `Protocol::RSP_PDU_SIZE` Bytes, as defined by the protocol.
+    ///
+    /// # Errors
+    ///
+    /// This method should only return an error when a critical problem occurs that can not be
+    /// recovered from and that can not be reported back to the connected device using the protocol.
+    /// This means that only things like unrecoverable protocol parsing errors should return an
+    /// error here.
+    fn process_message(&mut self, message: &[u8], responder: L2CAPResponder) -> Result<(), Error>;
 }
 
-struct Message<'a> {
-    /// Length of the payload following the length and channel fields.
+/// Trait for protocols that sit on top of L2CAP (non-object-safe part).
+///
+/// This extends the `ProtocolObj` trait with other protocol properties.
+pub trait Protocol: ProtocolObj {
+    /// Minimum size needed by PDUs sent by this protocol.
+    ///
+    /// Incoming PDUs will only be forwarded to the protocol if there is at least this much space in
+    /// the TX buffer.
+    const RSP_PDU_SIZE: u8;
+}
+
+/// Header used by *all* L2CAP PDUs.
+#[derive(Debug)]
+struct Header {
+    /// Length of the payload following the length and channel fields (after reassembly).
     length: u16,
+    /// Destination endpoint of the PDU.
     channel: Channel,
-    payload: &'a [u8],
 }
 
-impl<'a> FromBytes<'a> for Message<'a> {
+impl Header {
+    /// The size of an L2CAP message header in Bytes.
+    const SIZE: u8 = 4 + 4;
+}
+
+impl<'a> FromBytes<'a> for Header {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         let length = bytes.read_u16::<LittleEndian>()?;
         let channel = Channel::from_bytes(bytes)?;
+        Ok(Self { length, channel })
+    }
+}
+
+impl ToBytes for Header {
+    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+        writer.write_u16::<LittleEndian>(self.length)?;
+        writer.write_u16::<LittleEndian>(self.channel.as_raw())?;
+        Ok(())
+    }
+}
+
+struct Message<P> {
+    header: Header,
+    payload: P,
+}
+
+impl<'a, P: FromBytes<'a>> FromBytes<'a> for Message<P> {
+    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+        let header = Header::from_bytes(bytes)?;
         assert_eq!(
-            length as usize,
+            header.length as usize,
             bytes.len(),
             "L2CAP reassembly not yet implemented"
         );
 
-        let payload = bytes.read_slice(usize::from(length))?;
         Ok(Self {
-            length,
-            channel,
-            payload,
+            header,
+            payload: P::from_bytes(bytes)?,
         })
     }
 }
 
-impl ToBytes for Message<'_> {
+impl<P: ToBytes> ToBytes for Message<P> {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.length)?;
-        writer.write_u16::<LittleEndian>(self.channel.as_raw())?;
-        writer.write_slice(self.payload)?;
+        self.header.to_bytes(writer)?;
+        self.payload.to_bytes(writer)?;
         Ok(())
     }
 }
@@ -224,28 +298,52 @@ impl<M: ChannelMapper> L2CAPState<M> {
         Self { mapper }
     }
 
-    /// Process the start of a new L2CAP message (or a complete, unfragmented message).
-    pub fn process_start(&mut self, mut message: &[u8], tx: &mut Producer) -> Consume<()> {
-        let msg = match Message::from_bytes(&mut message) {
-            Ok(msg) => msg,
-            Err(e) => return Consume::always(Err(e)),
-        };
-        if let Some(chdata) = self.mapper.lookup(msg.channel) {
-            chdata.protocol.process_message(
-                msg.payload,
+    /// Dispatches a fully reassembled L2CAP message to the protocol listening on the addressed
+    /// channel.
+    fn dispatch(&mut self, channel: Channel, payload: &[u8], tx: &mut Producer) -> Consume<()> {
+        if let Some(mut chdata) = self.mapper.lookup(channel) {
+            let free = tx.free_space();
+            let needed = usize::from(chdata.response_pdu_size() + Header::SIZE);
+            if free < needed {
+                debug!(
+                    "{} free bytes, need {}; waiting",
+                    free,
+                    chdata.response_pdu_size()
+                );
+                return Consume::never(Ok(()));
+            }
+
+            let resp_channel = chdata.response_channel();
+            Consume::always(chdata.protocol().process_message(
+                payload,
                 L2CAPResponder {
                     tx,
-                    channel: chdata.response_channel,
+                    channel: resp_channel,
                 },
-            )
+            ))
         } else {
             warn!(
                 "ignoring message sent to unconnected channel {:?}: {:?}",
-                msg.channel,
-                HexSlice(msg.payload)
+                channel,
+                HexSlice(payload)
             );
             Consume::always(Ok(()))
         }
+    }
+
+    /// Process the start of a new L2CAP message (or a complete, unfragmented message).
+    pub fn process_start(&mut self, mut message: &[u8], tx: &mut Producer) -> Consume<()> {
+        let msg = match Message::<&[u8]>::from_bytes(&mut message) {
+            Ok(msg) => msg,
+            Err(e) => return Consume::always(Err(e)),
+        };
+
+        if usize::from(msg.header.length) != msg.payload.len() {
+            // Lengths mismatch => Reassembly needed
+            unimplemented!("L2CAP reassembly");
+        }
+
+        self.dispatch(msg.header.channel, msg.payload, tx)
     }
 
     /// Process continuation of an L2CAP message.
@@ -265,17 +363,32 @@ pub struct L2CAPResponder<'a> {
 impl<'a> L2CAPResponder<'a> {
     /// Enqueues an L2CAP message to be sent over the data connection.
     ///
+    /// L2CAP header (including the destination endpoint's channel) and the data channel PDU header
+    /// will be added automatically.
+    ///
     /// This will fail if there's not enough space left in the PDU queue.
-    pub fn respond(&mut self, payload: &[u8]) -> Result<(), Error> {
+    pub fn respond<P: ToBytes>(&mut self, payload: P) -> Result<(), Error> {
         // FIXME automatic fragmentation is not implemented
 
-        // Build L2CAP message
-        assert!(payload.len() < usize::from(u16::max_value()));
-        let message = Message {
-            length: payload.len() as u16,
-            channel: self.channel,
-            payload,
-        };
-        self.tx.produce_pdu(data::Pdu::DataStart { message })
+        // The payload length goes into the header, so we have to skip that part and write it later
+        let channel = self.channel;
+        self.tx.produce_with(|writer| {
+            let mut header_writer = writer.split_off(usize::from(Header::SIZE))?;
+
+            let left = writer.space_left();
+            payload.to_bytes(writer)?;
+            let used = left - writer.space_left();
+
+            assert!(used < 0xFFFF);
+            Header {
+                length: used as u16,
+                channel: channel,
+            }
+            .to_bytes(&mut header_writer)?;
+
+            assert_eq!(header_writer.space_left(), 0);
+
+            Ok(Llid::DataStart)
+        })
     }
 }
