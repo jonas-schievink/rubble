@@ -5,6 +5,8 @@
 This is a work in progress Bluetooth® Low Energy compatible, zero-allocation
 protocol stack for embedded Rust.
 
+[API documentation](https://jonas-schievink.github.io/rubble/)
+
 **NOTE: None of this has passed the Bluetooth® Qualification Process, so it cannot be used in commercial products!**
 
 ## Contributing
@@ -13,4 +15,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-BSD 0-Clause License ([LICENSE](LICENSE)).
+0-Clause BSD License ([LICENSE](LICENSE)).

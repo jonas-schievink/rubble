@@ -63,8 +63,8 @@ What are you interested in?
 
 ## Working on the code
 
-We try to extensively document all the code, so you can either check out the
-hosted internal docs (TODO) or jump straight in.
+We try to extensively document all the code, so you can check out the [hosted
+API docs] or jump straight in.
 
 ### Code Style
 
@@ -80,3 +80,4 @@ includes:
   `use` per imported crate or module).
 
 [bt-specs]: https://www.bluetooth.com/specifications/archived-specifications
+[hosted API docs]: https://jonas-schievink.github.io/rubble/
