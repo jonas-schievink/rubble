@@ -4,7 +4,11 @@
 //! this queue to be processed at a later time (perhaps in the application's idle loop).
 
 use {
-    crate::ble::{bytes::*, link::data, Error},
+    crate::ble::{
+        bytes::*,
+        link::data::{self, Llid},
+        Error,
+    },
     bbqueue::{self, BBQueue},
     byteorder::{ByteOrder, LittleEndian},
 };
@@ -17,15 +21,60 @@ pub struct Producer {
 impl Producer {
     /// Queries whether there is a free contiguous chunk of memory of at least `space` bytes.
     pub fn has_space(&mut self, space: usize) -> bool {
-        self.inner.grant(space).is_ok()
+        if let Ok(grant) = self.inner.grant(space) {
+            self.inner.commit(0, grant);
+            true
+        } else {
+            false
+        }
     }
 
     /// Returns the size of the largest contiguous free space in the queue (in Bytes).
     pub fn free_space(&mut self) -> usize {
         match self.inner.grant_max(usize::max_value()) {
-            Ok(grant) => grant.len(),
+            Ok(grant) => {
+                let space = grant.len();
+                self.inner.commit(0, grant);
+                space
+            }
             Err(_) => 0,
         }
+    }
+
+    pub fn produce_with(
+        &mut self,
+        f: impl FnOnce(&mut ByteWriter) -> Result<Llid, Error>,
+    ) -> Result<(), Error> {
+        let mut grant = match self.inner.grant_max(usize::max_value()) {
+            Ok(grant) => grant,
+            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
+            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof),
+        };
+
+        if grant.len() < 2 {
+            return Err(Error::Eof);
+        }
+
+        let mut writer = ByteWriter::new(&mut grant[2..]);
+        let free = writer.space_left();
+        let result = f(&mut writer);
+        let used = free - writer.space_left();
+        assert!(used <= 255);
+
+        let llid = match result {
+            Ok(llid) => llid,
+            Err(e) => {
+                self.inner.commit(0, grant);
+                return Err(e);
+            }
+        };
+
+        let mut header = data::Header::new(llid);
+        header.set_payload_length(used as u8);
+        LittleEndian::write_u16(&mut grant, header.to_u16());
+
+        self.inner.commit(used + 2, grant);
+        Ok(())
     }
 
     /// Enqueues a data channel PDU.
