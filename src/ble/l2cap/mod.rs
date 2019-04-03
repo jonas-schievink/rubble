@@ -29,6 +29,7 @@ use {
             data::Llid,
             queue::{Consume, Producer},
         },
+        security_manager::SecurityManager,
         utils::HexSlice,
         Error,
     },
@@ -172,6 +173,7 @@ impl<'a> ChannelData<'a> {
 /// * `0x0006`: LE Security Manager protocol.
 pub struct BleChannelMap<A: Attributes> {
     att: AttributeServer<A>,
+    sm: SecurityManager,
 }
 
 impl BleChannelMap<NoAttributes> {
@@ -182,6 +184,7 @@ impl BleChannelMap<NoAttributes> {
     pub fn empty() -> Self {
         Self {
             att: AttributeServer::empty(),
+            sm: SecurityManager::new(),
         }
     }
 }
@@ -193,6 +196,11 @@ impl<A: Attributes> ChannelMapper for BleChannelMap<A> {
                 response_channel: Channel::ATT,
                 protocol: &mut self.att,
                 rsp_pdu: AttributeServer::<A>::RSP_PDU_SIZE,
+            }),
+            Channel::LE_SECURITY_MANAGER => Some(ChannelData {
+                response_channel: Channel::LE_SECURITY_MANAGER,
+                protocol: &mut self.sm,
+                rsp_pdu: SecurityManager::RSP_PDU_SIZE,
             }),
             // FIXME implement the rest
             _ => None,

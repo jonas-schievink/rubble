@@ -14,6 +14,7 @@ pub mod l2cap;
 pub mod link;
 pub mod phy;
 mod responder;
+pub mod security_manager;
 pub mod time;
 pub mod uuid;
 
