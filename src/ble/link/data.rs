@@ -4,6 +4,7 @@ use {
     crate::ble::{
         bytes::*,
         link::{FeatureSet, SeqNum},
+        utils::Hex,
         Error,
     },
     byteorder::{ByteOrder, LittleEndian},
@@ -287,6 +288,13 @@ pub enum ControlPdu<'a> {
         slave_features: FeatureSet,
     },
 
+    /// `0x0C`/`LL_VERSION_IND` - Bluetooth version indication (sent by both master and slave).
+    VersionInd {
+        vers_nr: VersionNumber,
+        comp_id: Hex<u16>,
+        sub_vers_nr: Hex<u16>,
+    },
+
     /// Catch-all variant for unsupported opcodes.
     Unknown {
         /// The opcode we don't support. This can also be the `Unknown` variant.
@@ -304,6 +312,7 @@ impl ControlPdu<'_> {
             ControlPdu::UnknownRsp { .. } => ControlOpcode::UnknownRsp,
             ControlPdu::FeatureReq { .. } => ControlOpcode::FeatureReq,
             ControlPdu::FeatureRsp { .. } => ControlOpcode::FeatureRsp,
+            ControlPdu::VersionInd { .. } => ControlOpcode::VersionInd,
             ControlPdu::Unknown { opcode, .. } => *opcode,
         }
     }
@@ -321,6 +330,11 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
             },
             ControlOpcode::FeatureRsp => ControlPdu::FeatureRsp {
                 slave_features: FeatureSet::from_bytes(bytes)?,
+            },
+            ControlOpcode::VersionInd => ControlPdu::VersionInd {
+                vers_nr: VersionNumber::from(bytes.read_first()?),
+                comp_id: Hex(bytes.read_u16::<LittleEndian>()?),
+                sub_vers_nr: Hex(bytes.read_u16::<LittleEndian>()?),
             },
             _ => ControlPdu::Unknown {
                 opcode,
@@ -344,6 +358,16 @@ impl<'a> ToBytes for ControlPdu<'a> {
             }
             ControlPdu::FeatureReq { master_features } => master_features.to_bytes(buffer),
             ControlPdu::FeatureRsp { slave_features } => slave_features.to_bytes(buffer),
+            ControlPdu::VersionInd {
+                vers_nr,
+                comp_id,
+                sub_vers_nr,
+            } => {
+                buffer.write_byte(u8::from(*vers_nr))?;
+                buffer.write_u16::<LittleEndian>(comp_id.0)?;
+                buffer.write_u16::<LittleEndian>(sub_vers_nr.0)?;
+                Ok(())
+            }
             ControlPdu::Unknown { ctr_data, .. } => {
                 buffer.write_slice(ctr_data)?;
                 Ok(())
@@ -353,7 +377,7 @@ impl<'a> ToBytes for ControlPdu<'a> {
 }
 
 enum_with_unknown! {
-    /// Enumerations of all known LL Control PDU opcodes (not all of which might be supported).
+    /// Enumeration of all known LL Control PDU opcodes (not all of which might be supported).
     #[derive(Debug, Copy, Clone, PartialEq, Eq)]
     pub enum ControlOpcode(u8) {
         ConnectionUpdateReq = 0x00,
@@ -378,5 +402,19 @@ enum_with_unknown! {
         PingRsp = 0x13,
         LengthReq = 0x14,
         LengthRsp = 0x15,
+    }
+}
+
+enum_with_unknown! {
+    /// Enumeration of all possible `VersNr` for `LL_VERSION_IND` PDUs.
+    ///
+    /// According to https://www.bluetooth.com/specifications/assigned-numbers/link-layer
+    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    pub enum VersionNumber(u8) {
+        V4_0 = 6,
+        V4_1 = 7,
+        V4_2 = 8,
+        V5_0 = 9,
+        V5_1 = 10,
     }
 }

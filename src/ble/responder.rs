@@ -6,8 +6,8 @@ use {
             queue::{Consume, Consumer, Producer},
             FeatureSet,
         },
-        utils::HexSlice,
-        Error,
+        utils::{Hex, HexSlice},
+        Error, BLUETOOTH_VERSION,
     },
     log::info,
 };
@@ -50,10 +50,6 @@ impl<M: ChannelMapper> Responder<M> {
         self.with_rx(|rx, this| {
             rx.consume_pdu_with(|_, pdu| match pdu {
                 Pdu::Control { data } => {
-                    // The only LL Control PDU we have to support is `LL_FEATURE_REQ` (at least
-                    // Android doesn't like if it's unsupported; I haven't found anything in the
-                    // spec that says it has to be supported).
-
                     // We don't support any other LL Control PDU right now. Also see:
                     // https://github.com/jonas-schievink/rubble/issues/26
 
@@ -63,6 +59,18 @@ impl<M: ChannelMapper> Responder<M> {
                         ControlPdu::FeatureReq { .. } => ControlPdu::FeatureRsp {
                             slave_features: FeatureSet::supported(),
                         },
+                        ControlPdu::VersionInd { .. } => {
+                            // FIXME this should be something real, and defined somewhere else
+                            let comp_id = 0xFFFF;
+                            // FIXME this should correlate with the Cargo package version
+                            let sub_vers_nr = 0x0000;
+
+                            ControlPdu::VersionInd {
+                                vers_nr: BLUETOOTH_VERSION,
+                                comp_id: Hex(comp_id),
+                                sub_vers_nr: Hex(sub_vers_nr),
+                            }
+                        }
                         _ => ControlPdu::UnknownRsp {
                             unknown_type: pdu.opcode(),
                         },

@@ -20,3 +20,8 @@ pub mod uuid;
 
 pub use self::error::Error;
 pub use self::responder::Responder;
+
+use self::link::data::VersionNumber;
+
+/// Version of the Bluetooth specification implemented by rubble.
+pub const BLUETOOTH_VERSION: VersionNumber = VersionNumber::V4_2;
