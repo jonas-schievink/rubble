@@ -198,12 +198,8 @@ impl<HW: HardwareInterface> Connection<HW> {
 
         let last_channel = self.channel;
 
-        // If both devices set MD to `false`, the connection event closes and we hop to the next
-        // channel.
-        // If the CRC is bad, we must hop anyways.
-        if !crc_ok || (!header.md() && !self.has_more_data()) {
-            self.hop_channel();
-        }
+        // FIXME: Don't hop if one of the MD bits is set to true
+        self.hop_channel();
 
         trace!(
             "DATA({}->{})<- {}{:?}, {:?}",
