@@ -6,7 +6,10 @@
 //! ATT is used by GATT, the *Generic Attribute Profile*, which introduces the concept of *Services*
 //! and *Characteristics* which can all be accessed and discovered over the Attribute Protocol.
 
+mod handle;
+
 use {
+    self::handle::*,
     crate::ble::{
         bytes::*,
         l2cap::{L2CAPResponder, Protocol, ProtocolObj},
@@ -18,69 +21,7 @@ use {
     log::debug,
 };
 
-/// A 16-bit handle uniquely identifying an attribute on an ATT server.
-///
-/// The `0x0000` handle (`NULL`) is invalid and must not be used.
-#[derive(Copy, Clone)]
-pub struct AttHandle(u16);
-
-impl AttHandle {
-    /// The `0x0000` handle is not used for actual attributes, but as a special placeholder when no
-    /// attribute handle is valid (eg. in error responses).
-    const NULL: Self = AttHandle(0x0000);
-
-    fn as_u16(&self) -> u16 {
-        self.0
-    }
-}
-
-impl fmt::Debug for AttHandle {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:#06X}", self.0)
-    }
-}
-
-impl FromBytes<'_> for AttHandle {
-    fn from_bytes(bytes: &mut &'_ [u8]) -> Result<Self, Error> {
-        Ok(AttHandle(bytes.read_u16::<LittleEndian>()?))
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-struct HandleRange {
-    start: AttHandle,
-    end: AttHandle,
-}
-
-impl HandleRange {
-    fn check(&self) -> Result<(), AttError> {
-        if self.start.0 > self.end.0 || self.start.0 == 0 {
-            Err(AttError {
-                code: ErrorCode::InvalidHandle,
-                handle: self.start,
-            })
-        } else {
-            Ok(())
-        }
-    }
-}
-
-impl FromBytes<'_> for HandleRange {
-    fn from_bytes(bytes: &mut &'_ [u8]) -> Result<Self, Error> {
-        Ok(Self {
-            start: AttHandle::from_bytes(bytes)?,
-            end: AttHandle::from_bytes(bytes)?,
-        })
-    }
-}
-
-impl ToBytes for HandleRange {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.start.as_u16())?;
-        writer.write_u16::<LittleEndian>(self.end.as_u16())?;
-        Ok(())
-    }
-}
+pub use self::handle::AttHandle;
 
 /// An ATT opcode containing the `Method` to execute as well as command and authentication bits.
 #[derive(Copy, Clone)]
@@ -159,6 +100,7 @@ impl ToBytes for AttUuid {
 /// Structured representation of an ATT message (request or response).
 #[derive(Debug)]
 enum AttMsg<'a> {
+    /// Request could not be completed due to an error.
     ErrorRsp {
         /// The opcode that caused the error.
         opcode: Opcode,
@@ -168,7 +110,7 @@ enum AttMsg<'a> {
         error_code: ErrorCode,
     },
     ReadByGroup {
-        handle_range: HandleRange,
+        handle_range: RawHandleRange,
         group_type: AttUuid,
     },
     Unknown {
@@ -201,7 +143,7 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
                     error_code: ErrorCode::from(bytes.read_first()?),
                 },
                 Method::ReadByGroupReq => AttMsg::ReadByGroup {
-                    handle_range: HandleRange::from_bytes(bytes)?,
+                    handle_range: RawHandleRange::from_bytes(bytes)?,
                     group_type: AttUuid::from_bytes(bytes)?,
                 },
                 _ => AttMsg::Unknown {
@@ -405,7 +347,8 @@ enum_with_unknown! {
     }
 }
 
-struct AttError {
+/// An error on the ATT protocol layer. Can be sent as a response.
+pub struct AttError {
     code: ErrorCode,
     handle: AttHandle,
 }
