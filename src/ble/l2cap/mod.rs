@@ -248,7 +248,7 @@ struct Header {
 
 impl Header {
     /// The size of an L2CAP message header in Bytes.
-    const SIZE: u8 = 4 + 4;
+    const SIZE: u8 = 2 + 2;
 }
 
 impl<'a> FromBytes<'a> for Header {
