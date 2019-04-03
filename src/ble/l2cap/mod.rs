@@ -29,7 +29,7 @@ use {
             data::Llid,
             queue::{Consume, Producer},
         },
-        security_manager::SecurityManager,
+        security_manager::{NoSecurity, SecurityLevel, SecurityManager},
         utils::HexSlice,
         Error,
     },
@@ -171,12 +171,12 @@ impl<'a> ChannelData<'a> {
 /// * `0x0004`: Attribute protocol (ATT).
 /// * `0x0005`: LE L2CAP signaling channel.
 /// * `0x0006`: LE Security Manager protocol.
-pub struct BleChannelMap<A: Attributes> {
+pub struct BleChannelMap<A: Attributes, S: SecurityLevel> {
     att: AttributeServer<A>,
-    sm: SecurityManager,
+    sm: SecurityManager<S>,
 }
 
-impl BleChannelMap<NoAttributes> {
+impl BleChannelMap<NoAttributes, NoSecurity> {
     /// Creates a new channel map with no backing data for the connected protocols.
     ///
     /// This means:
@@ -184,12 +184,12 @@ impl BleChannelMap<NoAttributes> {
     pub fn empty() -> Self {
         Self {
             att: AttributeServer::empty(),
-            sm: SecurityManager::new(),
+            sm: SecurityManager::no_security(),
         }
     }
 }
 
-impl<A: Attributes> ChannelMapper for BleChannelMap<A> {
+impl<A: Attributes, S: SecurityLevel> ChannelMapper for BleChannelMap<A, S> {
     fn lookup(&mut self, channel: Channel) -> Option<ChannelData> {
         match channel {
             Channel::ATT => Some(ChannelData {
@@ -200,7 +200,7 @@ impl<A: Attributes> ChannelMapper for BleChannelMap<A> {
             Channel::LE_SECURITY_MANAGER => Some(ChannelData {
                 response_channel: Channel::LE_SECURITY_MANAGER,
                 protocol: &mut self.sm,
-                rsp_pdu: SecurityManager::RSP_PDU_SIZE,
+                rsp_pdu: SecurityManager::<S>::RSP_PDU_SIZE,
             }),
             // FIXME implement the rest
             _ => None,
