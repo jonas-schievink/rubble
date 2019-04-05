@@ -23,7 +23,7 @@
 mod utils;
 pub mod att;
 pub mod beacon;
-mod bytes;
+pub mod bytes;
 mod crc;
 mod error;
 pub mod l2cap;
