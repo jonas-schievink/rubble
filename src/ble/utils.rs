@@ -45,15 +45,6 @@ macro_rules! enum_with_unknown {
     }
 }
 
-/// Early-return `Error::Eof` if the given expression evaluates to `false`.
-macro_rules! eof_unless {
-    ( $e:expr ) => {
-        if !$e {
-            return Err(Error::Eof);
-        }
-    };
-}
-
 /// `Debug`-formats its contents as a hexadecimal byte slice.
 #[derive(Copy, Clone)]
 pub struct HexSlice<T>(pub T)

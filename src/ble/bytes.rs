@@ -235,10 +235,13 @@ impl<'a> ByteWriter<'a> {
     /// the skipped data will be filled in by other code). If the skipped bytes are *not* written,
     /// they will probably contain garbage data from an earlier use of the underlying buffer.
     pub fn skip(&mut self, bytes: usize) -> Result<(), Error> {
-        eof_unless!(self.space_left() >= bytes);
-        let this = mem::replace(&mut self.0, &mut []);
-        self.0 = &mut this[bytes..];
-        Ok(())
+        if self.space_left() < bytes {
+            Err(Error::Eof)
+        } else {
+            let this = mem::replace(&mut self.0, &mut []);
+            self.0 = &mut this[bytes..];
+            Ok(())
+        }
     }
 
     /// Creates and returns another `ByteWriter` that can write to the next `len` Bytes in the
@@ -251,11 +254,14 @@ impl<'a> ByteWriter<'a> {
     /// If you are really sure you want that, `skip` is a more explicit way of accomplishing that.
     #[must_use]
     pub fn split_off(&mut self, len: usize) -> Result<Self, Error> {
-        eof_unless!(self.space_left() >= len);
-        let this = mem::replace(&mut self.0, &mut []);
-        let (head, tail) = this.split_at_mut(len);
-        self.0 = tail;
-        Ok(ByteWriter::new(head))
+        if self.space_left() < len {
+            Err(Error::Eof)
+        } else {
+            let this = mem::replace(&mut self.0, &mut []);
+            let (head, tail) = this.split_at_mut(len);
+            self.0 = tail;
+            Ok(ByteWriter::new(head))
+        }
     }
 
     /// Returns the number of bytes that can be written to `self` until it is full.
@@ -283,11 +289,14 @@ impl<'a> ByteWriter<'a> {
     where
         'a: 'b,
     {
-        eof_unless!(self.space_left() >= other.len());
-        self.0[..other.len()].copy_from_slice(other);
-        let this = mem::replace(&mut self.0, &mut []);
-        self.0 = &mut this[other.len()..];
-        Ok(())
+        if self.space_left() < other.len() {
+            Err(Error::Eof)
+        } else {
+            self.0[..other.len()].copy_from_slice(other);
+            let this = mem::replace(&mut self.0, &mut []);
+            self.0 = &mut this[other.len()..];
+            Ok(())
+        }
     }
 
     /// Writes a `u16` to `self`, using byte order `B`.
@@ -531,10 +540,13 @@ impl<'a> MutSliceExt<'a> for &'a mut [u8] {
     where
         'a: 'b,
     {
-        eof_unless!(self.len() >= other.len());
-        self[..other.len()].copy_from_slice(other);
-        let this = mem::replace(self, &mut []);
-        *self = &mut this[other.len()..];
-        Ok(())
+        if self.len() < other.len() {
+            Err(Error::Eof)
+        } else {
+            self[..other.len()].copy_from_slice(other);
+            let this = mem::replace(self, &mut []);
+            *self = &mut this[other.len()..];
+            Ok(())
+        }
     }
 }
