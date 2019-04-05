@@ -9,7 +9,7 @@ use {
     nrf52810_hal::nrf52810_pac::{TIMER0, TIMER1, TIMER2},
 };
 
-/// Implements rubble's `Timer` trait for the timers on the nRF chip.
+/// Implements Rubble's `Timer` trait for the timers on the nRF chip.
 pub struct BleTimer<T: NrfTimer> {
     inner: T,
     next: Instant,

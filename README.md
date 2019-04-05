@@ -1,4 +1,4 @@
-# rubble
+# Rubble
 
 [![Build Status](https://travis-ci.org/jonas-schievink/rubble.svg?branch=master)](https://travis-ci.org/jonas-schievink/rubble)
 
