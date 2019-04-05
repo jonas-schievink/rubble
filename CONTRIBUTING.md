@@ -79,5 +79,15 @@ includes:
 * All `use` imports should be grouped into a single one (instead of adding a
   `use` per imported crate or module).
 
+### Decoding and Encoding data
+
+Implementing protocols necessarily involves a lot of decoding and encoding to go
+from bytes to useful data and back again. The fact that everything has to work
+without allocations, but still needs to deal with variable-length data while
+also offering more type-safety than a plain `&[u8]` makes this difficult.
+
+Our current solution for these problems is `bytes.rs`. Check out its
+[API docs][hosted API docs] to learn more about it.
+
 [bt-specs]: https://www.bluetooth.com/specifications/archived-specifications
 [hosted API docs]: https://jonas-schievink.github.io/rubble/

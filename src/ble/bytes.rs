@@ -1,4 +1,17 @@
-//! Utilities for parsing from and encoding into bytes.
+//! Utilities for decoding from and encoding into bytes.
+//!
+//! The most important parts offered by this module are [`ToBytes`] and [`FromBytes`],
+//! general-purpose traits for zero-allocation (de)serialization from/to bytes. These are used all
+//! over the place in Rubble, along with [`ByteWriter`]. In addition to those, this module also
+//! defines helpful extension traits on `&[T]` and `&mut [T]`, defined on [`SliceExt`] and
+//! [`MutSliceExt`], and on `&[u8]`, defined on [`BytesExt`].
+//!
+//! [`ToBytes`]: trait.ToBytes.html
+//! [`FromBytes`]: trait.FromBytes.html
+//! [`ByteWriter`]: struct.ByteWriter.html
+//! [`SliceExt`]: trait.SliceExt.html
+//! [`MutSliceExt`]: trait.MutSliceExt.html
+//! [`BytesExt`]: trait.BytesExt.html
 
 use {
     crate::ble::Error,
@@ -9,6 +22,14 @@ use {
 pub use byteorder::LittleEndian;
 
 /// Reference to a `T`, or to a byte slice that can be decoded as a `T`.
+///
+/// This type can be used in structures when storing a `T` directly is not desirable. For example,
+/// `T` might actually be a slice `[U]` and thus has a non-static size, or `T`s size might simply be
+/// too large (eg. it could be inside a rarely-encountered variant or would blow up the total size
+/// of the containing enum).
+///
+/// The size of this type is currently 2 `usize`s plus a discriminant byte, but could potentially be
+/// (unsafely) reduced further, should that be required.
 pub struct BytesOr<'a, T: ?Sized>(Inner<'a, T>);
 
 impl<'a, T: ?Sized> From<&'a T> for BytesOr<'a, T> {
@@ -54,6 +75,11 @@ impl<'a, T: fmt::Debug + FromBytes<'a> + Copy> fmt::Debug for BytesOr<'a, [T]> {
 
 impl<'a, T: ?Sized> BytesOr<'a, T> {
     /// Creates a `BytesOr` that holds on to a `T` via reference.
+    ///
+    /// For creating a `BytesOr` that references a byte slice, the [`FromBytes`] impl(s) can be
+    /// used.
+    ///
+    /// [`FromBytes`]: trait.FromBytes.html
     pub fn from_ref(value: &'a T) -> Self {
         BytesOr(Inner::Or(value))
     }
@@ -61,8 +87,12 @@ impl<'a, T: ?Sized> BytesOr<'a, T> {
 
 /// Creates a `BytesOr` that stores bytes that can be decoded to a `T`.
 ///
-/// This will check that `bytes` can indeed be decoded as a `T`, and returns an error if not. An
-/// error will also be returned if `bytes` contains more data than needed for a `T`.
+/// This will check that `bytes` can indeed be decoded as a `T` using its [`FromBytes`]
+/// implementation, and returns an error if not. An error will also be returned if `bytes` contains
+/// more data than needed for a `T`.
+///
+/// [`FromBytes`]: trait.FromBytes.html
+// FIXME this is the only `FromBytes` impl that does something like this, maybe it shouln't?
 impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, T> {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         {
@@ -117,6 +147,11 @@ impl<'a, T: ToBytes> ToBytes for BytesOr<'a, [T]> {
 
 impl<'a, T: Copy + FromBytes<'a>> BytesOr<'a, T> {
     /// Reads the `T`, possibly by parsing the stored bytes.
+    ///
+    /// If `self` already stores a reference to a `T`, the `T` will just be copied out. If `self`
+    /// stores a byte slice, the `T` will be parsed using its [`FromBytes`] implementation.
+    ///
+    /// [`FromBytes`]: trait.FromBytes.html
     pub fn read(&self) -> T {
         match self.0 {
             Inner::Bytes(mut b) => {
@@ -130,7 +165,9 @@ impl<'a, T: Copy + FromBytes<'a>> BytesOr<'a, T> {
 }
 
 impl<'a, T: Copy + FromBytes<'a>> BytesOr<'a, T> {
-    #[allow(dead_code)] // FIXME: USE ME!
+    /// Returns an iterator over all `T`s stored in `self` (which is just one `T` in this case).
+    ///
+    /// This method exists to mirror its twin implemented for `BytesOr<'a, [T]>`.
     pub fn iter(&self) -> impl Iterator<Item = T> + 'a {
         iter::once(self.read())
     }
@@ -168,6 +205,9 @@ impl<'a, T: Copy + FromBytes<'a>> Iterator for IterBytesOr<'a, T> {
 }
 
 /// Wrapper around a byte slice that can be used to encode data into bytes.
+///
+/// All `write_*` methods on this type will return `Error::Eof` when the underlying buffer slice is
+/// full.
 pub struct ByteWriter<'a>(&'a mut [u8]);
 
 impl<'a> ByteWriter<'a> {
@@ -176,7 +216,8 @@ impl<'a> ByteWriter<'a> {
         ByteWriter(buf)
     }
 
-    /// Consumes `self` and returns the part of the contained buffer that has not been written to.
+    /// Consumes `self` and returns the part of the contained buffer that has not yet been written
+    /// to.
     pub fn into_rest(self) -> &'a mut [u8] {
         self.0
     }
@@ -200,13 +241,14 @@ impl<'a> ByteWriter<'a> {
         Ok(())
     }
 
-    /// Creates another `ByteWriter` that can write to the next `len` Bytes in the buffer.
+    /// Creates and returns another `ByteWriter` that can write to the next `len` Bytes in the
+    /// buffer.
     ///
     /// `self` will be modified to point after the split-off bytes.
     ///
     /// Note that if the created `ByteWriter` is not used, the bytes will contain whatever contents
     /// they had before creating `self` (ie. most likely garbage data left over from earlier use).
-    /// If you want that, `skip` is a more explicit way of doing that.
+    /// If you are really sure you want that, `skip` is a more explicit way of accomplishing that.
     #[must_use]
     pub fn split_off(&mut self, len: usize) -> Result<Self, Error> {
         eof_unless!(self.space_left() >= len);
@@ -292,6 +334,10 @@ impl<'a> ByteWriter<'a> {
     /// The writer will be advanced to point to the rest of the underlying buffer.
     ///
     /// This allows filling in the value of the byte later, after writing more data.
+    ///
+    /// For a similar, but more flexible operation, see [`split_off`].
+    ///
+    /// [`split_off`]: #method.split_off
     pub fn split_next_mut<'b>(&'b mut self) -> Option<&'a mut u8>
     where
         'a: 'b,
@@ -319,7 +365,7 @@ pub trait ToBytes {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error>;
 }
 
-/// Trait for decoding values from a slice.
+/// Trait for decoding values from a byte slice.
 pub trait FromBytes<'a>: Sized {
     /// Decode a `Self` from a byte slice, advancing `bytes` to point past the data that was read.
     ///
