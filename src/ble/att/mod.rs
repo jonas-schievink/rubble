@@ -121,7 +121,7 @@ enum AttMsg<'a> {
     },
     ReadByGroupRsp {
         length: u8,
-        data_list: HexSlice<&'a [u8]>,
+        data_list: &'a [ByGroupAttData<'a>],
     },
     Unknown {
         params: HexSlice<&'a [u8]>,
@@ -153,6 +153,9 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
                     error_code: ErrorCode::from(bytes.read_first()?),
                 },
                 Method::ExchangeMtuReq => AttMsg::ExchangeMtuReq {
+                    mtu: bytes.read_u16::<LittleEndian>()?,
+                },
+                Method::ExchangeMtuRsp => AttMsg::ExchangeMtuRsp {
                     mtu: bytes.read_u16::<LittleEndian>()?,
                 },
                 Method::ReadByGroupReq => AttMsg::ReadByGroupReq {
@@ -200,7 +203,9 @@ impl ToBytes for Pdu<'_> {
             }
             AttMsg::ReadByGroupRsp { length, data_list } => {
                 writer.write_byte(length)?;
-                writer.write_slice(data_list.0)?;
+                for att_data in data_list {
+                    att_data.to_bytes(writer)?;
+                }
             }
             AttMsg::Unknown { params } => {
                 writer.write_slice(params.0)?;
@@ -256,7 +261,7 @@ impl<A: Attributes> AttributeServer<A> {
                         opcode: Opcode::new(Method::ReadByGroupRsp, false, false),
                         params: AttMsg::ReadByGroupRsp {
                             length: 0,
-                            data_list: HexSlice(&[]),
+                            data_list: &[],
                         },
                         signature: None,
                     })
@@ -399,4 +404,61 @@ enum_with_unknown! {
 pub struct AttError {
     code: ErrorCode,
     handle: AttHandle,
+}
+
+// Attribute Data returned in Read By Type response
+#[derive(Debug)]
+pub struct ByTypeAttData<'a> {
+    handle: u16,
+    value: HexSlice<&'a [u8]>,
+}
+
+impl<'a, 'b> FromBytes<'b> for ByTypeAttData<'a>
+where
+    'b: 'a,
+{
+    fn from_bytes(bytes: &mut &'b [u8]) -> Result<Self, Error> {
+        Ok(ByTypeAttData {
+            handle: bytes.read_u16::<LittleEndian>()?,
+            value: HexSlice(bytes.read_slice(bytes.len())?),
+        })
+    }
+}
+
+impl<'a> ToBytes for ByTypeAttData<'a> {
+    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+        writer.write_u16::<LittleEndian>(self.handle)?;
+        writer.write_slice(self.value.0)?;
+        Ok(())
+    }
+}
+
+// Attribute Data returned in Read By Group Type response
+#[derive(Debug)]
+pub struct ByGroupAttData<'a> {
+    handle: u16,
+    end_group_handle: u16,
+    value: HexSlice<&'a [u8]>,
+}
+
+impl<'a, 'b> FromBytes<'b> for ByGroupAttData<'a>
+where
+    'b: 'a,
+{
+    fn from_bytes(bytes: &mut &'b [u8]) -> Result<Self, Error> {
+        Ok(ByGroupAttData {
+            handle: bytes.read_u16::<LittleEndian>()?,
+            end_group_handle: bytes.read_u16::<LittleEndian>()?,
+            value: HexSlice(bytes.read_slice(bytes.len())?),
+        })
+    }
+}
+
+impl<'a> ToBytes for ByGroupAttData<'a> {
+    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+        writer.write_u16::<LittleEndian>(self.handle)?;
+        writer.write_u16::<LittleEndian>(self.end_group_handle)?;
+        writer.write_slice(self.value.0)?;
+        Ok(())
+    }
 }
