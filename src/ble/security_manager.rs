@@ -328,6 +328,10 @@ impl fmt::Debug for AuthReq {
 }
 
 enum_with_unknown! {
+    /// Whether to perform bonding in addition to pairing.
+    ///
+    /// If `Bonding` is selected, the exchanged keys are permanently stored on both devices. This
+    /// is usually what you want.
     #[derive(Debug, Copy, Clone)]
     pub enum BondingType(u8) {
         /// No bonding should be performed; the exchanged keys should not be permanently stored.
