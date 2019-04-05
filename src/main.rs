@@ -17,11 +17,10 @@ use {
             l2cap::{BleChannelMap, L2CAPState},
             link::{
                 ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
-                LinkLayer, MAX_PDU_SIZE,
+                LinkLayer, Responder, MAX_PDU_SIZE,
             },
             security_manager::NoSecurity,
             time::{Duration, Timer},
-            Responder,
         },
         logger::{BbqLogger, StampedLogger},
         radio::{BleRadio, PacketBuffer},

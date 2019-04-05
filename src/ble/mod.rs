@@ -13,13 +13,11 @@ mod error;
 pub mod l2cap;
 pub mod link;
 pub mod phy;
-mod responder;
 pub mod security_manager;
 pub mod time;
 pub mod uuid;
 
 pub use self::error::Error;
-pub use self::responder::Responder;
 
 use self::link::data::VersionNumber;
 

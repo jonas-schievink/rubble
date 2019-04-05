@@ -123,10 +123,12 @@ pub mod data;
 mod device_address;
 mod features;
 pub mod queue;
+mod responder;
 mod seq_num;
 
 pub use self::device_address::*;
 pub use self::features::*;
+pub use self::responder::*;
 
 use {
     self::{

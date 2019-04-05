@@ -18,8 +18,8 @@ use {
 /// at a lower priority (eg. being driven in the apps idle loop) and receives and transmits packets
 /// using the packet queue.
 ///
-/// Data channel PDUs can either contain L2CAP data or an LL Control PDU. This responder handles
-/// both, which is why it's neither placed in the `link` nor `l2cap` modules.
+/// LL Control PDUs are answered by the responder directly, and all L2CAP data is forwarded to an
+/// `L2CAPState<M>`.
 pub struct Responder<M: ChannelMapper> {
     tx: Producer,
     rx: Option<Consumer>,
