@@ -109,9 +109,19 @@ enum AttMsg<'a> {
         /// An error code describing the kind of error that occurred.
         error_code: ErrorCode,
     },
-    ReadByGroup {
+    ExchangeMtuReq {
+        mtu: u16,
+    },
+    ExchangeMtuRsp {
+        mtu: u16,
+    },
+    ReadByGroupReq {
         handle_range: RawHandleRange,
         group_type: AttUuid,
+    },
+    ReadByGroupRsp {
+        length: u8,
+        data_list: HexSlice<&'a [u8]>,
     },
     Unknown {
         params: HexSlice<&'a [u8]>,
@@ -142,7 +152,10 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
                     handle: AttHandle::from_bytes(bytes)?,
                     error_code: ErrorCode::from(bytes.read_first()?),
                 },
-                Method::ReadByGroupReq => AttMsg::ReadByGroup {
+                Method::ExchangeMtuReq => AttMsg::ExchangeMtuReq {
+                    mtu: bytes.read_u16::<LittleEndian>()?,
+                },
+                Method::ReadByGroupReq => AttMsg::ReadByGroupReq {
                     handle_range: RawHandleRange::from_bytes(bytes)?,
                     group_type: AttUuid::from_bytes(bytes)?,
                 },
@@ -172,12 +185,22 @@ impl ToBytes for Pdu<'_> {
                 writer.write_u16::<LittleEndian>(handle.as_u16())?;
                 writer.write_byte(error_code.into())?;
             }
-            AttMsg::ReadByGroup {
+            AttMsg::ExchangeMtuReq { mtu } => {
+                writer.write_u16::<LittleEndian>(mtu)?;
+            }
+            AttMsg::ExchangeMtuRsp { mtu } => {
+                writer.write_u16::<LittleEndian>(mtu)?;
+            }
+            AttMsg::ReadByGroupReq {
                 handle_range,
                 group_type,
             } => {
                 handle_range.to_bytes(writer)?;
                 group_type.to_bytes(writer)?;
+            }
+            AttMsg::ReadByGroupRsp { length, data_list } => {
+                writer.write_byte(length)?;
+                writer.write_slice(data_list.0)?;
             }
             AttMsg::Unknown { params } => {
                 writer.write_slice(params.0)?;
@@ -220,17 +243,42 @@ impl<A: Attributes> AttributeServer<A> {
     fn process_request(
         &mut self,
         pdu: Pdu,
-        _responder: &mut L2CAPResponder,
+        responder: &mut L2CAPResponder,
     ) -> Result<(), AttError> {
         match pdu.params {
-            AttMsg::ReadByGroup {
+            AttMsg::ReadByGroupReq {
                 handle_range,
                 group_type: _,
             } => {
                 handle_range.check()?;
-                unimplemented!()
+                responder
+                    .respond(Pdu {
+                        opcode: Opcode::new(Method::ReadByGroupRsp, false, false),
+                        params: AttMsg::ReadByGroupRsp {
+                            length: 0,
+                            data_list: HexSlice(&[]),
+                        },
+                        signature: None,
+                    })
+                    .unwrap();
+                Ok(())
             }
-            AttMsg::ErrorRsp { .. } | AttMsg::Unknown { .. } => {
+            AttMsg::ExchangeMtuReq { mtu: _mtu } => {
+                responder
+                    .respond(Pdu {
+                        opcode: Opcode::new(Method::ExchangeMtuRsp, false, false),
+                        params: AttMsg::ExchangeMtuRsp {
+                            mtu: u16::from(Self::RSP_PDU_SIZE),
+                        },
+                        signature: None,
+                    })
+                    .unwrap();
+                Ok(())
+            }
+            AttMsg::ErrorRsp { .. }
+            | AttMsg::Unknown { .. }
+            | AttMsg::ReadByGroupRsp { .. }
+            | AttMsg::ExchangeMtuRsp { .. } => {
                 return Err(AttError {
                     code: ErrorCode::InvalidPdu,
                     handle: AttHandle::NULL,
@@ -267,7 +315,7 @@ impl<A: Attributes> ProtocolObj for AttributeServer<A> {
 
 impl<A: Attributes> Protocol for AttributeServer<A> {
     // FIXME: Would it be useful to have this as a runtime parameter instead?
-    const RSP_PDU_SIZE: u8 = 40;
+    const RSP_PDU_SIZE: u8 = 23;
 }
 
 enum_with_unknown! {
