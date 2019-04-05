@@ -264,7 +264,7 @@ impl<'a, L: ToBytes> ToBytes for Pdu<'a, L> {
     }
 }
 
-/// A structured representation of LL Control PDUs.
+/// A structured representation of an LL Control PDU.
 #[derive(Debug, Copy, Clone)]
 pub enum ControlPdu<'a> {
     /// `0x07`/`LL_UNKNOWN_RSP` - Response to unknown/unsupported LL Control PDUs.
@@ -289,6 +289,9 @@ pub enum ControlPdu<'a> {
     },
 
     /// `0x0C`/`LL_VERSION_IND` - Bluetooth version indication (sent by both master and slave).
+    ///
+    /// When either master or slave receive this PDU, they should respond with their version if they
+    /// have not already sent this PDU during this data connection (FIXME do this).
     VersionInd {
         vers_nr: VersionNumber,
         comp_id: Hex<u16>,
