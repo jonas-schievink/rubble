@@ -366,11 +366,11 @@ impl<'a> ByteWriter<'a> {
 
 /// Trait for encoding a value into a byte buffer.
 pub trait ToBytes {
-    /// Converts `self` to bytes and writes them into `buffer`, advancing `buffer` to point past the
+    /// Converts `self` to bytes and writes them into `writer`, advancing `writer` to point past the
     /// encoded value.
     ///
-    /// If `buffer` does not contain enough space, an error will be returned and the state of the
-    /// buffer is unspecified (eg. `self` may be partially written into `buffer`).
+    /// If `writer` does not contain enough space, an error will be returned and the state of the
+    /// buffer is unspecified (eg. `self` may be partially written into `writer`).
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error>;
 }
 
