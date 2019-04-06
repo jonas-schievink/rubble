@@ -10,7 +10,7 @@ use {
 ///
 /// The `0x0000` handle (`NULL`) is invalid and must not be used.
 #[derive(Copy, Clone)]
-pub struct AttHandle(u16);
+pub struct AttHandle(pub u16);
 
 impl AttHandle {
     /// The `0x0000` handle is not used for actual attributes, but as a special placeholder when no
@@ -20,6 +20,11 @@ impl AttHandle {
     /// Returns the raw 16-bit integer representing this handle.
     pub fn as_u16(&self) -> u16 {
         self.0
+    }
+
+    /// Checks if an AttHandle is in a given range
+    pub fn check(&self, range: RangeInclusive<AttHandle>) -> bool {
+        range.start().0 <= self.0 && range.end().0 >= self.0
     }
 }
 
