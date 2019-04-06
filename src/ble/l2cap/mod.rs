@@ -23,7 +23,7 @@
 
 use {
     crate::ble::{
-        att::{AttributeServer, Attributes},
+        att::{AttributeServer, Attributes, NoAttributes},
         bytes::*,
         link::{
             data::Llid,
@@ -176,11 +176,20 @@ pub struct BleChannelMap<A: Attributes, S: SecurityLevel> {
     sm: SecurityManager<S>,
 }
 
-impl<A: Attributes> BleChannelMap<A, NoSecurity> {
+impl BleChannelMap<NoAttributes, NoSecurity> {
     /// Creates a new channel map with no backing data for the connected protocols.
     ///
     /// This means:
     /// * The attribute server on channel `0x0004` will host an empty attribute set.
+    pub fn empty() -> Self {
+        Self {
+            att: AttributeServer::new(NoAttributes),
+            sm: SecurityManager::no_security(),
+        }
+    }
+}
+
+impl<A: Attributes> BleChannelMap<A, NoSecurity> {
     pub fn with_attributes(att: A) -> Self {
         Self {
             att: AttributeServer::new(att),

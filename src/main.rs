@@ -176,7 +176,7 @@ const APP: () = {
         let resp = Responder::new(
             tx,
             rx,
-            L2CAPState::new(BleChannelMap::with_attributes(OneAttribute {})),
+            L2CAPState::new(BleChannelMap::with_attributes(OneAttribute::new())),
         );
 
         if !TEST_BEACON {
