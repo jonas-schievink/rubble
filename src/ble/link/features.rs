@@ -2,7 +2,6 @@ use {
     crate::ble::{bytes::*, Error},
     bitflags::bitflags,
     byteorder::LittleEndian,
-    log::warn,
 };
 
 bitflags! {
@@ -84,11 +83,6 @@ impl ToBytes for FeatureSet {
 impl<'a> FromBytes<'a> for FeatureSet {
     fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
         let raw = bytes.read_u64::<LittleEndian>()?;
-        let this = Self::from_bits_truncate(raw);
-        if raw != this.bits() {
-            warn!("unknown feature bits: {:b} (known: {:b})", raw, this.bits());
-        }
-
-        Ok(this)
+        Ok(Self::from_bits_truncate(raw))
     }
 }
