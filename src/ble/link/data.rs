@@ -279,13 +279,14 @@ pub enum ControlPdu<'a> {
     /// `0x08`/`LL_FEATURE_REQ` - Master requests slave's features.
     FeatureReq {
         /// Supported feature set of the master.
-        master_features: FeatureSet,
+        features_master: FeatureSet,
     },
 
-    /// `0x09`/`LL_FEATURE_RSP` - Slave answers `LL_FEATURE_REQ` with own feature set.
+    /// `0x09`/`LL_FEATURE_RSP` - Slave answers `LL_FEATURE_REQ` with the used feature set.
     FeatureRsp {
-        /// Supported feature set of the slave device.
-        slave_features: FeatureSet,
+        /// Features that will be used for the connection. Logical `AND` of master and slave
+        /// features.
+        features_used: FeatureSet,
     },
 
     /// `0x0C`/`LL_VERSION_IND` - Bluetooth version indication (sent by both master and slave).
@@ -329,10 +330,10 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
                 unknown_type: ControlOpcode::from(bytes.read_first()?),
             },
             ControlOpcode::FeatureReq => ControlPdu::FeatureReq {
-                master_features: FeatureSet::from_bytes(bytes)?,
+                features_master: FeatureSet::from_bytes(bytes)?,
             },
             ControlOpcode::FeatureRsp => ControlPdu::FeatureRsp {
-                slave_features: FeatureSet::from_bytes(bytes)?,
+                features_used: FeatureSet::from_bytes(bytes)?,
             },
             ControlOpcode::VersionInd => ControlPdu::VersionInd {
                 vers_nr: VersionNumber::from(bytes.read_first()?),
@@ -359,8 +360,8 @@ impl<'a> ToBytes for ControlPdu<'a> {
                 buffer.write_byte(u8::from(*unknown_type))?;
                 Ok(())
             }
-            ControlPdu::FeatureReq { master_features } => master_features.to_bytes(buffer),
-            ControlPdu::FeatureRsp { slave_features } => slave_features.to_bytes(buffer),
+            ControlPdu::FeatureReq { features_master } => features_master.to_bytes(buffer),
+            ControlPdu::FeatureRsp { features_used } => features_used.to_bytes(buffer),
             ControlPdu::VersionInd {
                 vers_nr,
                 comp_id,

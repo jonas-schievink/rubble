@@ -50,14 +50,14 @@ impl<M: ChannelMapper> Responder<M> {
         self.with_rx(|rx, this| {
             rx.consume_pdu_with(|_, pdu| match pdu {
                 Pdu::Control { data } => {
-                    // We don't support any other LL Control PDU right now. Also see:
+                    // Also see:
                     // https://github.com/jonas-schievink/rubble/issues/26
 
                     let pdu = data.read();
                     info!("LL Control PDU: {:?}", pdu);
                     let response = match pdu {
-                        ControlPdu::FeatureReq { .. } => ControlPdu::FeatureRsp {
-                            slave_features: FeatureSet::supported(),
+                        ControlPdu::FeatureReq { features_master } => ControlPdu::FeatureRsp {
+                            features_used: features_master & FeatureSet::supported(),
                         },
                         ControlPdu::VersionInd { .. } => {
                             // FIXME this should be something real, and defined somewhere else
