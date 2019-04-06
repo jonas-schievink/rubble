@@ -264,21 +264,34 @@ impl<'a> ByteWriter<'a> {
         }
     }
 
-    /// Returns the number of bytes that can be written to `self` until it is full.
-    pub fn space_left(&self) -> usize {
-        self.0.len()
-    }
-
-    /// Writes a single byte to `self`.
+    /// Splits off the next byte in the buffer.
     ///
-    /// Returns `Error::Eof` when no space is left.
-    pub fn write_byte<'b>(&'b mut self, byte: u8) -> Result<(), Error>
+    /// The writer will be advanced to point to the rest of the underlying buffer.
+    ///
+    /// This allows filling in the value of the byte later, after writing more data.
+    ///
+    /// For a similar, but more flexible operation, see [`split_off`].
+    ///
+    /// [`split_off`]: #method.split_off
+    pub fn split_next_mut<'b>(&'b mut self) -> Option<&'a mut u8>
     where
         'a: 'b,
     {
-        let first = self.split_next_mut().ok_or(Error::Eof)?;
-        *first = byte;
-        Ok(())
+        let this = mem::replace(&mut self.0, &mut []);
+        // Slight contortion to please the borrow checker:
+        if this.is_empty() {
+            self.0 = this;
+            None
+        } else {
+            let (first, rest) = this.split_first_mut().unwrap();
+            self.0 = rest;
+            Some(first)
+        }
+    }
+
+    /// Returns the number of bytes that can be written to `self` until it is full.
+    pub fn space_left(&self) -> usize {
+        self.0.len()
     }
 
     /// Writes all bytes from `other` to `self`.
@@ -297,6 +310,15 @@ impl<'a> ByteWriter<'a> {
             self.0 = &mut this[other.len()..];
             Ok(())
         }
+    }
+
+    /// Writes a single byte to `self`.
+    ///
+    /// Returns `Error::Eof` when no space is left.
+    pub fn write_u8<'b>(&'b mut self, byte: u8) -> Result<(), Error> {
+        let first = self.split_next_mut().ok_or(Error::Eof)?;
+        *first = byte;
+        Ok(())
     }
 
     /// Writes a `u16` to `self`, using byte order `B`.
@@ -336,31 +358,6 @@ impl<'a> ByteWriter<'a> {
         let mut bytes = [0; 8];
         B::write_u64(&mut bytes, value);
         self.write_slice(&bytes)
-    }
-
-    /// Splits off the next byte in the buffer.
-    ///
-    /// The writer will be advanced to point to the rest of the underlying buffer.
-    ///
-    /// This allows filling in the value of the byte later, after writing more data.
-    ///
-    /// For a similar, but more flexible operation, see [`split_off`].
-    ///
-    /// [`split_off`]: #method.split_off
-    pub fn split_next_mut<'b>(&'b mut self) -> Option<&'a mut u8>
-    where
-        'a: 'b,
-    {
-        let this = mem::replace(&mut self.0, &mut []);
-        // Slight contortion to please the borrow checker:
-        if this.is_empty() {
-            self.0 = this;
-            None
-        } else {
-            let (first, rest) = this.split_first_mut().unwrap();
-            self.0 = rest;
-            Some(first)
-        }
     }
 }
 

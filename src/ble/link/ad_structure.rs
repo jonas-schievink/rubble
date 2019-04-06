@@ -82,28 +82,28 @@ impl<'a> ToBytes for AdStructure<'a> {
         let left_before = buf.space_left();
         match self {
             AdStructure::Flags(flags) => {
-                buf.write_byte(Type::FLAGS)?;
-                buf.write_byte(flags.to_u8())?;
+                buf.write_u8(Type::FLAGS)?;
+                buf.write_u8(flags.to_u8())?;
             }
             AdStructure::ServiceUuids16(uuids) => uuids.to_bytes(buf)?,
             AdStructure::ServiceUuids32(uuids) => uuids.to_bytes(buf)?,
             AdStructure::ServiceUuids128(uuids) => uuids.to_bytes(buf)?,
             AdStructure::ServiceData16 { uuid, data } => {
-                buf.write_byte(Type::SERVICE_DATA_16BIT_UUID)?;
-                buf.write_byte(*uuid as u8)?;
-                buf.write_byte((*uuid >> 8) as u8)?;
+                buf.write_u8(Type::SERVICE_DATA_16BIT_UUID)?;
+                buf.write_u8(*uuid as u8)?;
+                buf.write_u8((*uuid >> 8) as u8)?;
                 buf.write_slice(data)?;
             }
             AdStructure::CompleteLocalName(name) => {
-                buf.write_byte(Type::COMPLETE_LOCAL_NAME)?;
+                buf.write_u8(Type::COMPLETE_LOCAL_NAME)?;
                 buf.write_slice(name.as_bytes())?;
             }
             AdStructure::ShortenedLocalName(name) => {
-                buf.write_byte(Type::SHORTENED_LOCAL_NAME)?;
+                buf.write_u8(Type::SHORTENED_LOCAL_NAME)?;
                 buf.write_slice(name.as_bytes())?;
             }
             AdStructure::Unknown { ty, data } => {
-                buf.write_byte(*ty)?;
+                buf.write_u8(*ty)?;
                 buf.write_slice(data)?;
             }
             AdStructure::__Nonexhaustive => unreachable!(),
@@ -236,7 +236,7 @@ impl<'a, T: IsUuid> FromBytes<'a> for ServiceUuids<'a, T> {
 
 impl<'a, T: IsUuid> ToBytes for ServiceUuids<'a, T> {
     fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
-        buffer.write_byte(self.type_())?;
+        buffer.write_u8(self.type_())?;
         self.data.to_bytes(buffer)
     }
 }

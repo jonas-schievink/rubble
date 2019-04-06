@@ -354,10 +354,10 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
 
 impl<'a> ToBytes for ControlPdu<'a> {
     fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
-        buffer.write_byte(self.opcode().into())?;
+        buffer.write_u8(self.opcode().into())?;
         match self {
             ControlPdu::UnknownRsp { unknown_type } => {
-                buffer.write_byte(u8::from(*unknown_type))?;
+                buffer.write_u8(u8::from(*unknown_type))?;
                 Ok(())
             }
             ControlPdu::FeatureReq { features_master } => features_master.to_bytes(buffer),
@@ -367,7 +367,7 @@ impl<'a> ToBytes for ControlPdu<'a> {
                 comp_id,
                 sub_vers_nr,
             } => {
-                buffer.write_byte(u8::from(*vers_nr))?;
+                buffer.write_u8(u8::from(*vers_nr))?;
                 buffer.write_u16::<LittleEndian>(comp_id.0)?;
                 buffer.write_u16::<LittleEndian>(sub_vers_nr.0)?;
                 Ok(())

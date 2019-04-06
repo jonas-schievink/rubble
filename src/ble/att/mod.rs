@@ -177,16 +177,16 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
 
 impl ToBytes for Pdu<'_> {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_byte(self.opcode.into())?;
+        writer.write_u8(self.opcode.into())?;
         match self.params {
             AttMsg::ErrorRsp {
                 opcode,
                 handle,
                 error_code,
             } => {
-                writer.write_byte(opcode.into())?;
+                writer.write_u8(opcode.into())?;
                 writer.write_u16::<LittleEndian>(handle.as_u16())?;
-                writer.write_byte(error_code.into())?;
+                writer.write_u8(error_code.into())?;
             }
             AttMsg::ExchangeMtuReq { mtu } => {
                 writer.write_u16::<LittleEndian>(mtu)?;
@@ -202,7 +202,7 @@ impl ToBytes for Pdu<'_> {
                 group_type.to_bytes(writer)?;
             }
             AttMsg::ReadByGroupRsp { length, data_list } => {
-                writer.write_byte(length)?;
+                writer.write_u8(length)?;
                 writer.write_slice(data_list)?;
             }
             AttMsg::Unknown { params } => {
