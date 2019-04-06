@@ -7,11 +7,9 @@
 //! and *Characteristics* which can all be accessed and discovered over the Attribute Protocol.
 
 mod handle;
-mod permission;
 
 use {
     self::handle::*,
-    self::permission::*,
     crate::ble::{
         bytes::*,
         l2cap::{L2CAPResponder, Protocol, ProtocolObj},
@@ -226,6 +224,9 @@ pub struct Attribute<'a> {
     _permission: AttPermission,
 }
 
+/// Permissions associated with an attribute
+pub struct AttPermission {}
+
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
 pub trait Attributes {
     fn attributes(&self) -> &[Attribute];
@@ -241,16 +242,26 @@ impl Attributes for NoAttributes {
 }
 
 /// Set with a single attribute.
-pub struct OneAttribute {}
+pub struct OneAttribute {
+    inner: [Attribute<'static>; 1],
+}
 
-impl<'a> Attributes for OneAttribute {
+impl OneAttribute {
+    pub fn new() -> Self {
+        Self {
+            inner: [Attribute {
+                att_type: AttUuid::Uuid16(Uuid16(0)),
+                handle: AttHandle::from_raw(1),
+                value: HexSlice(&[]),
+                _permission: AttPermission {},
+            }],
+        }
+    }
+}
+
+impl Attributes for OneAttribute {
     fn attributes(&self) -> &[Attribute] {
-        &[Attribute {
-            att_type: AttUuid::Uuid16(Uuid16(0)),
-            handle: AttHandle(1),
-            value: HexSlice(&[]),
-            _permission: AttPermission {},
-        }]
+        &self.inner
     }
 }
 
@@ -281,20 +292,16 @@ impl<A: Attributes> AttributeServer<A> {
                 handle_range,
                 group_type,
             } => {
-                let (lower, upper) = {
-                    let range = handle_range.check()?;
-                    (range.start().0, range.end().0)
-                };
+                let range = handle_range.check()?;
 
                 let mut buf = [0u8; 16];
                 let mut writer = ByteWriter::new(&mut buf);
 
                 for att in self.attrs.attributes() {
-                    if att.att_type == group_type && att.handle.0 >= lower && att.handle.0 <= upper
-                    {
+                    if att.att_type == group_type && range.contains(att.handle) {
                         let data = ByGroupAttData {
                             handle: att.handle,
-                            end_group_handle: 0,
+                            end_group_handle: AttHandle::from_raw(0),
                             value: att.value,
                         };
 
@@ -468,7 +475,7 @@ pub struct AttError {
     handle: AttHandle,
 }
 
-// Attribute Data returned in Read By Type response
+/// Attribute Data returned in Read By Type response
 #[derive(Debug)]
 pub struct ByTypeAttData<'a> {
     handle: AttHandle,
@@ -481,7 +488,7 @@ where
 {
     fn from_bytes(bytes: &mut &'b [u8]) -> Result<Self, Error> {
         Ok(ByTypeAttData {
-            handle: AttHandle(bytes.read_u16::<LittleEndian>()?),
+            handle: AttHandle::from_bytes(bytes)?,
             value: HexSlice(bytes.read_slice(bytes.len())?),
         })
     }
@@ -489,17 +496,17 @@ where
 
 impl<'a> ToBytes for ByTypeAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.handle.0)?;
+        writer.write_u16::<LittleEndian>(self.handle.as_u16())?;
         writer.write_slice(self.value.0)?;
         Ok(())
     }
 }
 
-// Attribute Data returned in Read By Group Type response
+/// Attribute Data returned in Read By Group Type response
 #[derive(Debug)]
 pub struct ByGroupAttData<'a> {
     handle: AttHandle,
-    end_group_handle: u16,
+    end_group_handle: AttHandle,
     value: HexSlice<&'a [u8]>,
 }
 
@@ -509,8 +516,8 @@ where
 {
     fn from_bytes(bytes: &mut &'b [u8]) -> Result<Self, Error> {
         Ok(ByGroupAttData {
-            handle: AttHandle(bytes.read_u16::<LittleEndian>()?),
-            end_group_handle: bytes.read_u16::<LittleEndian>()?,
+            handle: AttHandle::from_bytes(bytes)?,
+            end_group_handle: AttHandle::from_bytes(bytes)?,
             value: HexSlice(bytes.read_slice(bytes.len())?),
         })
     }
@@ -518,8 +525,8 @@ where
 
 impl<'a> ToBytes for ByGroupAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.handle.0)?;
-        writer.write_u16::<LittleEndian>(self.end_group_handle)?;
+        writer.write_u16::<LittleEndian>(self.handle.as_u16())?;
+        writer.write_u16::<LittleEndian>(self.end_group_handle.as_u16())?;
         writer.write_slice(self.value.0)?;
         Ok(())
     }

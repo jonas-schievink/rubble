@@ -10,7 +10,7 @@ use {
 ///
 /// The `0x0000` handle (`NULL`) is invalid and must not be used.
 #[derive(Copy, Clone)]
-pub struct AttHandle(pub u16);
+pub struct AttHandle(u16);
 
 impl AttHandle {
     /// The `0x0000` handle is not used for actual attributes, but as a special placeholder when no
@@ -22,9 +22,9 @@ impl AttHandle {
         self.0
     }
 
-    /// Checks if an AttHandle is in a given range
-    pub fn check(&self, range: RangeInclusive<AttHandle>) -> bool {
-        range.start().0 <= self.0 && range.end().0 >= self.0
+    /// Create an attribute handle from a raw u16
+    pub fn from_raw(raw: u16) -> Self {
+        AttHandle(raw)
     }
 }
 
@@ -51,14 +51,14 @@ impl RawHandleRange {
     /// Checks that this handle range is valid according to the Bluetooth spec.
     ///
     /// Returns an `AttError` that should be sent as a response if the range is invalid.
-    pub fn check(&self) -> Result<RangeInclusive<AttHandle>, AttError> {
+    pub fn check(&self) -> Result<HandleRange, AttError> {
         if self.start.0 > self.end.0 || self.start.0 == 0 {
             Err(AttError {
                 code: ErrorCode::InvalidHandle,
                 handle: self.start,
             })
         } else {
-            Ok(self.start..=self.end)
+            Ok(HandleRange(self.start..=self.end))
         }
     }
 }
@@ -77,5 +77,16 @@ impl ToBytes for RawHandleRange {
         writer.write_u16::<LittleEndian>(self.start.as_u16())?;
         writer.write_u16::<LittleEndian>(self.end.as_u16())?;
         Ok(())
+    }
+}
+
+/// A (de)serializable handle range that has been checked for validity.
+#[derive(Debug)]
+pub struct HandleRange(RangeInclusive<AttHandle>);
+
+impl HandleRange {
+    /// Checks if an AttHandle is in a HandleRange
+    pub fn contains(&self, handle: AttHandle) -> bool {
+        self.0.start().0 <= handle.as_u16() && self.0.end().0 >= handle.as_u16()
     }
 }
