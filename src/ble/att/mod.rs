@@ -7,9 +7,11 @@
 //! and *Characteristics* which can all be accessed and discovered over the Attribute Protocol.
 
 mod handle;
+mod permission;
 
 use {
     self::handle::*,
+    self::permission::*,
     crate::ble::{
         bytes::*,
         l2cap::{L2CAPResponder, Protocol, ProtocolObj},
@@ -72,7 +74,7 @@ impl fmt::Debug for Opcode {
 }
 
 /// ATT protocol UUID (either a 16 or a 128-bit UUID).
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 enum AttUuid {
     Uuid16(Uuid16),
     Uuid128(Uuid),
@@ -121,7 +123,7 @@ enum AttMsg<'a> {
     },
     ReadByGroupRsp {
         length: u8,
-        data_list: &'a [ByGroupAttData<'a>],
+        data_list: &'a [u8],
     },
     Unknown {
         params: HexSlice<&'a [u8]>,
@@ -203,9 +205,7 @@ impl ToBytes for Pdu<'_> {
             }
             AttMsg::ReadByGroupRsp { length, data_list } => {
                 writer.write_byte(length)?;
-                for att_data in data_list {
-                    att_data.to_bytes(writer)?;
-                }
+                writer.write_slice(data_list)?;
             }
             AttMsg::Unknown { params } => {
                 writer.write_slice(params.0)?;
@@ -218,25 +218,51 @@ impl ToBytes for Pdu<'_> {
     }
 }
 
+/// An ATT server attribute
+pub struct Attribute<'a> {
+    att_type: AttUuid,
+    handle: AttHandle,
+    value: HexSlice<&'a [u8]>,
+    _permission: AttPermission,
+}
+
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
-pub trait Attributes {}
+pub trait Attributes {
+    fn attributes(&self) -> &[Attribute];
+}
 
 /// An empty attribute set.
 pub struct NoAttributes;
 
-impl Attributes for NoAttributes {}
+impl Attributes for NoAttributes {
+    fn attributes(&self) -> &[Attribute] {
+        &[]
+    }
+}
+
+/// Set with a single attribute.
+pub struct OneAttribute {}
+
+impl<'a> Attributes for OneAttribute {
+    fn attributes(&self) -> &[Attribute] {
+        &[Attribute {
+            att_type: AttUuid::Uuid16(Uuid16(0)),
+            handle: AttHandle(1),
+            value: HexSlice(&[]),
+            _permission: AttPermission {},
+        }]
+    }
+}
 
 /// An Attribute Protocol server providing read and write access to stored attributes.
 pub struct AttributeServer<A: Attributes> {
-    _attrs: A,
+    attrs: A,
 }
 
-impl AttributeServer<NoAttributes> {
-    /// Creates an attribute server that serves no attributes.
-    pub fn empty() -> Self {
-        Self {
-            _attrs: NoAttributes,
-        }
+impl<A: Attributes> AttributeServer<A> {
+    /// Creates an AttributeServer with Attributes
+    pub fn new(attrs: A) -> Self {
+        Self { attrs }
     }
 }
 
@@ -253,20 +279,55 @@ impl<A: Attributes> AttributeServer<A> {
         match pdu.params {
             AttMsg::ReadByGroupReq {
                 handle_range,
-                group_type: _,
+                group_type,
             } => {
-                handle_range.check()?;
-                responder
-                    .respond(Pdu {
-                        opcode: Opcode::new(Method::ReadByGroupRsp, false, false),
-                        params: AttMsg::ReadByGroupRsp {
-                            length: 0,
-                            data_list: &[],
-                        },
-                        signature: None,
-                    })
-                    .unwrap();
-                Ok(())
+                let (lower, upper) = {
+                    let range = handle_range.check()?;
+                    (range.start().0, range.end().0)
+                };
+
+                let mut buf = [0u8; 16];
+                let mut writer = ByteWriter::new(&mut buf);
+
+                for att in self.attrs.attributes() {
+                    if att.att_type == group_type && att.handle.0 >= lower && att.handle.0 <= upper
+                    {
+                        let data = ByGroupAttData {
+                            handle: att.handle,
+                            end_group_handle: 0,
+                            value: att.value,
+                        };
+
+                        data.to_bytes(&mut writer).unwrap();
+                    }
+                }
+
+                // If no attributes matched request, return AttributeNotFound error, else send ReadByGroupResponse
+                if writer.space_left() == 16 {
+                    let err = AttError {
+                        code: ErrorCode::AttributeNotFound,
+                        handle: AttHandle::NULL,
+                    };
+
+                    debug!("ATT Error: {:?}", err);
+
+                    Err(err)
+                } else {
+                    let length = 2 + 2 + self.attrs.attributes()[0].value.0.len() as u8;
+
+                    responder
+                        .respond(Pdu {
+                            opcode: Opcode::new(Method::ReadByGroupRsp, false, false),
+                            params: AttMsg::ReadByGroupRsp {
+                                length,
+                                data_list: &buf,
+                            },
+                            signature: None,
+                        })
+                        .unwrap();
+
+                    Ok(())
+                }
             }
             AttMsg::ExchangeMtuReq { mtu: _mtu } => {
                 responder
@@ -401,6 +462,7 @@ enum_with_unknown! {
 }
 
 /// An error on the ATT protocol layer. Can be sent as a response.
+#[derive(Debug)]
 pub struct AttError {
     code: ErrorCode,
     handle: AttHandle,
@@ -409,7 +471,7 @@ pub struct AttError {
 // Attribute Data returned in Read By Type response
 #[derive(Debug)]
 pub struct ByTypeAttData<'a> {
-    handle: u16,
+    handle: AttHandle,
     value: HexSlice<&'a [u8]>,
 }
 
@@ -419,7 +481,7 @@ where
 {
     fn from_bytes(bytes: &mut &'b [u8]) -> Result<Self, Error> {
         Ok(ByTypeAttData {
-            handle: bytes.read_u16::<LittleEndian>()?,
+            handle: AttHandle(bytes.read_u16::<LittleEndian>()?),
             value: HexSlice(bytes.read_slice(bytes.len())?),
         })
     }
@@ -427,7 +489,7 @@ where
 
 impl<'a> ToBytes for ByTypeAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.handle)?;
+        writer.write_u16::<LittleEndian>(self.handle.0)?;
         writer.write_slice(self.value.0)?;
         Ok(())
     }
@@ -436,7 +498,7 @@ impl<'a> ToBytes for ByTypeAttData<'a> {
 // Attribute Data returned in Read By Group Type response
 #[derive(Debug)]
 pub struct ByGroupAttData<'a> {
-    handle: u16,
+    handle: AttHandle,
     end_group_handle: u16,
     value: HexSlice<&'a [u8]>,
 }
@@ -447,7 +509,7 @@ where
 {
     fn from_bytes(bytes: &mut &'b [u8]) -> Result<Self, Error> {
         Ok(ByGroupAttData {
-            handle: bytes.read_u16::<LittleEndian>()?,
+            handle: AttHandle(bytes.read_u16::<LittleEndian>()?),
             end_group_handle: bytes.read_u16::<LittleEndian>()?,
             value: HexSlice(bytes.read_slice(bytes.len())?),
         })
@@ -456,7 +518,7 @@ where
 
 impl<'a> ToBytes for ByGroupAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.handle)?;
+        writer.write_u16::<LittleEndian>(self.handle.0)?;
         writer.write_u16::<LittleEndian>(self.end_group_handle)?;
         writer.write_slice(self.value.0)?;
         Ok(())
