@@ -565,35 +565,6 @@ impl<'a> FromBytes<'a> for u8 {
     }
 }
 
-/// Extensions on `&'a [u8]` that expose byteorder methods.
-pub trait BytesExt<'a> {
-    fn read_u8(&mut self) -> Result<u8, Error>;
-    fn read_u16<B: ByteOrder>(&mut self) -> Result<u16, Error>;
-    fn read_u32<B: ByteOrder>(&mut self) -> Result<u32, Error>;
-    fn read_u64<B: ByteOrder>(&mut self) -> Result<u64, Error>;
-}
-
-impl<'a> BytesExt<'a> for &'a [u8] {
-    fn read_u8(&mut self) -> Result<u8, Error> {
-        Ok(self.read_array::<[u8; 1]>()?[0])
-    }
-
-    fn read_u16<B: ByteOrder>(&mut self) -> Result<u16, Error> {
-        let arr = self.read_array::<[u8; 2]>()?;
-        Ok(B::read_u16(&arr))
-    }
-
-    fn read_u32<B: ByteOrder>(&mut self) -> Result<u32, Error> {
-        let arr = self.read_array::<[u8; 4]>()?;
-        Ok(B::read_u32(&arr))
-    }
-
-    fn read_u64<B: ByteOrder>(&mut self) -> Result<u64, Error> {
-        let arr = self.read_array::<[u8; 8]>()?;
-        Ok(B::read_u64(&arr))
-    }
-}
-
 /// Extensions on `&'a [T]`.
 pub trait SliceExt<'a, T: Copy> {
     /// Returns a copy of the first element in the slice `self` and advances `self` to point past
