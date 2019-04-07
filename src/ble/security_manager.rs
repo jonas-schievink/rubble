@@ -67,8 +67,8 @@
 //!
 //! ### LE Secure Connections pairing
 //!
-//! This finally uses established cryptography to do everything. It uses ECDH on the P-256 curve
-//! (aka "secp256r1" or "prime256v1").
+//! Added with BLE 4.2, this finally uses established cryptography to do everything. It uses ECDH on
+//! the P-256 curve (aka "secp256r1" or "prime256v1").
 //!
 //! Using ECDH immediately protects against passive eavesdropping. MITM-protection works similarly
 //! to what *LE Legacy Pairing* attempted to do, but is actually relevant here since the base key
