@@ -30,19 +30,21 @@ use {
 /// Many packets can contain dynamically-sized lists of objects. These packets all need to implement
 /// [`ToBytes`] and [`FromBytes`]. For [`FromBytes`], it is impossible to go from `&[u8]` to `&[T]`.
 ///
-/// A common workaround is to just keep storing the `&[u8]` and decode `T`s when necessary. However,
-/// this isn't very type-safe and also precludes implementing [`ToBytes`] properly, since there is
-/// no way to turn `&[T]` into `&[u8]` either, except by preallocating a fixed-size buffer and
-/// serializing into that, but that comes with its own set of problems.
+/// A workaround is to just store the `&[u8]` and decode `T`s only when necessary. However, this
+/// isn't very type-safe and also makes it difficult to create the type when you have a list of
+/// `T`s, but can't easily get a `&[u8]` (such as when creating a packet to be sent out). You'd have
+/// to define your own byte buffer and serialize the `T`s into it, which is problematic due to the
+/// potentially unknown size requirement and lifetime management.
 ///
 /// A workaround around the workaround would be to use 2 types for the same packet: One storing a
-/// `&[u8]` and implementing [`FromBytes`] which can only to *deserialization*, and one storing a
-/// `&[T]` and implementing [`ToBytes`], which can only to *serialization*.
+/// `&[u8]` and implementing [`FromBytes`] which can only do *deserialization*, and one storing a
+/// `&[T]` and implementing [`ToBytes`], which can only do *serialization*. This has the obvious
+/// drawback of essentially duplicating all packet definitions.
 ///
 /// Rubble's solution for this is `BytesOr`: It can store either an `&[u8]` or a `&T` (where `T`
-/// might be a slice), and always implements [`ToBytes`] and [`FromBytes`] (at least as long as `T`
-/// does). Methods allowing access to the stored `T` (or the elements in the `&[T]` slice) will
-/// either directly return the value, or decode it using its [`FromBytes`] implementation.
+/// might be a slice), and always implements [`ToBytes`] and [`FromBytes`] if `T` does. Methods
+/// allowing access to the stored `T` (or the elements in the `&[T]` slice) will either directly
+/// return the value, or decode it using its [`FromBytes`] implementation.
 ///
 /// When encoding a `T`, [`BytesOr::from_ref`] can be used to store a `&T` in a `BytesOr`, which can
 /// then be turned into bytes via [`ToBytes`]. When decoding data, [`FromBytes`] can be used to
