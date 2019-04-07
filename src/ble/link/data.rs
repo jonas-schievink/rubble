@@ -264,7 +264,7 @@ impl<'a, L: ToBytes> ToBytes for Pdu<'a, L> {
     }
 }
 
-/// A structured representation of an LL Control PDU.
+/// A structured representation of an LL Control PDU used by the Link Layer Control Protocol (LLCP).
 #[derive(Debug, Copy, Clone)]
 pub enum ControlPdu<'a> {
     /// `0x07`/`LL_UNKNOWN_RSP` - Response to unknown/unsupported LL Control PDUs.

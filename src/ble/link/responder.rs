@@ -18,8 +18,8 @@ use {
 /// at a lower priority (eg. being driven in the apps idle loop) and receives and transmits packets
 /// using the packet queue.
 ///
-/// LL Control PDUs are answered by the responder directly, and all L2CAP data is forwarded to an
-/// `L2CAPState<M>`.
+/// *LL Control PDUs* sent as part of the Link Layer Control Protocol (LLCP) are answered by the
+/// responder directly, and all L2CAP data is forwarded to an `L2CAPState<M>`.
 pub struct Responder<M: ChannelMapper> {
     tx: Producer,
     rx: Option<Consumer>,
@@ -54,7 +54,7 @@ impl<M: ChannelMapper> Responder<M> {
                     // https://github.com/jonas-schievink/rubble/issues/26
 
                     let pdu = data.read();
-                    info!("LL Control PDU: {:?}", pdu);
+                    info!("<- LL Control PDU: {:?}", pdu);
                     let response = match pdu {
                         ControlPdu::FeatureReq { features_master } => ControlPdu::FeatureRsp {
                             features_used: features_master & FeatureSet::supported(),
@@ -75,6 +75,7 @@ impl<M: ChannelMapper> Responder<M> {
                             unknown_type: pdu.opcode(),
                         },
                     };
+                    info!("-> Response: {:?}", response);
 
                     // Consume the LL Control PDU iff we can fit the response in the TX buffer:
                     Consume::on_success(this.tx.produce_pdu(Pdu::from(&response)))
