@@ -114,42 +114,37 @@ impl<'a, T: ?Sized> BytesOr<'a, T> {
 /// Creates a `BytesOr` that stores bytes that can be decoded to a `T`.
 ///
 /// This will check that `bytes` can indeed be decoded as a `T` using its [`FromBytes`]
-/// implementation, and returns an error if not. An error will also be returned if `bytes` contains
-/// more data than needed for a `T`.
+/// implementation, and returns an error if not.
+///
+/// The [`ByteReader`] will be advanced to point past the decoded `T` if the conversion succeeds.
 ///
 /// [`FromBytes`]: trait.FromBytes.html
+/// [`ByteReader`]: struct.ByteReader.html
 impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, T> {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
-        // FIXME `bytes` should be advanced past the read bytes
         let raw = bytes.as_raw_bytes();
+        T::from_bytes(bytes)?;
+        let used = raw.len() - bytes.bytes_left();
 
-        {
-            let mut bytes = ByteReader::new(raw);
-            T::from_bytes(&mut bytes)?;
-            if !bytes.is_empty() {
-                // FIXME this is the only `FromBytes` impl that does something like this,
-                // maybe it shouln't?
-                return Err(Error::IncompleteParse);
-            }
-        }
-
-        Ok(BytesOr(Inner::Bytes(raw)))
+        Ok(BytesOr(Inner::Bytes(&raw[..used])))
     }
 }
 
 /// Creates a `BytesOr` that stores bytes that can be decoded to a sequence of `T`s.
 ///
 /// This will check that `bytes` can indeed be decoded as a sequence of `T`s, and returns an error
-/// if not.
+/// if not. Note that this will read *as many `T`s as possible* until the [`ByteReader`] is at its
+/// end of input. Any trailing data after the list of `T`s will result in an error.
+///
+/// The [`ByteReader`] will be advanced to point past the decoded list of `T`s if the conversion
+/// succeeds. In that case, it will be at EOF and no more data can be read.
+///
+/// [`ByteReader`]: struct.ByteReader.html
 impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, [T]> {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let raw = bytes.as_raw_bytes();
-
-        {
-            let mut bytes = ByteReader::new(raw);
-            while !bytes.is_empty() {
-                T::from_bytes(&mut bytes)?;
-            }
+        while !bytes.is_empty() {
+            T::from_bytes(bytes)?;
         }
 
         Ok(BytesOr(Inner::Bytes(raw)))
