@@ -1,17 +1,21 @@
 //! Utilities for decoding from and encoding into bytes.
 //!
-//! The most important parts offered by this module are [`ToBytes`] and [`FromBytes`],
-//! general-purpose traits for zero-allocation (de)serialization from/to bytes. These are used all
-//! over the place in Rubble, along with [`ByteWriter`]. In addition to those, this module also
-//! defines helpful extension traits on `&[T]` and `&mut [T]`, defined on [`SliceExt`] and
-//! [`MutSliceExt`], and on `&[u8]`, defined on [`BytesExt`].
+//! This module defines zero-copy (de)serialization traits, [`ToBytes`] and [`FromBytes`], as well
+//! as the helper structs [`ByteWriter`] and [`ByteReader`], which wrap a `&mut [u8]` or `&[u8]`
+//! and offer useful utilities to read and write values.
+//!
+//! All types that end up getting transmitted over the air will want to implement [`ToBytes`] and
+//! [`FromBytes`]. This includes the raw PDUs sent and received on advertising and data channels,
+//! as well as messages used by a high-level protocol transferred over L2CAP.
+//!
+//! Also defined in this module is the [`BytesOr`] type, which can be used to store objects and
+//! slices of objects either as a direct reference or as a `&[u8]` that is lazily decoded.
 //!
 //! [`ToBytes`]: trait.ToBytes.html
 //! [`FromBytes`]: trait.FromBytes.html
 //! [`ByteWriter`]: struct.ByteWriter.html
-//! [`SliceExt`]: trait.SliceExt.html
-//! [`MutSliceExt`]: trait.MutSliceExt.html
-//! [`BytesExt`]: trait.BytesExt.html
+//! [`ByteReader`]: struct.ByteReader.html
+//! [`BytesOr`]: struct.BytesOr.html
 
 use {
     crate::ble::Error,
@@ -21,13 +25,37 @@ use {
 
 /// Reference to a `T`, or to a byte slice that can be decoded as a `T`.
 ///
-/// This type can be used in structures when storing a `T` directly is not desirable. For example,
-/// `T` might actually be a slice `[U]` and thus has a non-static size, or `T`s size might simply be
-/// too large (eg. it could be inside a rarely-encountered variant or would blow up the total size
-/// of the containing enum).
+/// # Motivation
 ///
-/// The size of this type is currently 2 `usize`s plus a discriminant byte, but could potentially be
-/// (unsafely) reduced further, should that be required.
+/// Many packets can contain dynamically-sized lists of objects. These packets all need to implement
+/// [`ToBytes`] and [`FromBytes`]. For [`FromBytes`], it is impossible to go from `&[u8]` to `&[T]`.
+///
+/// A common workaround is to just keep storing the `&[u8]` and decode `T`s when necessary. However,
+/// this isn't very type-safe and also precludes implementing [`ToBytes`] properly, since there is
+/// no way to turn `&[T]` into `&[u8]` either, except by preallocating a fixed-size buffer and
+/// serializing into that, but that comes with its own set of problems.
+///
+/// A workaround around the workaround would be to use 2 types for the same packet: One storing a
+/// `&[u8]` and implementing [`FromBytes`] which can only to *deserialization*, and one storing a
+/// `&[T]` and implementing [`ToBytes`], which can only to *serialization*.
+///
+/// Rubble's solution for this is `BytesOr`: It can store either an `&[u8]` or a `&T` (where `T`
+/// might be a slice), and always implements [`ToBytes`] and [`FromBytes`] (at least as long as `T`
+/// does). Methods allowing access to the stored `T` (or the elements in the `&[T]` slice) will
+/// either directly return the value, or decode it using its [`FromBytes`] implementation.
+///
+/// When encoding a `T`, [`BytesOr::from_ref`] can be used to store a `&T` in a `BytesOr`, which can
+/// then be turned into bytes via [`ToBytes`]. When decoding data, [`FromBytes`] can be used to
+/// create a `BytesOr` from bytes.
+///
+/// This type can also be used in structures when storing a `T` directly is not desirable due to
+/// size concerns: It could be inside a rarely-encountered variant or would blow up the total size
+/// of the containing enum). The size of `BytesOr` is currently 2 `usize`s plus a discriminant byte,
+/// but could potentially be (unsafely) reduced further, should that be required.
+///
+/// [`ToBytes`]: trait.ToBytes.html
+/// [`FromBytes`]: trait.FromBytes.html
+/// [`BytesOr::from_ref`]: #method.from_ref
 pub struct BytesOr<'a, T: ?Sized>(Inner<'a, T>);
 
 impl<'a, T: ?Sized> From<&'a T> for BytesOr<'a, T> {
