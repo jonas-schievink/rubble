@@ -288,10 +288,7 @@ impl<'a> ByteWriter<'a> {
     /// For a similar, but more flexible operation, see [`split_off`].
     ///
     /// [`split_off`]: #method.split_off
-    pub fn split_next_mut<'b>(&'b mut self) -> Option<&'a mut u8>
-    where
-        'a: 'b,
-    {
+    pub fn split_next_mut(&mut self) -> Option<&'a mut u8> {
         let this = mem::replace(&mut self.0, &mut []);
         // Slight contortion to please the borrow checker:
         if this.is_empty() {
@@ -313,10 +310,7 @@ impl<'a> ByteWriter<'a> {
     ///
     /// Returns `Error::Eof` when `self` does not have enough space left to fit `other`. In that
     /// case, `self` will not be modified.
-    pub fn write_slice<'b>(&'b mut self, other: &[u8]) -> Result<(), Error>
-    where
-        'a: 'b,
-    {
+    pub fn write_slice(&mut self, other: &[u8]) -> Result<(), Error> {
         if self.space_left() < other.len() {
             Err(Error::Eof)
         } else {
@@ -330,7 +324,7 @@ impl<'a> ByteWriter<'a> {
     /// Writes a single byte to `self`.
     ///
     /// Returns `Error::Eof` when no space is left.
-    pub fn write_u8<'b>(&'b mut self, byte: u8) -> Result<(), Error> {
+    pub fn write_u8(&mut self, byte: u8) -> Result<(), Error> {
         let first = self.split_next_mut().ok_or(Error::Eof)?;
         *first = byte;
         Ok(())
@@ -340,10 +334,7 @@ impl<'a> ByteWriter<'a> {
     ///
     /// If `self` does not have enough space left, an error will be returned and no bytes will be
     /// written to `self`.
-    pub fn write_u16_le<'b>(&'b mut self, value: u16) -> Result<(), Error>
-    where
-        'a: 'b,
-    {
+    pub fn write_u16_le(&mut self, value: u16) -> Result<(), Error> {
         let mut bytes = [0; 2];
         LittleEndian::write_u16(&mut bytes, value);
         self.write_slice(&bytes)
@@ -353,10 +344,7 @@ impl<'a> ByteWriter<'a> {
     ///
     /// If `self` does not have enough space left, an error will be returned and no bytes will be
     /// written to `self`.
-    pub fn write_u32_le<'b>(&'b mut self, value: u32) -> Result<(), Error>
-    where
-        'a: 'b,
-    {
+    pub fn write_u32_le(&mut self, value: u32) -> Result<(), Error> {
         let mut bytes = [0; 4];
         LittleEndian::write_u32(&mut bytes, value);
         self.write_slice(&bytes)
@@ -366,10 +354,7 @@ impl<'a> ByteWriter<'a> {
     ///
     /// If `self` does not have enough space left, an error will be returned and no bytes will be
     /// written to `self`.
-    pub fn write_u64_le<'b>(&'b mut self, value: u64) -> Result<(), Error>
-    where
-        'a: 'b,
-    {
+    pub fn write_u64_le(&mut self, value: u64) -> Result<(), Error> {
         let mut bytes = [0; 8];
         LittleEndian::write_u64(&mut bytes, value);
         self.write_slice(&bytes)
@@ -445,10 +430,7 @@ impl<'a> ByteReader<'a> {
     ///
     /// If `self` contains less than `len` bytes, `Error::Eof` will be returned and `self` will not
     /// be modified.
-    pub fn read_slice<'b>(&'b mut self, len: usize) -> Result<&'a [u8], Error>
-    where
-        'a: 'b,
-    {
+    pub fn read_slice(&mut self, len: usize) -> Result<&'a [u8], Error> {
         if self.bytes_left() < len {
             Err(Error::Eof)
         } else {
@@ -487,33 +469,24 @@ impl<'a> ByteReader<'a> {
     /// Reads a single byte from `self`.
     ///
     /// Returns `Error::Eof` when `self` is empty.
-    pub fn read_u8<'b>(&'b mut self) -> Result<u8, Error> {
+    pub fn read_u8(&mut self) -> Result<u8, Error> {
         Ok(self.read_array::<[u8; 1]>()?[0])
     }
 
     /// Reads a `u16` from `self`, using Little Endian byte order.
-    pub fn read_u16_le<'b>(&'b mut self) -> Result<u16, Error>
-    where
-        'a: 'b,
-    {
+    pub fn read_u16_le(&mut self) -> Result<u16, Error> {
         let arr = self.read_array::<[u8; 2]>()?;
         Ok(LittleEndian::read_u16(&arr))
     }
 
     /// Reads a `u32` from `self`, using Little Endian byte order.
-    pub fn read_u32_le<'b>(&'b mut self) -> Result<u32, Error>
-    where
-        'a: 'b,
-    {
+    pub fn read_u32_le(&mut self) -> Result<u32, Error> {
         let arr = self.read_array::<[u8; 4]>()?;
         Ok(LittleEndian::read_u32(&arr))
     }
 
     /// Reads a `u64` from `self`, using Little Endian byte order.
-    pub fn read_u64_le<'b>(&'b mut self) -> Result<u64, Error>
-    where
-        'a: 'b,
-    {
+    pub fn read_u64_le(&mut self) -> Result<u64, Error> {
         let arr = self.read_array::<[u8; 8]>()?;
         Ok(LittleEndian::read_u64(&arr))
     }
