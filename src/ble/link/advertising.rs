@@ -419,7 +419,7 @@ impl FromBytes<'_> for ConnectRequestData {
     fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
         let sca;
         Ok(Self {
-            access_address: Hex(bytes.read_u32::<LittleEndian>()?),
+            access_address: Hex(bytes.read_u32_le()?),
             crc_init: {
                 let mut le_bytes = [0u8; 4];
                 le_bytes[..3].copy_from_slice(bytes.read_slice(3)?);
@@ -428,13 +428,13 @@ impl FromBytes<'_> for ConnectRequestData {
             // transmitWindowSize in 1.25 ms steps
             win_size: Duration::from_micros(u32::from(bytes.read_u8()?) * 1250),
             // transmitWindowOffset in 1.25 ms steps
-            win_offset: Duration::from_micros(u32::from(bytes.read_u16::<LittleEndian>()?) * 1250),
+            win_offset: Duration::from_micros(u32::from(bytes.read_u16_le()?) * 1250),
             // connInterval in 1.25 ms steps
-            interval: Duration::from_micros(u32::from(bytes.read_u16::<LittleEndian>()?) * 1250),
+            interval: Duration::from_micros(u32::from(bytes.read_u16_le()?) * 1250),
             // connSlaveLatency in no. of events
-            latency: bytes.read_u16::<LittleEndian>()?,
+            latency: bytes.read_u16_le()?,
             // supervision timeout in 10 ms steps
-            timeout: Duration::from_micros(u32::from(bytes.read_u16::<LittleEndian>()?) * 10_000),
+            timeout: Duration::from_micros(u32::from(bytes.read_u16_le()?) * 10_000),
             chm: ChannelMap::from_raw(bytes.read_array()?),
             hop: {
                 let hop_and_sca = bytes.read_u8()?;
@@ -792,14 +792,14 @@ impl fmt::Debug for Header {
 
 impl<'a> FromBytes<'a> for Header {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
-        let raw = bytes.read_u16::<LittleEndian>()?;
+        let raw = bytes.read_u16_le()?;
         Ok(Header(raw))
     }
 }
 
 impl ToBytes for Header {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.0)
+        writer.write_u16_le(self.0)
     }
 }
 

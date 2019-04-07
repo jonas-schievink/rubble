@@ -36,7 +36,7 @@ impl fmt::Debug for AttHandle {
 
 impl FromBytes<'_> for AttHandle {
     fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
-        Ok(AttHandle(bytes.read_u16::<LittleEndian>()?))
+        Ok(AttHandle(bytes.read_u16_le()?))
     }
 }
 
@@ -74,8 +74,8 @@ impl FromBytes<'_> for RawHandleRange {
 
 impl ToBytes for RawHandleRange {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.start.as_u16())?;
-        writer.write_u16::<LittleEndian>(self.end.as_u16())?;
+        writer.write_u16_le(self.start.as_u16())?;
+        writer.write_u16_le(self.end.as_u16())?;
         Ok(())
     }
 }

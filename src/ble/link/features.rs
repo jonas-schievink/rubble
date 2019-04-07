@@ -1,7 +1,6 @@
 use {
     crate::ble::{bytes::*, Error},
     bitflags::bitflags,
-    byteorder::LittleEndian,
 };
 
 bitflags! {
@@ -76,13 +75,13 @@ impl FeatureSet {
 
 impl ToBytes for FeatureSet {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u64::<LittleEndian>(self.bits())
+        writer.write_u64_le(self.bits())
     }
 }
 
 impl<'a> FromBytes<'a> for FeatureSet {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
-        let raw = bytes.read_u64::<LittleEndian>()?;
+        let raw = bytes.read_u64_le()?;
         Ok(Self::from_bits_truncate(raw))
     }
 }

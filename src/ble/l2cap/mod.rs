@@ -33,7 +33,6 @@ use {
         utils::HexSlice,
         Error,
     },
-    byteorder::LittleEndian,
     core::fmt,
     log::{debug, warn},
 };
@@ -109,13 +108,13 @@ impl fmt::Debug for Channel {
 
 impl FromBytes<'_> for Channel {
     fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
-        Ok(Channel(bytes.read_u16::<LittleEndian>()?))
+        Ok(Channel(bytes.read_u16_le()?))
     }
 }
 
 impl ToBytes for Channel {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.0)
+        writer.write_u16_le(self.0)
     }
 }
 
@@ -262,7 +261,7 @@ impl Header {
 
 impl<'a> FromBytes<'a> for Header {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
-        let length = bytes.read_u16::<LittleEndian>()?;
+        let length = bytes.read_u16_le()?;
         let channel = Channel::from_bytes(bytes)?;
         Ok(Self { length, channel })
     }
@@ -270,8 +269,8 @@ impl<'a> FromBytes<'a> for Header {
 
 impl ToBytes for Header {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.length)?;
-        writer.write_u16::<LittleEndian>(self.channel.as_raw())?;
+        writer.write_u16_le(self.length)?;
+        writer.write_u16_le(self.channel.as_raw())?;
         Ok(())
     }
 }

@@ -153,10 +153,10 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
                     error_code: ErrorCode::from(bytes.read_u8()?),
                 },
                 Method::ExchangeMtuReq => AttMsg::ExchangeMtuReq {
-                    mtu: bytes.read_u16::<LittleEndian>()?,
+                    mtu: bytes.read_u16_le()?,
                 },
                 Method::ExchangeMtuRsp => AttMsg::ExchangeMtuRsp {
-                    mtu: bytes.read_u16::<LittleEndian>()?,
+                    mtu: bytes.read_u16_le()?,
                 },
                 Method::ReadByGroupReq => AttMsg::ReadByGroupReq {
                     handle_range: RawHandleRange::from_bytes(bytes)?,
@@ -187,14 +187,14 @@ impl ToBytes for Pdu<'_> {
                 error_code,
             } => {
                 writer.write_u8(opcode.into())?;
-                writer.write_u16::<LittleEndian>(handle.as_u16())?;
+                writer.write_u16_le(handle.as_u16())?;
                 writer.write_u8(error_code.into())?;
             }
             AttMsg::ExchangeMtuReq { mtu } => {
-                writer.write_u16::<LittleEndian>(mtu)?;
+                writer.write_u16_le(mtu)?;
             }
             AttMsg::ExchangeMtuRsp { mtu } => {
-                writer.write_u16::<LittleEndian>(mtu)?;
+                writer.write_u16_le(mtu)?;
             }
             AttMsg::ReadByGroupReq {
                 handle_range,
@@ -495,7 +495,7 @@ impl<'a> FromBytes<'a> for ByTypeAttData<'a> {
 
 impl<'a> ToBytes for ByTypeAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.handle.as_u16())?;
+        writer.write_u16_le(self.handle.as_u16())?;
         writer.write_slice(self.value.0)?;
         Ok(())
     }
@@ -521,8 +521,8 @@ impl<'a> FromBytes<'a> for ByGroupAttData<'a> {
 
 impl<'a> ToBytes for ByGroupAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_u16::<LittleEndian>(self.handle.as_u16())?;
-        writer.write_u16::<LittleEndian>(self.end_group_handle.as_u16())?;
+        writer.write_u16_le(self.handle.as_u16())?;
+        writer.write_u16_le(self.end_group_handle.as_u16())?;
         writer.write_slice(self.value.0)?;
         Ok(())
     }

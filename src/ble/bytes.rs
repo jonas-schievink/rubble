@@ -15,11 +15,9 @@
 
 use {
     crate::ble::Error,
-    byteorder::ByteOrder,
+    byteorder::{ByteOrder, LittleEndian},
     core::{fmt, iter, mem},
 };
-
-pub use byteorder::LittleEndian;
 
 /// Reference to a `T`, or to a byte slice that can be decoded as a `T`.
 ///
@@ -338,42 +336,42 @@ impl<'a> ByteWriter<'a> {
         Ok(())
     }
 
-    /// Writes a `u16` to `self`, using byte order `B`.
+    /// Writes a `u16` to `self`, using Little Endian byte order.
     ///
     /// If `self` does not have enough space left, an error will be returned and no bytes will be
     /// written to `self`.
-    pub fn write_u16<'b, B: ByteOrder>(&'b mut self, value: u16) -> Result<(), Error>
+    pub fn write_u16_le<'b>(&'b mut self, value: u16) -> Result<(), Error>
     where
         'a: 'b,
     {
         let mut bytes = [0; 2];
-        B::write_u16(&mut bytes, value);
+        LittleEndian::write_u16(&mut bytes, value);
         self.write_slice(&bytes)
     }
 
-    /// Writes a `u32` to `self`, using byte order `B`.
+    /// Writes a `u32` to `self`, using Little Endian byte order.
     ///
     /// If `self` does not have enough space left, an error will be returned and no bytes will be
     /// written to `self`.
-    pub fn write_u32<'b, B: ByteOrder>(&'b mut self, value: u32) -> Result<(), Error>
+    pub fn write_u32_le<'b>(&'b mut self, value: u32) -> Result<(), Error>
     where
         'a: 'b,
     {
         let mut bytes = [0; 4];
-        B::write_u32(&mut bytes, value);
+        LittleEndian::write_u32(&mut bytes, value);
         self.write_slice(&bytes)
     }
 
-    /// Writes a `u64` to `self`, using byte order `B`.
+    /// Writes a `u64` to `self`, using Little Endian byte order.
     ///
     /// If `self` does not have enough space left, an error will be returned and no bytes will be
     /// written to `self`.
-    pub fn write_u64<'b, B: ByteOrder>(&'b mut self, value: u64) -> Result<(), Error>
+    pub fn write_u64_le<'b>(&'b mut self, value: u64) -> Result<(), Error>
     where
         'a: 'b,
     {
         let mut bytes = [0; 8];
-        B::write_u64(&mut bytes, value);
+        LittleEndian::write_u64(&mut bytes, value);
         self.write_slice(&bytes)
     }
 }
@@ -493,31 +491,31 @@ impl<'a> ByteReader<'a> {
         Ok(self.read_array::<[u8; 1]>()?[0])
     }
 
-    /// Reads a `u16` from `self`, using byte order `B`.
-    pub fn read_u16<'b, B: ByteOrder>(&'b mut self) -> Result<u16, Error>
+    /// Reads a `u16` from `self`, using Little Endian byte order.
+    pub fn read_u16_le<'b>(&'b mut self) -> Result<u16, Error>
     where
         'a: 'b,
     {
         let arr = self.read_array::<[u8; 2]>()?;
-        Ok(B::read_u16(&arr))
+        Ok(LittleEndian::read_u16(&arr))
     }
 
-    /// Reads a `u32` from `self`, using byte order `B`.
-    pub fn read_u32<'b, B: ByteOrder>(&'b mut self) -> Result<u32, Error>
+    /// Reads a `u32` from `self`, using Little Endian byte order.
+    pub fn read_u32_le<'b>(&'b mut self) -> Result<u32, Error>
     where
         'a: 'b,
     {
         let arr = self.read_array::<[u8; 4]>()?;
-        Ok(B::read_u32(&arr))
+        Ok(LittleEndian::read_u32(&arr))
     }
 
-    /// Reads a `u64` from `self`, using byte order `B`.
-    pub fn read_u64<'b, B: ByteOrder>(&'b mut self) -> Result<u64, Error>
+    /// Reads a `u64` from `self`, using Little Endian byte order.
+    pub fn read_u64_le<'b>(&'b mut self) -> Result<u64, Error>
     where
         'a: 'b,
     {
         let arr = self.read_array::<[u8; 8]>()?;
-        Ok(B::read_u64(&arr))
+        Ok(LittleEndian::read_u64(&arr))
     }
 }
 

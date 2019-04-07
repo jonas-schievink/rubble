@@ -337,8 +337,8 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
             },
             ControlOpcode::VersionInd => ControlPdu::VersionInd {
                 vers_nr: VersionNumber::from(bytes.read_u8()?),
-                comp_id: Hex(bytes.read_u16::<LittleEndian>()?),
-                sub_vers_nr: Hex(bytes.read_u16::<LittleEndian>()?),
+                comp_id: Hex(bytes.read_u16_le()?),
+                sub_vers_nr: Hex(bytes.read_u16_le()?),
             },
             _ => ControlPdu::Unknown {
                 opcode,
@@ -364,8 +364,8 @@ impl<'a> ToBytes for ControlPdu<'a> {
                 sub_vers_nr,
             } => {
                 buffer.write_u8(u8::from(*vers_nr))?;
-                buffer.write_u16::<LittleEndian>(comp_id.0)?;
-                buffer.write_u16::<LittleEndian>(sub_vers_nr.0)?;
+                buffer.write_u16_le(comp_id.0)?;
+                buffer.write_u16_le(sub_vers_nr.0)?;
                 Ok(())
             }
             ControlPdu::Unknown { ctr_data, .. } => {
