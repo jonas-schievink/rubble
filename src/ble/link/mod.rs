@@ -139,6 +139,7 @@ use {
         seq_num::SeqNum,
     },
     crate::ble::{
+        bytes::ByteReader,
         crc::ble_crc24,
         phy::{AdvertisingChannel, DataChannel, Radio},
         time::{Duration, Instant, Timer},
@@ -281,11 +282,10 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
         rx_end: Instant,
         tx: &mut HW::Tx,
         header: advertising::Header,
-        mut payload: &[u8],
+        payload: &[u8],
         crc_ok: bool,
     ) -> Cmd {
-        let orig_payload = payload;
-        let pdu = advertising::Pdu::from_header_and_payload(header, &mut payload);
+        let pdu = advertising::Pdu::from_header_and_payload(header, &mut ByteReader::new(payload));
 
         if let Ok(pdu) = pdu {
             if let State::Advertising {
@@ -323,7 +323,7 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
             "ADV<- {}{:?}, {:?}\n{:?}\n",
             if crc_ok { "" } else { "BADCRC " },
             header,
-            HexSlice(orig_payload),
+            HexSlice(payload),
             pdu,
         );
 

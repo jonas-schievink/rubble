@@ -79,8 +79,8 @@ enum AttUuid {
 }
 
 impl FromBytes<'_> for AttUuid {
-    fn from_bytes(bytes: &mut &'_ [u8]) -> Result<Self, Error> {
-        Ok(match bytes.len() {
+    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
+        Ok(match bytes.bytes_left() {
             2 => AttUuid::Uuid16(Uuid16::from_bytes(bytes)?),
             16 => AttUuid::Uuid128(<Uuid as FromBytes>::from_bytes(bytes)?),
             _ => return Err(Error::InvalidLength),
@@ -140,17 +140,17 @@ struct Pdu<'a> {
 }
 
 impl<'a> FromBytes<'a> for Pdu<'a> {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
-        let opcode = Opcode::from(bytes.read_first()?);
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
+        let opcode = Opcode::from(bytes.read_u8()?);
         let auth = opcode.is_authenticated();
 
         Ok(Self {
             opcode,
             params: match opcode.method() {
                 Method::ErrorRsp => AttMsg::ErrorRsp {
-                    opcode: Opcode::from(bytes.read_first()?),
+                    opcode: Opcode::from(bytes.read_u8()?),
                     handle: AttHandle::from_bytes(bytes)?,
-                    error_code: ErrorCode::from(bytes.read_first()?),
+                    error_code: ErrorCode::from(bytes.read_u8()?),
                 },
                 Method::ExchangeMtuReq => AttMsg::ExchangeMtuReq {
                     mtu: bytes.read_u16::<LittleEndian>()?,
@@ -163,7 +163,9 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
                     group_type: AttUuid::from_bytes(bytes)?,
                 },
                 _ => AttMsg::Unknown {
-                    params: HexSlice(bytes.read_slice(bytes.len() - if auth { 12 } else { 0 })?),
+                    params: HexSlice(
+                        bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?,
+                    ),
                 },
             },
             signature: if auth {
@@ -364,10 +366,10 @@ impl<A: Attributes> AttributeServer<A> {
 impl<A: Attributes> ProtocolObj for AttributeServer<A> {
     fn process_message(
         &mut self,
-        mut message: &[u8],
+        message: &[u8],
         mut responder: L2CAPResponder,
     ) -> Result<(), Error> {
-        let pdu = Pdu::from_bytes(&mut message)?;
+        let pdu = Pdu::from_bytes(&mut ByteReader::new(message))?;
         let opcode = pdu.opcode;
         debug!("ATT msg: {:?}", pdu);
 
@@ -482,14 +484,11 @@ pub struct ByTypeAttData<'a> {
     value: HexSlice<&'a [u8]>,
 }
 
-impl<'a, 'b> FromBytes<'b> for ByTypeAttData<'a>
-where
-    'b: 'a,
-{
-    fn from_bytes(bytes: &mut &'b [u8]) -> Result<Self, Error> {
+impl<'a> FromBytes<'a> for ByTypeAttData<'a> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         Ok(ByTypeAttData {
             handle: AttHandle::from_bytes(bytes)?,
-            value: HexSlice(bytes.read_slice(bytes.len())?),
+            value: HexSlice(bytes.read_rest()),
         })
     }
 }
@@ -510,15 +509,12 @@ pub struct ByGroupAttData<'a> {
     value: HexSlice<&'a [u8]>,
 }
 
-impl<'a, 'b> FromBytes<'b> for ByGroupAttData<'a>
-where
-    'b: 'a,
-{
-    fn from_bytes(bytes: &mut &'b [u8]) -> Result<Self, Error> {
+impl<'a> FromBytes<'a> for ByGroupAttData<'a> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         Ok(ByGroupAttData {
             handle: AttHandle::from_bytes(bytes)?,
             end_group_handle: AttHandle::from_bytes(bytes)?,
-            value: HexSlice(bytes.read_slice(bytes.len())?),
+            value: HexSlice(bytes.read_rest()),
         })
     }
 }

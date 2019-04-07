@@ -108,7 +108,7 @@ impl fmt::Debug for Channel {
 }
 
 impl FromBytes<'_> for Channel {
-    fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
         Ok(Channel(bytes.read_u16::<LittleEndian>()?))
     }
 }
@@ -261,7 +261,7 @@ impl Header {
 }
 
 impl<'a> FromBytes<'a> for Header {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let length = bytes.read_u16::<LittleEndian>()?;
         let channel = Channel::from_bytes(bytes)?;
         Ok(Self { length, channel })
@@ -282,11 +282,11 @@ struct Message<P> {
 }
 
 impl<'a, P: FromBytes<'a>> FromBytes<'a> for Message<P> {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let header = Header::from_bytes(bytes)?;
         assert_eq!(
             header.length as usize,
-            bytes.len(),
+            bytes.bytes_left(),
             "L2CAP reassembly not yet implemented"
         );
 
@@ -349,8 +349,8 @@ impl<M: ChannelMapper> L2CAPState<M> {
     }
 
     /// Process the start of a new L2CAP message (or a complete, unfragmented message).
-    pub fn process_start(&mut self, mut message: &[u8], tx: &mut Producer) -> Consume<()> {
-        let msg = match Message::<&[u8]>::from_bytes(&mut message) {
+    pub fn process_start(&mut self, message: &[u8], tx: &mut Producer) -> Consume<()> {
+        let msg = match Message::<&[u8]>::from_bytes(&mut ByteReader::new(message)) {
             Ok(msg) => msg,
             Err(e) => return Consume::always(Err(e)),
         };

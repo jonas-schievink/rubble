@@ -79,21 +79,21 @@ impl ToBytes for Uuid {
 }
 
 impl FromBytes<'_> for Uuid16 {
-    fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
         let array = bytes.read_array()?;
         Ok(Uuid16(u16::from_le_bytes(array)))
     }
 }
 
 impl FromBytes<'_> for Uuid32 {
-    fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
         let array = bytes.read_array()?;
         Ok(Uuid32(u32::from_le_bytes(array)))
     }
 }
 
 impl FromBytes<'_> for Uuid {
-    fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
         let array = bytes.read_array()?;
         Ok(Uuid::from_bytes(array))
     }

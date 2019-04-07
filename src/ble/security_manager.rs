@@ -143,12 +143,8 @@ impl SecurityManager<NoSecurity> {
 }
 
 impl<S: SecurityLevel> ProtocolObj for SecurityManager<S> {
-    fn process_message(
-        &mut self,
-        mut message: &[u8],
-        _responder: L2CAPResponder,
-    ) -> Result<(), Error> {
-        let cmd = Command::from_bytes(&mut message)?;
+    fn process_message(&mut self, message: &[u8], _responder: L2CAPResponder) -> Result<(), Error> {
+        let cmd = Command::from_bytes(&mut ByteReader::new(message))?;
         trace!("SMP cmd {:?}, {:?}", cmd, HexSlice(message));
         match cmd {
             Command::PairingRequest { .. } => {
@@ -205,7 +201,7 @@ enum Command<'a> {
 }
 
 impl<'a> FromBytes<'a> for Command<'a> {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let code = CommandCode::from(bytes.read_u8()?);
         Ok(match code {
             CommandCode::PairingRequest => Command::PairingRequest {
@@ -218,7 +214,7 @@ impl<'a> FromBytes<'a> for Command<'a> {
             },
             _ => Command::Unknown {
                 code,
-                data: bytes.read_slice(bytes.len())?,
+                data: bytes.read_rest(),
             },
         })
     }

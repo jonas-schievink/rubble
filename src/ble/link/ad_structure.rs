@@ -117,17 +117,17 @@ impl<'a> ToBytes for AdStructure<'a> {
 }
 
 impl<'a> FromBytes<'a> for AdStructure<'a> {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
-        let len = bytes.read_first()?;
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
+        let len = bytes.read_u8()?;
         if len == 0 {
             // Must be at least 1 for the type
             return Err(Error::InvalidLength);
         }
 
         // The `FromBytes` impls of all AD structures also read the type byte
-        let mut data = bytes.read_slice(usize::from(len))?;
-        let mut ty_and_data = data;
-        let ty = data.read_first()?;
+        let ty_and_data = bytes.read_slice(usize::from(len))?;
+        let ty = ty_and_data[0];
+        let data = &ty_and_data[1..];
 
         Ok(match ty {
             Type::FLAGS => {
@@ -141,7 +141,7 @@ impl<'a> FromBytes<'a> for AdStructure<'a> {
             }
             Type::COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS
             | Type::INCOMPLETE_LIST_OF_16BIT_SERVICE_UUIDS => {
-                let uuids = ServiceUuids::<Uuid16>::from_bytes(&mut ty_and_data)?;
+                let uuids = ServiceUuids::<Uuid16>::from_bytes(&mut ByteReader::new(ty_and_data))?;
                 AdStructure::ServiceUuids16(uuids)
             }
             _ => AdStructure::Unknown { ty, data },
@@ -202,7 +202,7 @@ impl<'a, T: IsUuid> ServiceUuids<'a, T> {
 ///   type. Both the complete and incomplete type are accepted.
 /// * **`UUID`**...: n*2/4/16 Bytes of UUID data, in *little* endian.
 impl<'a, T: IsUuid> FromBytes<'a> for ServiceUuids<'a, T> {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let (t_complete, t_incomplete) = match T::KIND {
             UuidKind::Uuid16 => (
                 Type::COMPLETE_LIST_OF_16BIT_SERVICE_UUIDS,
@@ -218,7 +218,7 @@ impl<'a, T: IsUuid> FromBytes<'a> for ServiceUuids<'a, T> {
             ),
         };
 
-        let ty = bytes.read_first()?;
+        let ty = bytes.read_u8()?;
         let complete = if ty == t_complete {
             true
         } else if ty == t_incomplete {

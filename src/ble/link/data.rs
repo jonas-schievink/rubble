@@ -230,16 +230,16 @@ impl<'a, L> Pdu<'a, L> {
 
 impl<'a, L: FromBytes<'a> + ?Sized> Pdu<'a, L> {
     /// Parses a PDU from a `Header` and raw payload.
-    pub fn parse(header: Header, mut payload: &'a [u8]) -> Result<Self, Error> {
+    pub fn parse(header: Header, payload: &'a [u8]) -> Result<Self, Error> {
         match header.llid() {
             Llid::DataCont => Ok(Pdu::DataCont {
-                message: L::from_bytes(&mut payload)?,
+                message: L::from_bytes(&mut ByteReader::new(payload))?,
             }),
             Llid::DataStart => Ok(Pdu::DataStart {
-                message: L::from_bytes(&mut payload)?,
+                message: L::from_bytes(&mut ByteReader::new(payload))?,
             }),
             Llid::Control => Ok(Pdu::Control {
-                data: BytesOr::from_bytes(&mut payload)?,
+                data: BytesOr::from_bytes(&mut ByteReader::new(payload))?,
             }),
             Llid::Reserved => Err(Error::InvalidValue),
         }
@@ -323,11 +323,11 @@ impl ControlPdu<'_> {
 }
 
 impl<'a> FromBytes<'a> for ControlPdu<'a> {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
-        let opcode = ControlOpcode::from(bytes.read_first()?);
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
+        let opcode = ControlOpcode::from(bytes.read_u8()?);
         Ok(match opcode {
             ControlOpcode::UnknownRsp => ControlPdu::UnknownRsp {
-                unknown_type: ControlOpcode::from(bytes.read_first()?),
+                unknown_type: ControlOpcode::from(bytes.read_u8()?),
             },
             ControlOpcode::FeatureReq => ControlPdu::FeatureReq {
                 features_master: FeatureSet::from_bytes(bytes)?,
@@ -336,17 +336,13 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
                 features_used: FeatureSet::from_bytes(bytes)?,
             },
             ControlOpcode::VersionInd => ControlPdu::VersionInd {
-                vers_nr: VersionNumber::from(bytes.read_first()?),
+                vers_nr: VersionNumber::from(bytes.read_u8()?),
                 comp_id: Hex(bytes.read_u16::<LittleEndian>()?),
                 sub_vers_nr: Hex(bytes.read_u16::<LittleEndian>()?),
             },
             _ => ControlPdu::Unknown {
                 opcode,
-                ctr_data: {
-                    let rest = *bytes;
-                    *bytes = &[];
-                    rest
-                },
+                ctr_data: bytes.read_rest(),
             },
         })
     }

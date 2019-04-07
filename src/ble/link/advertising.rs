@@ -123,10 +123,13 @@ pub enum Pdu<'a> {
 
 impl<'a> Pdu<'a> {
     /// Constructs a PDU by parsing `payload`.
-    pub fn from_header_and_payload(header: Header, payload: &mut &'a [u8]) -> Result<Self, Error> {
+    pub fn from_header_and_payload(
+        header: Header,
+        payload: &mut ByteReader<'a>,
+    ) -> Result<Self, Error> {
         use self::Pdu::*;
 
-        if usize::from(header.payload_length()) != payload.len() {
+        if usize::from(header.payload_length()) != payload.bytes_left() {
             return Err(Error::InvalidLength);
         }
 
@@ -332,7 +335,7 @@ impl<'a> Pdu<'a> {
 /// Decodes an advertising channel PDU (consisting of header and payload) from
 /// raw bytes.
 impl<'a> FromBytes<'a> for Pdu<'a> {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let header = Header::from_bytes(bytes)?;
         Self::from_header_and_payload(header, bytes)
     }
@@ -413,7 +416,7 @@ impl ConnectRequestData {
 }
 
 impl FromBytes<'_> for ConnectRequestData {
-    fn from_bytes(bytes: &mut &[u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
         let sca;
         Ok(Self {
             access_address: Hex(bytes.read_u32::<LittleEndian>()?),
@@ -788,7 +791,7 @@ impl fmt::Debug for Header {
 }
 
 impl<'a> FromBytes<'a> for Header {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let raw = bytes.read_u16::<LittleEndian>()?;
         Ok(Header(raw))
     }

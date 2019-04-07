@@ -81,7 +81,7 @@ impl ToBytes for FeatureSet {
 }
 
 impl<'a> FromBytes<'a> for FeatureSet {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let raw = bytes.read_u64::<LittleEndian>()?;
         Ok(Self::from_bits_truncate(raw))
     }

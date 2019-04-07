@@ -53,7 +53,21 @@ impl fmt::Write for BbqLogger {
         let mut bytes = s.as_bytes();
 
         while !bytes.is_empty() {
-            let mut grant = self.p.grant_max(bytes.len()).expect("log buffer overflow");
+            let mut grant = match self.p.grant_max(bytes.len()) {
+                Ok(grant) => grant,
+                Err(_) => {
+                    let max_len = self
+                        .p
+                        .grant_max(usize::max_value())
+                        .map(|mut g| g.buf().len())
+                        .unwrap_or(0);
+                    panic!(
+                        "log buffer overflow: failed to grant {} Bytes ({} available)",
+                        bytes.len(),
+                        max_len
+                    );
+                }
+            };
             let size = grant.buf().len();
             grant.buf().copy_from_slice(&bytes[..size]);
             bytes = &bytes[size..];

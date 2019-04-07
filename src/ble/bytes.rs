@@ -92,17 +92,22 @@ impl<'a, T: ?Sized> BytesOr<'a, T> {
 /// more data than needed for a `T`.
 ///
 /// [`FromBytes`]: trait.FromBytes.html
-// FIXME this is the only `FromBytes` impl that does something like this, maybe it shouln't?
 impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, T> {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
+        // FIXME `bytes` should be advanced past the read bytes
+        let raw = bytes.as_raw_bytes();
+
         {
-            let bytes = &mut &**bytes;
-            T::from_bytes(bytes)?;
+            let mut bytes = ByteReader::new(raw);
+            T::from_bytes(&mut bytes)?;
             if !bytes.is_empty() {
+                // FIXME this is the only `FromBytes` impl that does something like this,
+                // maybe it shouln't?
                 return Err(Error::IncompleteParse);
             }
         }
-        Ok(BytesOr(Inner::Bytes(bytes)))
+
+        Ok(BytesOr(Inner::Bytes(raw)))
     }
 }
 
@@ -111,14 +116,17 @@ impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, T> {
 /// This will check that `bytes` can indeed be decoded as a sequence of `T`s, and returns an error
 /// if not.
 impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, [T]> {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
+        let raw = bytes.as_raw_bytes();
+
         {
-            let bytes = &mut &**bytes;
+            let mut bytes = ByteReader::new(raw);
             while !bytes.is_empty() {
-                T::from_bytes(bytes)?;
+                T::from_bytes(&mut bytes)?;
             }
         }
-        Ok(BytesOr(Inner::Bytes(bytes)))
+
+        Ok(BytesOr(Inner::Bytes(raw)))
     }
 }
 
@@ -154,9 +162,10 @@ impl<'a, T: Copy + FromBytes<'a>> BytesOr<'a, T> {
     /// [`FromBytes`]: trait.FromBytes.html
     pub fn read(&self) -> T {
         match self.0 {
-            Inner::Bytes(mut b) => {
-                let t = T::from_bytes(&mut b).unwrap();
-                assert!(b.is_empty());
+            Inner::Bytes(b) => {
+                let mut bytes = ByteReader::new(b);
+                let t = T::from_bytes(&mut bytes).unwrap();
+                assert!(bytes.is_empty());
                 t
             }
             Inner::Or(t) => *t,
@@ -196,10 +205,18 @@ impl<'a, T: Copy + FromBytes<'a>> Iterator for IterBytesOr<'a, T> {
                 if b.is_empty() {
                     None
                 } else {
-                    Some(T::from_bytes(b).unwrap())
+                    // Read a `T` and overwrite our `b` with the left-over data
+                    let mut reader = ByteReader::new(*b);
+                    let t = T::from_bytes(&mut reader).unwrap();
+                    *b = reader.into_rest();
+                    Some(t)
                 }
             }
-            Inner::Or(slice) => slice.read_first().ok(),
+            Inner::Or(slice) => {
+                let (first, rest) = slice.split_first()?;
+                *slice = rest;
+                Some(*first)
+            }
         }
     }
 }
@@ -361,6 +378,149 @@ impl<'a> ByteWriter<'a> {
     }
 }
 
+/// Allows reading values from a borrowed byte slice.
+pub struct ByteReader<'a>(&'a [u8]);
+
+impl<'a> ByteReader<'a> {
+    /// Creates a new `ByteReader` that will read from the given byte slice.
+    pub fn new(bytes: &'a [u8]) -> Self {
+        ByteReader(bytes)
+    }
+
+    /// Returns a reference to the raw bytes in `self`, without advancing `self` or reading any
+    /// data.
+    pub fn as_raw_bytes(&self) -> &'a [u8] {
+        self.0
+    }
+
+    /// Consumes `self` and returns the part of the contained buffer that has not yet been read
+    /// from.
+    pub fn into_rest(self) -> &'a [u8] {
+        self.0
+    }
+
+    /// Skips the given number of bytes in the input data without inspecting them.
+    ///
+    /// This is a potentially dangerous operation that should only be used when the bytes really do
+    /// not matter.
+    pub fn skip(&mut self, bytes: usize) -> Result<(), Error> {
+        if self.bytes_left() < bytes {
+            Err(Error::Eof)
+        } else {
+            self.0 = &self.0[bytes..];
+            Ok(())
+        }
+    }
+
+    /// Creates and returns another `ByteReader` that will read from the next `len` Bytes in the
+    /// buffer.
+    ///
+    /// `self` will be modified to point after the split-off bytes, and will continue reading from
+    /// there.
+    ///
+    /// Note that if the created `ByteReader` is not used, the bytes will be ignored. If you are
+    /// really sure you want that, `skip` is a more explicit way of accomplishing that.
+    #[must_use]
+    pub fn split_off(&mut self, len: usize) -> Result<Self, Error> {
+        if self.bytes_left() < len {
+            Err(Error::Eof)
+        } else {
+            let (head, tail) = (&self.0[..len], &self.0[len..]);
+            self.0 = tail;
+            Ok(ByteReader::new(head))
+        }
+    }
+
+    /// Returns the number of bytes that can still be read from `self`.
+    pub fn bytes_left(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns whether `self` is at the end of the underlying buffer (EOF).
+    ///
+    /// If this returns `true`, no data can be read from `self` anymore.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// Reads a byte slice of length `len` from `self`.
+    ///
+    /// If `self` contains less than `len` bytes, `Error::Eof` will be returned and `self` will not
+    /// be modified.
+    pub fn read_slice<'b>(&'b mut self, len: usize) -> Result<&'a [u8], Error>
+    where
+        'a: 'b,
+    {
+        if self.bytes_left() < len {
+            Err(Error::Eof)
+        } else {
+            let slice = &self.0[..len];
+            self.0 = &self.0[len..];
+            Ok(slice)
+        }
+    }
+
+    /// Reads a byte-array-like type `S` from `self`.
+    ///
+    /// `S` must implement `Default` and `AsMut<[u8]>`, which allows using small arrays up to 32
+    /// bytes as well as datastructures from `alloc` (eg. `Box<[u8]>` or `Vec<u8>`).
+    pub fn read_array<S>(&mut self) -> Result<S, Error>
+    where
+        S: Default + AsMut<[u8]>,
+    {
+        let mut buf = S::default();
+        let slice = buf.as_mut();
+        if self.bytes_left() < slice.len() {
+            return Err(Error::Eof);
+        }
+
+        slice.copy_from_slice(&self.0[..slice.len()]);
+        self.0 = &self.0[slice.len()..];
+        Ok(buf)
+    }
+
+    /// Reads the remaining bytes from `self`.
+    pub fn read_rest(&mut self) -> &'a [u8] {
+        let rest = self.0;
+        self.0 = &[];
+        rest
+    }
+
+    /// Reads a single byte from `self`.
+    ///
+    /// Returns `Error::Eof` when `self` is empty.
+    pub fn read_u8<'b>(&'b mut self) -> Result<u8, Error> {
+        Ok(self.read_array::<[u8; 1]>()?[0])
+    }
+
+    /// Reads a `u16` from `self`, using byte order `B`.
+    pub fn read_u16<'b, B: ByteOrder>(&'b mut self) -> Result<u16, Error>
+    where
+        'a: 'b,
+    {
+        let arr = self.read_array::<[u8; 2]>()?;
+        Ok(B::read_u16(&arr))
+    }
+
+    /// Reads a `u32` from `self`, using byte order `B`.
+    pub fn read_u32<'b, B: ByteOrder>(&'b mut self) -> Result<u32, Error>
+    where
+        'a: 'b,
+    {
+        let arr = self.read_array::<[u8; 4]>()?;
+        Ok(B::read_u32(&arr))
+    }
+
+    /// Reads a `u64` from `self`, using byte order `B`.
+    pub fn read_u64<'b, B: ByteOrder>(&'b mut self) -> Result<u64, Error>
+    where
+        'a: 'b,
+    {
+        let arr = self.read_array::<[u8; 8]>()?;
+        Ok(B::read_u64(&arr))
+    }
+}
+
 /// Trait for encoding a value into a byte buffer.
 pub trait ToBytes {
     /// Converts `self` to bytes and writes them into `writer`, advancing `writer` to point past the
@@ -378,7 +538,7 @@ pub trait FromBytes<'a>: Sized {
     /// If `bytes` contains data not valid for the target type, or contains an insufficient number
     /// of bytes, an error will be returned and the state of `bytes` is unspecified (it can point to
     /// arbitrary data).
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error>;
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error>;
 }
 
 impl ToBytes for [u8] {
@@ -394,13 +554,13 @@ impl<'a> ToBytes for &'a [u8] {
 }
 
 impl<'a> FromBytes<'a> for &'a [u8] {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
-        Ok(mem::replace(bytes, &[]))
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
+        Ok(bytes.read_rest())
     }
 }
 
 impl<'a> FromBytes<'a> for u8 {
-    fn from_bytes(bytes: &mut &'a [u8]) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         bytes.read_u8()
     }
 }

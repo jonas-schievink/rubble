@@ -153,7 +153,7 @@ const APP: () = {
         .unwrap();
 
         let log_stamper = ble_timer.create_stamp_source();
-        let (tx, log_sink) = bbq![2048].unwrap().split();
+        let (tx, log_sink) = bbq![10000].unwrap().split();
         let logger = StampedLogger::new(BbqLogger::new(tx), log_stamper);
 
         let log = logger::WriteLogger::new(logger);
