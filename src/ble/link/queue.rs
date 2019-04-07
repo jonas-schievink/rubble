@@ -184,11 +184,11 @@ impl Consumer {
             Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof),
         };
 
-        let mut bytes = &*grant;
+        let mut bytes = ByteReader::new(&grant);
         let raw_header: [u8; 2] = bytes.read_array().unwrap();
         let header = data::Header::parse(&raw_header);
         let pl_len = usize::from(header.payload_length());
-        let raw_payload = &bytes[..pl_len];
+        let raw_payload = bytes.read_slice(pl_len)?;
 
         let res = f(header, raw_payload);
         if res.consume {
