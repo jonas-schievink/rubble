@@ -8,10 +8,7 @@ pub struct CompanyId(u16);
 
 impl fmt::Debug for CompanyId {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.name() {
-            Some(s) => write!(f, "CompanyId(\"{}\")", s),
-            None => write!(f, "CompanyId(0x{:X})", self.as_u16()),
-        }
+        write!(f, "CompanyId(0x{:X})", self.as_u16())
     }
 }
 
@@ -27,6 +24,10 @@ impl CompanyId {
     }
 
     /// Get the full company name from identifer
+    ///
+    /// *** WARNING ***
+    ///
+    /// Using this method anywhere will add roughly 70KB to your binary size
     pub fn name(&self) -> Option<&'static str> {
         match self.0 {
             0x0000 => Some("Ericsson Technology Licensing"),

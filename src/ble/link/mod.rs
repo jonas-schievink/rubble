@@ -118,7 +118,7 @@
 
 pub mod ad_structure;
 pub mod advertising;
-mod comp_id;
+pub mod comp_id;
 mod connection;
 pub mod data;
 mod device_address;
