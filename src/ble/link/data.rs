@@ -3,7 +3,7 @@
 use {
     crate::ble::{
         bytes::*,
-        link::{FeatureSet, SeqNum},
+        link::{comp_id::CompanyId, FeatureSet, SeqNum},
         utils::Hex,
         Error,
     },
@@ -295,7 +295,7 @@ pub enum ControlPdu<'a> {
     /// have not already sent this PDU during this data connection (FIXME do this).
     VersionInd {
         vers_nr: VersionNumber,
-        comp_id: Hex<u16>,
+        comp_id: CompanyId,
         sub_vers_nr: Hex<u16>,
     },
 
@@ -337,7 +337,7 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
             },
             ControlOpcode::VersionInd => ControlPdu::VersionInd {
                 vers_nr: VersionNumber::from(bytes.read_u8()?),
-                comp_id: Hex(bytes.read_u16_le()?),
+                comp_id: CompanyId::from_raw(bytes.read_u16_le()?),
                 sub_vers_nr: Hex(bytes.read_u16_le()?),
             },
             _ => ControlPdu::Unknown {
@@ -364,7 +364,7 @@ impl<'a> ToBytes for ControlPdu<'a> {
                 sub_vers_nr,
             } => {
                 buffer.write_u8(u8::from(*vers_nr))?;
-                buffer.write_u16_le(comp_id.0)?;
+                buffer.write_u16_le(comp_id.as_u16())?;
                 buffer.write_u16_le(sub_vers_nr.0)?;
                 Ok(())
             }

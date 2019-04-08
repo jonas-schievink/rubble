@@ -2,6 +2,7 @@ use {
     crate::ble::{
         l2cap::{ChannelMapper, L2CAPState},
         link::{
+            comp_id::CompanyId,
             data::{ControlPdu, Pdu},
             queue::{Consume, Consumer, Producer},
             FeatureSet,
@@ -67,7 +68,7 @@ impl<M: ChannelMapper> Responder<M> {
 
                             ControlPdu::VersionInd {
                                 vers_nr: BLUETOOTH_VERSION,
-                                comp_id: Hex(comp_id),
+                                comp_id: CompanyId::from_raw(comp_id),
                                 sub_vers_nr: Hex(sub_vers_nr),
                             }
                         }
