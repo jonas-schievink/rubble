@@ -26,6 +26,7 @@ pub mod beacon;
 pub mod bytes;
 mod crc;
 mod error;
+pub mod gatt;
 pub mod l2cap;
 pub mod link;
 pub mod phy;
