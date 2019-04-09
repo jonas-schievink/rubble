@@ -17,7 +17,7 @@ use {
         uuid::{Uuid, Uuid16},
         Error,
     },
-    core::fmt,
+    core::{default::Default, fmt},
     log::debug,
 };
 
@@ -73,7 +73,7 @@ impl fmt::Debug for Opcode {
 
 /// ATT protocol UUID (either a 16 or a 128-bit UUID).
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum AttUuid {
+pub enum AttUuid {
     Uuid16(Uuid16),
     Uuid128(Uuid),
 }
@@ -220,14 +220,51 @@ impl ToBytes for Pdu<'_> {
 
 /// An ATT server attribute
 pub struct Attribute<'a> {
-    att_type: AttUuid,
-    handle: AttHandle,
-    value: HexSlice<&'a [u8]>,
-    _permission: AttPermission,
+    pub att_type: AttUuid,
+    pub handle: AttHandle,
+    pub value: HexSlice<&'a [u8]>,
+    pub permission: AttPermission,
 }
 
 /// Permissions associated with an attribute
-pub struct AttPermission {}
+pub struct AttPermission {
+    _access: AccessPermission,
+    _encryption: EncryptionPermission,
+    _authentication: AuthenticationPermission,
+    _authorization: AuthorizationPermission,
+}
+
+pub enum AccessPermission {
+    Readable,
+    Writeable,
+    ReadableWritable,
+}
+
+pub enum EncryptionPermission {
+    EncryptionRequired,
+    EncryptionNotRequired,
+}
+
+pub enum AuthenticationPermission {
+    AuthenticationRequired,
+    AuthenticationNotRequired,
+}
+
+pub enum AuthorizationPermission {
+    AuthorizationRequired,
+    AuthorizationNotRequired,
+}
+
+impl Default for AttPermission {
+    fn default() -> Self {
+        Self {
+            _access: AccessPermission::Readable,
+            _encryption: EncryptionPermission::EncryptionNotRequired,
+            _authentication: AuthenticationPermission::AuthenticationNotRequired,
+            _authorization: AuthorizationPermission::AuthorizationNotRequired,
+        }
+    }
+}
 
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
 pub trait Attributes {
@@ -240,30 +277,6 @@ pub struct NoAttributes;
 impl Attributes for NoAttributes {
     fn attributes(&self) -> &[Attribute] {
         &[]
-    }
-}
-
-/// Set with a single attribute.
-pub struct OneAttribute {
-    inner: [Attribute<'static>; 1],
-}
-
-impl OneAttribute {
-    pub fn new() -> Self {
-        Self {
-            inner: [Attribute {
-                att_type: AttUuid::Uuid16(Uuid16(0)),
-                handle: AttHandle::from_raw(1),
-                value: HexSlice(&[]),
-                _permission: AttPermission {},
-            }],
-        }
-    }
-}
-
-impl Attributes for OneAttribute {
-    fn attributes(&self) -> &[Attribute] {
-        &self.inner
     }
 }
 
@@ -289,15 +302,15 @@ impl<A: Attributes> AttributeServer<A> {
         pdu: Pdu,
         responder: &mut L2CAPResponder,
     ) -> Result<(), AttError> {
-        match pdu.params {
+        let mut buf = [0u8; 16];
+        let mut writer = ByteWriter::new(&mut buf);
+
+        let pdu: Pdu = match pdu.params {
             AttMsg::ReadByGroupReq {
                 handle_range,
                 group_type,
             } => {
                 let range = handle_range.check()?;
-
-                let mut buf = [0u8; 16];
-                let mut writer = ByteWriter::new(&mut buf);
 
                 for att in self.attrs.attributes() {
                     if att.att_type == group_type && range.contains(att.handle) {
@@ -318,38 +331,29 @@ impl<A: Attributes> AttributeServer<A> {
                         handle: AttHandle::NULL,
                     };
 
-                    debug!("ATT Error: {:?}", err);
+                    debug!("ATT error: {:?}", err);
 
-                    Err(err)
+                    return Err(err);
                 } else {
                     let length = 2 + 2 + self.attrs.attributes()[0].value.0.len() as u8;
 
-                    responder
-                        .respond(Pdu {
-                            opcode: Opcode::new(Method::ReadByGroupRsp, false, false),
-                            params: AttMsg::ReadByGroupRsp {
-                                length,
-                                data_list: &buf,
-                            },
-                            signature: None,
-                        })
-                        .unwrap();
-
-                    Ok(())
-                }
-            }
-            AttMsg::ExchangeMtuReq { mtu: _mtu } => {
-                responder
-                    .respond(Pdu {
-                        opcode: Opcode::new(Method::ExchangeMtuRsp, false, false),
-                        params: AttMsg::ExchangeMtuRsp {
-                            mtu: u16::from(Self::RSP_PDU_SIZE),
+                    Pdu {
+                        opcode: Opcode::new(Method::ReadByGroupRsp, false, false),
+                        params: AttMsg::ReadByGroupRsp {
+                            length,
+                            data_list: &buf[..length as usize],
                         },
                         signature: None,
-                    })
-                    .unwrap();
-                Ok(())
+                    }
+                }
             }
+            AttMsg::ExchangeMtuReq { mtu: _mtu } => Pdu {
+                opcode: Opcode::new(Method::ExchangeMtuRsp, false, false),
+                params: AttMsg::ExchangeMtuRsp {
+                    mtu: u16::from(Self::RSP_PDU_SIZE),
+                },
+                signature: None,
+            },
             AttMsg::ErrorRsp { .. }
             | AttMsg::Unknown { .. }
             | AttMsg::ReadByGroupRsp { .. }
@@ -359,7 +363,13 @@ impl<A: Attributes> AttributeServer<A> {
                     handle: AttHandle::NULL,
                 });
             }
-        }
+        };
+
+        debug!("ATT msg send: {:?}", pdu);
+
+        responder.respond(pdu).unwrap();
+
+        Ok(())
     }
 }
 
@@ -371,7 +381,7 @@ impl<A: Attributes> ProtocolObj for AttributeServer<A> {
     ) -> Result<(), Error> {
         let pdu = Pdu::from_bytes(&mut ByteReader::new(message))?;
         let opcode = pdu.opcode;
-        debug!("ATT msg: {:?}", pdu);
+        debug!("ATT msg received: {:?}", pdu);
 
         match self.process_request(pdu, &mut responder) {
             Ok(()) => Ok(()),

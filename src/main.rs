@@ -12,8 +12,8 @@ mod timer;
 use {
     crate::{
         ble::{
-            att::OneAttribute,
             beacon::Beacon,
+            gatt::{GattServer, PrimaryService},
             l2cap::{BleChannelMap, L2CAPState},
             link::{
                 ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
@@ -65,7 +65,8 @@ const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
     static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
     static mut BLE_LL: LinkLayer<HwNRf52810> = ();
-    static mut BLE_R: Responder<BleChannelMap<OneAttribute, NoSecurity>> = ();
+    static mut BLE_R: Responder<BleChannelMap<GattServer<'static, PrimaryService>, NoSecurity>> =
+        ();
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
     static mut BEACON_TIMER: pac::TIMER1 = ();
@@ -176,7 +177,7 @@ const APP: () = {
         let resp = Responder::new(
             tx,
             rx,
-            L2CAPState::new(BleChannelMap::with_attributes(OneAttribute::new())),
+            L2CAPState::new(BleChannelMap::with_attributes(GattServer::new())),
         );
 
         if !TEST_BEACON {
