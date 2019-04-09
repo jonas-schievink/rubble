@@ -17,7 +17,7 @@ use {
         uuid::{Uuid, Uuid16},
         Error,
     },
-    core::{default::Default, fmt},
+    core::fmt,
     log::debug,
 };
 
@@ -220,9 +220,14 @@ impl ToBytes for Pdu<'_> {
 
 /// An ATT server attribute
 pub struct Attribute<'a> {
+    /// The type of the attribute as a UUID16, EG "Primary Service" or "Anaerobic Heart Rate Lower Limit"
     pub att_type: AttUuid,
+    /// Unique server-side identifer for attribute
     pub handle: AttHandle,
+    /// Attribute values can be any fixed length or variable length octet array, which if too large
+    /// can be sent across multiple PDUs
     pub value: HexSlice<&'a [u8]>,
+    /// Permissions associated with the attribute
     pub permission: AttPermission,
 }
 
@@ -268,14 +273,14 @@ impl Default for AttPermission {
 
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
 pub trait Attributes {
-    fn attributes(&self) -> &[Attribute];
+    fn attributes(&mut self) -> &[Attribute];
 }
 
 /// An empty attribute set.
 pub struct NoAttributes;
 
 impl Attributes for NoAttributes {
-    fn attributes(&self) -> &[Attribute] {
+    fn attributes(&mut self) -> &[Attribute] {
         &[]
     }
 }
@@ -297,15 +302,10 @@ impl<A: Attributes> AttributeServer<A> {
     ///
     /// This may return an `AttError`, which the caller will then send as a response. In the success
     /// case, this method will send the response.
-    fn process_request(
-        &mut self,
-        pdu: Pdu,
-        responder: &mut L2CAPResponder,
-    ) -> Result<(), AttError> {
-        let mut buf = [0u8; 16];
-        let mut writer = ByteWriter::new(&mut buf);
+    fn process_request<'a>(&mut self, pdu: Pdu, buf: &'a mut [u8]) -> Result<Pdu<'a>, AttError> {
+        let mut writer = ByteWriter::new(buf);
 
-        let pdu: Pdu = match pdu.params {
+        match pdu.params {
             AttMsg::ReadByGroupReq {
                 handle_range,
                 group_type,
@@ -331,29 +331,27 @@ impl<A: Attributes> AttributeServer<A> {
                         handle: AttHandle::NULL,
                     };
 
-                    debug!("ATT error: {:?}", err);
-
                     return Err(err);
                 } else {
-                    let length = 2 + 2 + self.attrs.attributes()[0].value.0.len() as u8;
+                    let length = 6;
 
-                    Pdu {
+                    return Ok(Pdu {
                         opcode: Opcode::new(Method::ReadByGroupRsp, false, false),
                         params: AttMsg::ReadByGroupRsp {
                             length,
                             data_list: &buf[..length as usize],
                         },
                         signature: None,
-                    }
+                    });
                 }
             }
-            AttMsg::ExchangeMtuReq { mtu: _mtu } => Pdu {
+            AttMsg::ExchangeMtuReq { mtu: _mtu } => Ok(Pdu {
                 opcode: Opcode::new(Method::ExchangeMtuRsp, false, false),
                 params: AttMsg::ExchangeMtuRsp {
                     mtu: u16::from(Self::RSP_PDU_SIZE),
                 },
                 signature: None,
-            },
+            }),
             AttMsg::ErrorRsp { .. }
             | AttMsg::Unknown { .. }
             | AttMsg::ReadByGroupRsp { .. }
@@ -363,13 +361,7 @@ impl<A: Attributes> AttributeServer<A> {
                     handle: AttHandle::NULL,
                 });
             }
-        };
-
-        debug!("ATT msg send: {:?}", pdu);
-
-        responder.respond(pdu).unwrap();
-
-        Ok(())
+        }
     }
 }
 
@@ -383,17 +375,27 @@ impl<A: Attributes> ProtocolObj for AttributeServer<A> {
         let opcode = pdu.opcode;
         debug!("ATT msg received: {:?}", pdu);
 
-        match self.process_request(pdu, &mut responder) {
-            Ok(()) => Ok(()),
-            Err(att_error) => responder.respond(Pdu {
-                opcode: Opcode::new(Method::ErrorRsp, false, false),
-                params: AttMsg::ErrorRsp {
-                    opcode: opcode,
-                    handle: att_error.handle,
-                    error_code: att_error.code,
-                },
-                signature: None,
-            }),
+        let mut buf = [0u8; 16];
+
+        match self.process_request(pdu, &mut buf) {
+            Ok(pdu) => {
+                debug!("ATT msg send: {:?}", pdu);
+                responder.respond(pdu).unwrap();
+                Ok(())
+            }
+            Err(att_error) => {
+                debug!("ATT error: {:?}", att_error);
+
+                responder.respond(Pdu {
+                    opcode: Opcode::new(Method::ErrorRsp, false, false),
+                    params: AttMsg::ErrorRsp {
+                        opcode: opcode,
+                        handle: att_error.handle,
+                        error_code: att_error.code,
+                    },
+                    signature: None,
+                })
+            }
         }
     }
 }

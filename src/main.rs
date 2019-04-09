@@ -13,7 +13,7 @@ use {
     crate::{
         ble::{
             beacon::Beacon,
-            gatt::{GattServer, PrimaryService},
+            gatt::GattServer,
             l2cap::{BleChannelMap, L2CAPState},
             link::{
                 ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
@@ -65,8 +65,7 @@ const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
     static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
     static mut BLE_LL: LinkLayer<HwNRf52810> = ();
-    static mut BLE_R: Responder<BleChannelMap<GattServer<'static, PrimaryService>, NoSecurity>> =
-        ();
+    static mut BLE_R: Responder<BleChannelMap<GattServer<'static>, NoSecurity>> = ();
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
     static mut BEACON_TIMER: pac::TIMER1 = ();
