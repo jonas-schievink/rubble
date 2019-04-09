@@ -3,13 +3,10 @@
 //! GATT describes a service framework that uses the Attribute Protocol for discovery and
 //! interaction
 
-use {
-    crate::ble::{
-        att::{AttHandle, AttPermission, AttUuid, Attribute, Attributes},
-        utils::HexSlice,
-        uuid::Uuid16,
-    },
-    core::default::Default,
+use crate::ble::{
+    att::{AttHandle, AttPermission, AttUuid, Attribute, Attributes},
+    utils::HexSlice,
+    uuid::Uuid16,
 };
 
 /// A collection of data and associated behaviors to accomplish a particular function or feature
@@ -18,8 +15,11 @@ use {
 /// * Primary services expose the primary usable functionality of a device
 /// * Secondary services are only intended to be referenced from another service or higher level
 ///   specification
-pub trait Service {
-    fn get_type(&self) -> ServiceType;
+pub struct Service<'a> {
+    _uuid: AttUuid,
+    _service_type: ServiceType,
+    _includes: Option<&'a [Service<'a>]>,
+    _characteristics: Option<&'a [Characteristic]>,
 }
 
 pub enum ServiceType {
@@ -27,24 +27,30 @@ pub enum ServiceType {
     Secondary,
 }
 
+impl<'a> Service<'a> {
+    pub fn as_attributes(&self) -> &[Attribute<'a>] {
+        &[]
+    }
+}
+
 /// A characteristic is a value used in a service along with properties and configuration
 /// information about how the value is accessed and information about how the value is displayed
 /// or represented
-pub trait Characteristic {}
+pub struct Characteristic {}
 
 /// A GATT server to run on top of an ATT server
-pub struct GattServer<'a, S: Service> {
-    _services: &'a [S],
-    temp: [Attribute<'static>; 1],
+pub struct GattServer<'a> {
+    _services: &'a [Service<'a>],
+    attributes: [Attribute<'a>; 1],
 }
 
-impl<'a, S: Service> GattServer<'a, S> {
+impl<'a> GattServer<'a> {
     pub fn new() -> Self {
         Self {
             _services: &[],
-            temp: [Attribute {
+            attributes: [Attribute {
                 att_type: AttUuid::Uuid16(Uuid16(0x2800)),
-                handle: AttHandle::from_raw(0x1234),
+                handle: AttHandle::from_raw(0x0001),
                 value: HexSlice(&[0xCD, 0xAB]),
                 permission: AttPermission::default(),
             }],
@@ -52,18 +58,8 @@ impl<'a, S: Service> GattServer<'a, S> {
     }
 }
 
-impl<S: Service> Attributes for GattServer<'static, S> {
-    fn attributes(&self) -> &[Attribute] {
-        &self.temp
-    }
-}
-
-pub struct PrimaryService {
-    _uuid: AttUuid,
-}
-
-impl Service for PrimaryService {
-    fn get_type(&self) -> ServiceType {
-        ServiceType::Primary
+impl<'a> Attributes for GattServer<'a> {
+    fn attributes(&mut self) -> &[Attribute] {
+        &self.attributes
     }
 }
