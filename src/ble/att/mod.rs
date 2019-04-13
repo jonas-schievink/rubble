@@ -7,6 +7,7 @@
 //! and *Characteristics* which can all be accessed and discovered over the Attribute Protocol.
 
 mod handle;
+mod uuid;
 
 use {
     self::handle::*,
@@ -14,13 +15,13 @@ use {
         bytes::*,
         l2cap::{L2CAPResponder, Protocol, ProtocolObj},
         utils::HexSlice,
-        uuid::{Uuid, Uuid16},
         Error,
     },
     log::debug,
 };
 
 pub use self::handle::AttHandle;
+pub use self::uuid::AttUuid;
 
 enum_with_unknown! {
     /// Specifies an ATT operation to perform.
@@ -95,32 +96,6 @@ impl Opcode {
     /// whether they succeed). Unimplemented commands should be ignored, according to the spec.
     fn is_command(&self) -> bool {
         self.raw() & 0x40 != 0
-    }
-}
-
-/// ATT protocol UUID (either a 16 or a 128-bit UUID).
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum AttUuid {
-    Uuid16(Uuid16),
-    Uuid128(Uuid),
-}
-
-impl FromBytes<'_> for AttUuid {
-    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
-        Ok(match bytes.bytes_left() {
-            2 => AttUuid::Uuid16(Uuid16::from_bytes(bytes)?),
-            16 => AttUuid::Uuid128(<Uuid as FromBytes>::from_bytes(bytes)?),
-            _ => return Err(Error::InvalidLength),
-        })
-    }
-}
-
-impl ToBytes for AttUuid {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        match self {
-            AttUuid::Uuid16(uuid) => uuid.to_bytes(writer),
-            AttUuid::Uuid128(uuid) => uuid.to_bytes(writer),
-        }
     }
 }
 
