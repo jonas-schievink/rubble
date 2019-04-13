@@ -49,6 +49,11 @@ impl Producer {
         &mut self,
         f: impl FnOnce(&mut ByteWriter) -> Result<Llid, Error>,
     ) -> Result<(), Error> {
+        // Problem: We don't know the PDU size before encoding it, but it needs to go into the
+        // header.
+
+        // Get the largest contiguous buffer segment and write the PDU there, skipping the header
+        // FIXME: This is probably an inefficient use of bbqueue...
         let mut grant = match self.inner.grant_max(usize::max_value()) {
             Ok(grant) => grant,
             Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
@@ -86,33 +91,10 @@ impl Producer {
     /// Returns `Error::Eof` when the queue does not have enough free space for both header and
     /// payload.
     pub fn produce_pdu<L: ToBytes>(&mut self, payload: data::Pdu<L>) -> Result<(), Error> {
-        // Problem: We don't know the PDU size before encoding it, but it needs to go into the
-        // header.
-
-        // Get the largest contiguous buffer segment and write the PDU there, skipping the header
-        // FIXME: This is probably an inefficient use of bbqueue...
-        let mut grant = match self.inner.grant_max(usize::max_value()) {
-            Ok(grant) => grant,
-            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
-            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof),
-        };
-
-        if grant.len() < 2 {
-            return Err(Error::Eof);
-        }
-
-        let mut writer = ByteWriter::new(&mut grant[2..]);
-        let free = writer.space_left();
-        payload.to_bytes(&mut writer)?;
-        let used = free - writer.space_left();
-        assert!(used <= 255);
-
-        let mut header = data::Header::new(payload.llid());
-        header.set_payload_length(used as u8);
-        LittleEndian::write_u16(&mut grant, header.to_u16());
-
-        self.inner.commit(used + 2, grant);
-        Ok(())
+        self.produce_with(|w| {
+            payload.to_bytes(w)?;
+            Ok(payload.llid())
+        })
     }
 
     /// Enqueues a data channel PDU, where the payload is given as raw bytes.
