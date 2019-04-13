@@ -17,57 +17,84 @@ use {
         uuid::{Uuid, Uuid16},
         Error,
     },
-    core::fmt,
     log::debug,
 };
 
 pub use self::handle::AttHandle;
 
-/// An ATT opcode containing the `Method` to execute as well as command and authentication bits.
-#[derive(Copy, Clone)]
-struct Opcode(u8);
+enum_with_unknown! {
+    /// Specifies an ATT operation to perform.
+    ///
+    /// The byte values assigned to opcodes are chosen so that the most significant 2 bits indicate
+    /// additional information that can be useful in some cases:
+    ///
+    /// ```notrust
+    /// MSb                            LSb
+    /// +-----------+---------+----------+
+    /// | Signature | Command |  Method  |
+    /// |   1 bit   |  1 bit  |  6 bits  |
+    /// +-----------+---------+----------+
+    /// ```
+    ///
+    /// * **`Signature`** is set to 1 to indicate that the Attribute Opcode and Parameters are followed
+    ///   by an Authentication Signature. This is only allowed for the *Write Command*.
+    /// * **`Command`** is set to 1 when the PDU is a command. This is done purely so that the server
+    ///   can ignore unknown commands. Unlike *Requests*, Commands are not followed by a server
+    ///   response.
+    /// * **`Method`** defines which operation to perform.
+    #[derive(Debug, Copy, Clone)]
+    enum Opcode(u8) {
+        ErrorRsp = 0x01,
+        ExchangeMtuReq = 0x02,
+        ExchangeMtuRsp = 0x03,
+        FindInformationReq = 0x04,
+        FindInformationRsp = 0x05,
+        FindByTypeReq = 0x06,
+        FindByTypeRsp = 0x07,
+        ReadByTypeReq = 0x08,
+        ReadByTypeRsp = 0x09,
+        ReadReq = 0x0A,
+        ReadRsp = 0x0B,
+        ReadBlobReq = 0x0C,
+        ReadBlobRsp = 0x0D,
+        ReadMultipleReq = 0x0E,
+        ReadMultipleRsp = 0x0F,
+        ReadByGroupReq = 0x10,
+        ReadByGroupRsp = 0x11,
+        WriteReq = 0x12,
+        WriteRsp = 0x13,
+        WriteCommand = 0x52,
+        SignedWriteCommand = 0xD2,
+        PrepareWriteReq = 0x16,
+        PrepareWriteRsp = 0x17,
+        ExecuteWriteReq = 0x18,
+        ExecuteWriteRsp = 0x19,
+        HandleValueNotification = 0x1B,
+        HandleValueIndication = 0x1D,
+        HandleValueConfirmation = 0x1E,
+    }
+}
 
 impl Opcode {
-    fn new(method: Method, auth: bool, command: bool) -> Self {
-        let auth = if auth { 0x80 } else { 0x00 };
-        let command = if command { 0x40 } else { 0x00 };
-        let method = u8::from(method) & 0x3f;
-
-        Opcode(auth | command | method)
+    /// Returns the raw byte corresponding to the opcode `self`.
+    fn raw(&self) -> u8 {
+        u8::from(*self)
     }
 
+    /// Returns whether the `Signature` bit in this opcode is set.
+    ///
+    /// If the bit is set, this is an authenticated operation. The opcode parameters are followed by
+    /// a 12-Byte signature.
     fn is_authenticated(&self) -> bool {
-        self.0 & 0x80 != 0
+        self.raw() & 0x80 != 0
     }
 
+    /// Returns whether the `Command` bit in this opcode is set.
+    ///
+    /// Commands sent to the server are not followed by a server response (ie. it is not indicated
+    /// whether they succeed). Unimplemented commands should be ignored, according to the spec.
     fn is_command(&self) -> bool {
-        self.0 & 0x40 != 0
-    }
-
-    fn method(&self) -> Method {
-        Method::from(self.0 & 0x3f)
-    }
-}
-
-impl From<u8> for Opcode {
-    fn from(u: u8) -> Self {
-        Opcode(u)
-    }
-}
-
-impl Into<u8> for Opcode {
-    fn into(self) -> u8 {
-        self.0
-    }
-}
-
-impl fmt::Debug for Opcode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Opcode")
-            .field("auth", &self.is_authenticated())
-            .field("command", &self.is_command())
-            .field("method", &self.method())
-            .finish()
+        self.raw() & 0x40 != 0
     }
 }
 
@@ -124,14 +151,120 @@ enum AttMsg<'a> {
         data_list: &'a [u8],
     },
     Unknown {
+        opcode: Opcode,
         params: HexSlice<&'a [u8]>,
     },
 }
 
-/// An ATT PDU transferred as the L2CAP protocol payload.
+impl AttMsg<'_> {
+    fn opcode(&self) -> Opcode {
+        match self {
+            AttMsg::ErrorRsp { .. } => Opcode::ErrorRsp,
+            AttMsg::ExchangeMtuReq { .. } => Opcode::ExchangeMtuReq,
+            AttMsg::ExchangeMtuRsp { .. } => Opcode::ExchangeMtuRsp,
+            AttMsg::ReadByGroupReq { .. } => Opcode::ReadByGroupReq,
+            AttMsg::ReadByGroupRsp { .. } => Opcode::ReadByGroupRsp,
+            AttMsg::Unknown { opcode, .. } => *opcode,
+        }
+    }
+}
+
+/// A PDU sent from server to client (over L2CAP).
 #[derive(Debug)]
-struct Pdu<'a> {
+struct OutgoingPdu<'a>(AttMsg<'a>);
+
+impl<'a> From<AttMsg<'a>> for OutgoingPdu<'a> {
+    fn from(msg: AttMsg<'a>) -> Self {
+        OutgoingPdu(msg)
+    }
+}
+
+impl<'a> FromBytes<'a> for OutgoingPdu<'a> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
+        let opcode = Opcode::from(bytes.read_u8()?);
+        let auth = opcode.is_authenticated();
+
+        let msg = match opcode {
+            Opcode::ErrorRsp => AttMsg::ErrorRsp {
+                opcode: Opcode::from(bytes.read_u8()?),
+                handle: AttHandle::from_bytes(bytes)?,
+                error_code: ErrorCode::from(bytes.read_u8()?),
+            },
+            Opcode::ExchangeMtuReq => AttMsg::ExchangeMtuReq {
+                mtu: bytes.read_u16_le()?,
+            },
+            Opcode::ExchangeMtuRsp => AttMsg::ExchangeMtuRsp {
+                mtu: bytes.read_u16_le()?,
+            },
+            Opcode::ReadByGroupReq => AttMsg::ReadByGroupReq {
+                handle_range: RawHandleRange::from_bytes(bytes)?,
+                group_type: AttUuid::from_bytes(bytes)?,
+            },
+            _ => AttMsg::Unknown {
+                opcode,
+                params: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
+            },
+        };
+
+        if auth {
+            // Ignore signature
+            bytes.skip(12)?;
+        }
+        Ok(OutgoingPdu(msg))
+    }
+}
+
+impl ToBytes for OutgoingPdu<'_> {
+    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+        writer.write_u8(self.0.opcode().into())?;
+        match self.0 {
+            AttMsg::ErrorRsp {
+                opcode,
+                handle,
+                error_code,
+            } => {
+                writer.write_u8(opcode.into())?;
+                writer.write_u16_le(handle.as_u16())?;
+                writer.write_u8(error_code.into())?;
+            }
+            AttMsg::ExchangeMtuReq { mtu } => {
+                writer.write_u16_le(mtu)?;
+            }
+            AttMsg::ExchangeMtuRsp { mtu } => {
+                writer.write_u16_le(mtu)?;
+            }
+            AttMsg::ReadByGroupReq {
+                handle_range,
+                group_type,
+            } => {
+                handle_range.to_bytes(writer)?;
+                group_type.to_bytes(writer)?;
+            }
+            AttMsg::ReadByGroupRsp { length, data_list } => {
+                writer.write_u8(length)?;
+                writer.write_slice(data_list)?;
+            }
+            AttMsg::Unknown { opcode: _, params } => {
+                writer.write_slice(params.0)?;
+            }
+        }
+        if self.0.opcode().is_authenticated() {
+            // Write a dummy signature. This should never really be reached since the server never
+            // sends authenticated messages.
+            writer.write_slice(&[0; 12])?;
+        }
+        Ok(())
+    }
+}
+
+/// An ATT PDU transferred from client to server as the L2CAP protocol payload.
+///
+/// Outgoing PDUs are just `AttMsg`s.
+#[derive(Debug)]
+struct IncomingPdu<'a> {
+    /// The 1-Byte opcode value. It is kept around since it needs to be returned in error responses.
     opcode: Opcode,
+    /// Decoded message (request or command) including parameters.
     params: AttMsg<'a>,
     /// `Some` if `opcode.is_authenticated()` is `true`, `None` if not.
     ///
@@ -139,30 +272,31 @@ struct Pdu<'a> {
     signature: Option<HexSlice<&'a [u8]>>,
 }
 
-impl<'a> FromBytes<'a> for Pdu<'a> {
+impl<'a> FromBytes<'a> for IncomingPdu<'a> {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let opcode = Opcode::from(bytes.read_u8()?);
         let auth = opcode.is_authenticated();
 
         Ok(Self {
             opcode,
-            params: match opcode.method() {
-                Method::ErrorRsp => AttMsg::ErrorRsp {
+            params: match opcode {
+                Opcode::ErrorRsp => AttMsg::ErrorRsp {
                     opcode: Opcode::from(bytes.read_u8()?),
                     handle: AttHandle::from_bytes(bytes)?,
                     error_code: ErrorCode::from(bytes.read_u8()?),
                 },
-                Method::ExchangeMtuReq => AttMsg::ExchangeMtuReq {
+                Opcode::ExchangeMtuReq => AttMsg::ExchangeMtuReq {
                     mtu: bytes.read_u16_le()?,
                 },
-                Method::ExchangeMtuRsp => AttMsg::ExchangeMtuRsp {
+                Opcode::ExchangeMtuRsp => AttMsg::ExchangeMtuRsp {
                     mtu: bytes.read_u16_le()?,
                 },
-                Method::ReadByGroupReq => AttMsg::ReadByGroupReq {
+                Opcode::ReadByGroupReq => AttMsg::ReadByGroupReq {
                     handle_range: RawHandleRange::from_bytes(bytes)?,
                     group_type: AttUuid::from_bytes(bytes)?,
                 },
                 _ => AttMsg::Unknown {
+                    opcode,
                     params: HexSlice(
                         bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?,
                     ),
@@ -177,7 +311,7 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
     }
 }
 
-impl ToBytes for Pdu<'_> {
+impl ToBytes for IncomingPdu<'_> {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
         writer.write_u8(self.opcode.into())?;
         match self.params {
@@ -207,7 +341,7 @@ impl ToBytes for Pdu<'_> {
                 writer.write_u8(length)?;
                 writer.write_slice(data_list)?;
             }
-            AttMsg::Unknown { params } => {
+            AttMsg::Unknown { opcode: _, params } => {
                 writer.write_slice(params.0)?;
             }
         }
@@ -298,14 +432,19 @@ impl<A: Attributes> AttributeServer<A> {
 }
 
 impl<A: Attributes> AttributeServer<A> {
-    /// Process an incoming request PDU and return a response.
+    /// Process an incoming request (or command) PDU and return a response.
     ///
     /// This may return an `AttError`, which the caller will then send as a response. In the success
-    /// case, this method will send the response.
-    fn process_request<'a>(&mut self, pdu: Pdu, buf: &'a mut [u8]) -> Result<Pdu<'a>, AttError> {
+    /// case, this method will return the `OutgoingPdu` to respond with (or `None` if no response
+    /// needs to be sent).
+    fn process_request<'a>(
+        &mut self,
+        pdu: IncomingPdu,
+        buf: &'a mut [u8],
+    ) -> Result<Option<OutgoingPdu<'a>>, AttError> {
         let mut writer = ByteWriter::new(buf);
 
-        match pdu.params {
+        Ok(Some(match pdu.params {
             AttMsg::ReadByGroupReq {
                 handle_range,
                 group_type,
@@ -335,25 +474,31 @@ impl<A: Attributes> AttributeServer<A> {
                 } else {
                     let length = 6;
 
-                    return Ok(Pdu {
-                        opcode: Opcode::new(Method::ReadByGroupRsp, false, false),
-                        params: AttMsg::ReadByGroupRsp {
-                            length,
-                            data_list: &buf[..length as usize],
-                        },
-                        signature: None,
+                    OutgoingPdu(AttMsg::ReadByGroupRsp {
+                        length,
+                        data_list: &buf[..length as usize],
+                    })
+                }
+            }
+            AttMsg::ExchangeMtuReq { mtu: _mtu } => OutgoingPdu(AttMsg::ExchangeMtuRsp {
+                mtu: u16::from(Self::RSP_PDU_SIZE),
+            }),
+
+            AttMsg::Unknown { .. } => {
+                if pdu.opcode.is_command() {
+                    // According to the spec, unknown Command PDUs should be ignored
+                    return Ok(None);
+                } else {
+                    // Unknown requests are rejected with a `RequestNotSupported` error
+                    return Err(AttError {
+                        code: ErrorCode::RequestNotSupported,
+                        handle: AttHandle::NULL,
                     });
                 }
             }
-            AttMsg::ExchangeMtuReq { mtu: _mtu } => Ok(Pdu {
-                opcode: Opcode::new(Method::ExchangeMtuRsp, false, false),
-                params: AttMsg::ExchangeMtuRsp {
-                    mtu: u16::from(Self::RSP_PDU_SIZE),
-                },
-                signature: None,
-            }),
+
+            // Responses are always invalid here
             AttMsg::ErrorRsp { .. }
-            | AttMsg::Unknown { .. }
             | AttMsg::ReadByGroupRsp { .. }
             | AttMsg::ExchangeMtuRsp { .. } => {
                 return Err(AttError {
@@ -361,7 +506,7 @@ impl<A: Attributes> AttributeServer<A> {
                     handle: AttHandle::NULL,
                 });
             }
-        }
+        }))
     }
 }
 
@@ -371,30 +516,30 @@ impl<A: Attributes> ProtocolObj for AttributeServer<A> {
         message: &[u8],
         mut responder: L2CAPResponder,
     ) -> Result<(), Error> {
-        let pdu = Pdu::from_bytes(&mut ByteReader::new(message))?;
+        let pdu = IncomingPdu::from_bytes(&mut ByteReader::new(message))?;
         let opcode = pdu.opcode;
         debug!("ATT msg received: {:?}", pdu);
 
         let mut buf = [0u8; 16];
 
         match self.process_request(pdu, &mut buf) {
-            Ok(pdu) => {
+            Ok(Some(pdu)) => {
                 debug!("ATT msg send: {:?}", pdu);
                 responder.respond(pdu).unwrap();
+                Ok(())
+            }
+            Ok(None) => {
+                debug!("(no response)");
                 Ok(())
             }
             Err(att_error) => {
                 debug!("ATT error: {:?}", att_error);
 
-                responder.respond(Pdu {
-                    opcode: Opcode::new(Method::ErrorRsp, false, false),
-                    params: AttMsg::ErrorRsp {
-                        opcode: opcode,
-                        handle: att_error.handle,
-                        error_code: att_error.code,
-                    },
-                    signature: None,
-                })
+                responder.respond(OutgoingPdu(AttMsg::ErrorRsp {
+                    opcode: opcode,
+                    handle: att_error.handle,
+                    error_code: att_error.code,
+                }))
             }
         }
     }
@@ -403,40 +548,6 @@ impl<A: Attributes> ProtocolObj for AttributeServer<A> {
 impl<A: Attributes> Protocol for AttributeServer<A> {
     // FIXME: Would it be useful to have this as a runtime parameter instead?
     const RSP_PDU_SIZE: u8 = 23;
-}
-
-enum_with_unknown! {
-    #[derive(Debug)]
-    enum Method(u8) {
-        ErrorRsp = 0x01,
-        ExchangeMtuReq = 0x02,
-        ExchangeMtuRsp = 0x03,
-        FindInformationReq = 0x04,
-        FindInformationRsp = 0x05,
-        FindByTypeReq = 0x06,
-        FindByTypeRsp = 0x07,
-        ReadByTypeReq = 0x08,
-        ReadByTypeRsp = 0x09,
-        ReadReq = 0x0A,
-        ReadRsp = 0x0B,
-        ReadBlobReq = 0x0C,
-        ReadBlobRsp = 0x0D,
-        ReadMultipleReq = 0x0E,
-        ReadMultipleRsp = 0x0F,
-        ReadByGroupReq = 0x10,
-        ReadByGroupRsp = 0x11,
-        WriteReq = 0x12,
-        WriteRsp = 0x13,
-        WriteCommand = 0x52,
-        SignedWriteCommand = 0xD2,
-        PrepareWriteReq = 0x16,
-        PrepareWriteRsp = 0x17,
-        ExecuteWriteReq = 0x18,
-        ExecuteWriteRsp = 0x19,
-        HandleValueNotification = 0x1B,
-        HandleValueIndication = 0x1D,
-        HandleValueConfirmation = 0x1E,
-    }
 }
 
 enum_with_unknown! {
