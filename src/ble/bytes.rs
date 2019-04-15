@@ -153,25 +153,11 @@ impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, [T]> {
     }
 }
 
-impl<'a, T: ToBytes> ToBytes for BytesOr<'a, T> {
+impl<'a, T: ToBytes + ?Sized> ToBytes for BytesOr<'a, T> {
     fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
         match self.0 {
             Inner::Bytes(b) => buffer.write_slice(b),
             Inner::Or(t) => t.to_bytes(buffer),
-        }
-    }
-}
-
-impl<'a, T: ToBytes> ToBytes for BytesOr<'a, [T]> {
-    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
-        match self.0 {
-            Inner::Bytes(b) => buffer.write_slice(b),
-            Inner::Or(ts) => {
-                for t in ts {
-                    t.to_bytes(buffer)?;
-                }
-                Ok(())
-            }
         }
     }
 }
@@ -537,9 +523,12 @@ pub trait FromBytes<'a>: Sized {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error>;
 }
 
-impl ToBytes for [u8] {
+impl<T: ToBytes> ToBytes for [T] {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
-        writer.write_slice(self)
+        for t in self {
+            t.to_bytes(writer)?;
+        }
+        Ok(())
     }
 }
 
