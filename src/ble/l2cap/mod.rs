@@ -180,6 +180,7 @@ impl BleChannelMap<NoAttributes, NoSecurity> {
     ///
     /// This means:
     /// * The attribute server on channel `0x0004` will host an empty attribute set.
+    /// * The security manager on channel `0x0006` will not support pairing or any security.
     pub fn empty() -> Self {
         Self {
             att: AttributeServer::new(NoAttributes),
@@ -382,17 +383,35 @@ impl<'a> L2CAPResponder<'a> {
     /// L2CAP header (including the destination endpoint's channel) and the data channel PDU header
     /// will be added automatically.
     ///
-    /// This will fail if there's not enough space left in the PDU queue.
+    /// This will fail if there's not enough space left in the TX queue.
     pub fn respond<P: ToBytes>(&mut self, payload: P) -> Result<(), Error> {
+        self.respond_with(|writer| payload.to_bytes(writer))
+    }
+
+    /// Respond with an L2CAP message encoded by a closure.
+    ///
+    /// L2CAP header and data channel PDU header will be added automatically. The closure `f` only
+    /// has to write the protocol PDU to transmit over L2CAP.
+    ///
+    /// The L2CAP implementation will ensure that there are at least `Protocol::RSP_PDU_SIZE` Bytes
+    /// available in the `ByteWriter` passed to the closure.
+    pub fn respond_with<T, E>(
+        &mut self,
+        f: impl FnOnce(&mut ByteWriter) -> Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<Error>,
+    {
         // FIXME automatic fragmentation is not implemented
 
         // The payload length goes into the header, so we have to skip that part and write it later
         let channel = self.channel;
-        self.tx.produce_with(|writer| {
+        let mut r = None;
+        self.tx.produce_with(|writer| -> Result<_, E> {
             let mut header_writer = writer.split_off(usize::from(Header::SIZE))?;
 
             let left = writer.space_left();
-            payload.to_bytes(writer)?;
+            r = Some(f(writer)?);
             let used = left - writer.space_left();
 
             assert!(used < 0xFFFF);
@@ -405,6 +424,7 @@ impl<'a> L2CAPResponder<'a> {
             assert_eq!(header_writer.space_left(), 0);
 
             Ok(Llid::DataStart)
-        })
+        })?;
+        Ok(r.unwrap())
     }
 }
