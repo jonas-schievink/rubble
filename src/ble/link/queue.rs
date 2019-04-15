@@ -45,10 +45,13 @@ impl Producer {
     ///
     /// The closure has to write the PDU payload into the `ByteWriter` and must return the `Llid` to
     /// set in the header. The payload size is determined and written to the header automatically.
-    pub fn produce_with(
+    pub fn produce_with<E>(
         &mut self,
-        f: impl FnOnce(&mut ByteWriter) -> Result<Llid, Error>,
-    ) -> Result<(), Error> {
+        f: impl FnOnce(&mut ByteWriter) -> Result<Llid, E>,
+    ) -> Result<(), E>
+    where
+        E: From<Error>,
+    {
         // Problem: We don't know the PDU size before encoding it, but it needs to go into the
         // header.
 
@@ -57,11 +60,11 @@ impl Producer {
         let mut grant = match self.inner.grant_max(usize::max_value()) {
             Ok(grant) => grant,
             Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
-            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof),
+            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof.into()),
         };
 
         if grant.len() < 2 {
-            return Err(Error::Eof);
+            return Err(Error::Eof.into());
         }
 
         let mut writer = ByteWriter::new(&mut grant[2..]);
