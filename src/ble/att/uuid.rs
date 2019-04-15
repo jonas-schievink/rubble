@@ -1,12 +1,12 @@
 use {
     crate::ble::{bytes::*, uuid::*, Error},
-    core::fmt,
+    core::{cmp::PartialEq, fmt},
 };
 
 /// ATT protocol UUID (either a 16 or a 128-bit UUID).
 ///
 /// 32-bit UUIDs are not supported by ATT are must be converted to 128-bit UUIDs.
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Eq)]
 pub enum AttUuid {
     Uuid16(Uuid16),
     Uuid128(Uuid),
@@ -31,6 +31,21 @@ impl ToBytes for AttUuid {
     }
 }
 
+impl PartialEq for AttUuid {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            // 16-bit UUIDs can be compared directly
+            (AttUuid::Uuid16(a), AttUuid::Uuid16(b)) => a == b,
+
+            // All other combinations need to convert to 128-bit UUIDs
+            (AttUuid::Uuid128(a), b) | (b, AttUuid::Uuid128(a)) => {
+                let b: Uuid = (*b).into();
+                *a == b
+            }
+        }
+    }
+}
+
 impl From<Uuid16> for AttUuid {
     fn from(uu: Uuid16) -> Self {
         AttUuid::Uuid16(uu)
@@ -46,6 +61,15 @@ impl From<Uuid32> for AttUuid {
 impl From<Uuid> for AttUuid {
     fn from(uu: Uuid) -> Self {
         AttUuid::Uuid128(uu)
+    }
+}
+
+impl Into<Uuid> for AttUuid {
+    fn into(self) -> Uuid {
+        match self {
+            AttUuid::Uuid16(u) => u.into(),
+            AttUuid::Uuid128(u) => u,
+        }
     }
 }
 
