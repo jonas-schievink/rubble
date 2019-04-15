@@ -5,6 +5,22 @@
 //!
 //! ATT is used by GATT, the *Generic Attribute Profile*, which introduces the concept of *Services*
 //! and *Characteristics* which can all be accessed and discovered over the Attribute Protocol.
+//!
+//! # Attributes
+//!
+//! The ATT server hosts a list of *Attributes*, which consist of the following:
+//!
+//! * A 16-bit *Attribute Handle* ([`AttHandle`]) uniquely identifying the attribute.
+//! * A 16- or 128-bit UUID identifying the attribute type. This provides information about how to
+//!   interpret the attribute's value (eg. as a little-endian 32-bit integer).
+//! * The attribute's *value*, consisting of a dynamically-sized byte array of up to 512 Bytes.
+//! * A set of *permissions*, restricting the operations that can be performed on the attribute.
+//!
+//! ## Attribute Grouping
+//!
+//! TODO: Figure out how the hell this works and write it down in human-readable form.
+//!
+//! [`AttHandle`]: struct.AttHandle.html
 
 mod handle;
 mod uuid;
@@ -17,7 +33,7 @@ use {
         utils::HexSlice,
         Error,
     },
-    log::debug,
+    log::{debug, trace},
 };
 
 pub use self::handle::AttHandle;
@@ -37,8 +53,9 @@ enum_with_unknown! {
     /// +-----------+---------+----------+
     /// ```
     ///
-    /// * **`Signature`** is set to 1 to indicate that the Attribute Opcode and Parameters are followed
-    ///   by an Authentication Signature. This is only allowed for the *Write Command*.
+    /// * **`Signature`** is set to 1 to indicate that the Attribute Opcode and Parameters are
+    ///   followed by an Authentication Signature. This is only allowed for the *Write Command*,
+    ///   resulting in the `SignedWriteCommand`.
     /// * **`Command`** is set to 1 when the PDU is a command. This is done purely so that the server
     ///   can ignore unknown commands. Unlike *Requests*, Commands are not followed by a server
     ///   response.
@@ -100,6 +117,8 @@ impl Opcode {
 }
 
 /// Structured representation of an ATT message (request or response).
+///
+/// Note that many responses will need their own type that wraps an iterator.
 #[derive(Debug)]
 enum AttMsg<'a> {
     /// Request could not be completed due to an error.
@@ -121,14 +140,54 @@ enum AttMsg<'a> {
         handle_range: RawHandleRange,
         group_type: AttUuid,
     },
-    ReadByGroupRsp {
-        length: u8,
-        data_list: &'a [u8],
-    },
     Unknown {
         opcode: Opcode,
         params: HexSlice<&'a [u8]>,
     },
+}
+
+/// *Read By Group Type* response PDU holding an iterator.
+struct ReadByGroupRsp<'a, I: Iterator<Item = ByGroupAttData<'a>>> {
+    items: I,
+}
+
+impl<'a, I: Iterator<Item = ByGroupAttData<'a>>> ReadByGroupRsp<'a, I> {
+    fn encode(self, writer: &mut ByteWriter) -> Result<(), Error> {
+        // This is pretty complicated to encode: The length depends on the attributes we fetch from
+        // the iterator, and has to be written last, but is located at the start.
+        // All the attributes we encode must have the same length. If they don't, we simply stop
+        // when reaching the first one with a different size.
+
+        writer.write_u8(Opcode::ReadByGroupRsp.into())?;
+        let mut length = writer.split_off(1)?;
+
+        let mut size = None;
+        let left = writer.space_left();
+
+        // Encode attribute data until we run out of space or the encoded size differs from the
+        // first entry. This might write partial data, but we set the preceding length correctly, so
+        // it shouldn't matter.
+        for att in self.items {
+            trace!("read by group rsp: {:?}", att);
+            if let Err(_) = att.to_bytes(writer) {
+                break;
+            }
+
+            let used = left - writer.space_left();
+            if let Some(expected_size) = size {
+                if used != expected_size {
+                    break;
+                }
+            } else {
+                size = Some(used);
+            }
+        }
+
+        let size = size.expect("empty response");
+        assert!(size <= usize::from(u8::max_value()));
+        length.write_u8(size as u8).unwrap();
+        Ok(())
+    }
 }
 
 impl AttMsg<'_> {
@@ -138,7 +197,6 @@ impl AttMsg<'_> {
             AttMsg::ExchangeMtuReq { .. } => Opcode::ExchangeMtuReq,
             AttMsg::ExchangeMtuRsp { .. } => Opcode::ExchangeMtuRsp,
             AttMsg::ReadByGroupReq { .. } => Opcode::ReadByGroupReq,
-            AttMsg::ReadByGroupRsp { .. } => Opcode::ReadByGroupRsp,
             AttMsg::Unknown { opcode, .. } => *opcode,
         }
     }
@@ -214,10 +272,6 @@ impl ToBytes for OutgoingPdu<'_> {
             } => {
                 handle_range.to_bytes(writer)?;
                 group_type.to_bytes(writer)?;
-            }
-            AttMsg::ReadByGroupRsp { length, data_list } => {
-                writer.write_u8(length)?;
-                writer.write_slice(data_list)?;
             }
             AttMsg::Unknown { opcode: _, params } => {
                 writer.write_slice(params.0)?;
@@ -311,10 +365,6 @@ impl ToBytes for IncomingPdu<'_> {
             } => {
                 handle_range.to_bytes(writer)?;
                 group_type.to_bytes(writer)?;
-            }
-            AttMsg::ReadByGroupRsp { length, data_list } => {
-                writer.write_u8(length)?;
-                writer.write_slice(data_list)?;
             }
             AttMsg::Unknown { opcode: _, params } => {
                 writer.write_slice(params.0)?;
@@ -410,78 +460,103 @@ impl<A: Attributes> AttributeServer<A> {
     /// Process an incoming request (or command) PDU and return a response.
     ///
     /// This may return an `AttError`, which the caller will then send as a response. In the success
-    /// case, this method will return the `OutgoingPdu` to respond with (or `None` if no response
-    /// needs to be sent).
+    /// case, this method will send the response (if any).
     fn process_request<'a>(
         &mut self,
         pdu: IncomingPdu,
-        buf: &'a mut [u8],
-    ) -> Result<Option<OutgoingPdu<'a>>, AttError> {
-        let mut writer = ByteWriter::new(buf);
+        responder: &mut L2CAPResponder,
+    ) -> Result<(), AttError> {
+        /// Error returned when an ATT error should be sent back.
+        ///
+        /// Returning this from inside `responder.respond_with` will not send the response and
+        /// instead bail out of the closure.
+        struct RspError(AttError);
 
-        Ok(Some(match pdu.params {
+        impl From<Error> for RspError {
+            fn from(e: Error) -> Self {
+                panic!("unexpected error: {}", e);
+            }
+        }
+
+        impl From<AttError> for RspError {
+            fn from(att: AttError) -> Self {
+                RspError(att)
+            }
+        }
+
+        match pdu.params {
             AttMsg::ReadByGroupReq {
                 handle_range,
                 group_type,
             } => {
                 let range = handle_range.check()?;
 
-                for att in self.attrs.attributes() {
-                    if att.att_type == group_type && range.contains(att.handle) {
-                        let data = ByGroupAttData {
+                // TODO: Ask GATT whether `group_type` is a grouping attribute, reject if not
+
+                let requested_attrs = self
+                    .attrs
+                    .attributes()
+                    .iter()
+                    .filter(|att| att.att_type == group_type && range.contains(att.handle))
+                    .map(|att| {
+                        ByGroupAttData {
                             handle: att.handle,
-                            end_group_handle: AttHandle::from_raw(0),
+                            end_group_handle: att.handle, // TODO: Ask GATT where the group ends
                             value: att.value,
-                        };
+                        }
+                    });
 
-                        data.to_bytes(&mut writer).unwrap();
+                let result = responder.respond_with(|writer| {
+                    // If no attributes match request, return `AttributeNotFound` error, else send
+                    // `ReadByGroupResponse` with at least one entry
+                    if requested_attrs.clone().next().is_none() {
+                        Err(AttError {
+                            code: ErrorCode::AttributeNotFound,
+                            handle: AttHandle::NULL,
+                        }
+                        .into())
+                    } else {
+                        ReadByGroupRsp {
+                            items: requested_attrs,
+                        }
+                        .encode(writer)?;
+                        Ok(())
                     }
-                }
+                });
 
-                // If no attributes matched request, return AttributeNotFound error, else send ReadByGroupResponse
-                if writer.space_left() == 16 {
-                    let err = AttError {
-                        code: ErrorCode::AttributeNotFound,
-                        handle: AttHandle::NULL,
-                    };
-
-                    return Err(err);
-                } else {
-                    let length = 6;
-
-                    OutgoingPdu(AttMsg::ReadByGroupRsp {
-                        length,
-                        data_list: &buf[..length as usize],
-                    })
+                match result {
+                    Ok(()) => Ok(()),
+                    Err(RspError(e)) => Err(e),
                 }
             }
-            AttMsg::ExchangeMtuReq { mtu: _mtu } => OutgoingPdu(AttMsg::ExchangeMtuRsp {
-                mtu: u16::from(Self::RSP_PDU_SIZE),
-            }),
+            AttMsg::ExchangeMtuReq { mtu: _mtu } => {
+                responder
+                    .respond(OutgoingPdu(AttMsg::ExchangeMtuRsp {
+                        mtu: u16::from(Self::RSP_PDU_SIZE),
+                    }))
+                    .unwrap();
+                Ok(())
+            }
 
             AttMsg::Unknown { .. } => {
                 if pdu.opcode.is_command() {
                     // According to the spec, unknown Command PDUs should be ignored
-                    return Ok(None);
+                    Ok(())
                 } else {
                     // Unknown requests are rejected with a `RequestNotSupported` error
-                    return Err(AttError {
+                    Err(AttError {
                         code: ErrorCode::RequestNotSupported,
                         handle: AttHandle::NULL,
-                    });
+                    })
                 }
             }
 
             // Responses are always invalid here
-            AttMsg::ErrorRsp { .. }
-            | AttMsg::ReadByGroupRsp { .. }
-            | AttMsg::ExchangeMtuRsp { .. } => {
-                return Err(AttError {
-                    code: ErrorCode::InvalidPdu,
-                    handle: AttHandle::NULL,
-                });
-            }
-        }))
+            AttMsg::ErrorRsp { .. } | AttMsg::ExchangeMtuRsp { .. } => Err(AttError {
+                code: ErrorCode::InvalidPdu,
+                handle: AttHandle::NULL,
+            }),
+        }
     }
 }
 
@@ -495,18 +570,8 @@ impl<A: Attributes> ProtocolObj for AttributeServer<A> {
         let opcode = pdu.opcode;
         debug!("ATT msg received: {:?}", pdu);
 
-        let mut buf = [0u8; 16];
-
-        match self.process_request(pdu, &mut buf) {
-            Ok(Some(pdu)) => {
-                debug!("ATT msg send: {:?}", pdu);
-                responder.respond(pdu).unwrap();
-                Ok(())
-            }
-            Ok(None) => {
-                debug!("(no response)");
-                Ok(())
-            }
+        match self.process_request(pdu, &mut responder) {
+            Ok(()) => Ok(()),
             Err(att_error) => {
                 debug!("ATT error: {:?}", att_error);
 
@@ -575,7 +640,7 @@ pub struct AttError {
     handle: AttHandle,
 }
 
-/// Attribute Data returned in Read By Type response
+/// Attribute Data returned in *Read By Type* response.
 #[derive(Debug)]
 pub struct ByTypeAttData<'a> {
     handle: AttHandle,
@@ -599,9 +664,10 @@ impl<'a> ToBytes for ByTypeAttData<'a> {
     }
 }
 
-/// Attribute Data returned in Read By Group Type response
-#[derive(Debug)]
+/// Attribute Data returned in *Read By Group Type* response.
+#[derive(Debug, Copy, Clone)]
 pub struct ByGroupAttData<'a> {
+    /// The handle of this attribute.
     handle: AttHandle,
     end_group_handle: AttHandle,
     value: HexSlice<&'a [u8]>,
@@ -617,11 +683,18 @@ impl<'a> FromBytes<'a> for ByGroupAttData<'a> {
     }
 }
 
+/// The `ToBytes` impl will truncate the value if it doesn't fit.
 impl<'a> ToBytes for ByGroupAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
         writer.write_u16_le(self.handle.as_u16())?;
         writer.write_u16_le(self.end_group_handle.as_u16())?;
-        writer.write_slice(self.value.0)?;
+        if writer.space_left() >= self.value.0.len() {
+            writer.write_slice(self.value.0)?;
+        } else {
+            writer
+                .write_slice(&self.value.0[..writer.space_left()])
+                .unwrap();
+        }
         Ok(())
     }
 }
