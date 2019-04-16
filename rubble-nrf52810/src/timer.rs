@@ -10,13 +10,13 @@ use {
 };
 
 /// Implements Rubble's `Timer` trait for the timers on the nRF chip.
-pub struct BleTimer<T: NrfTimer> {
+pub struct BleTimer<T: NrfTimerExt> {
     inner: T,
     next: Instant,
     interrupt_enabled: bool,
 }
 
-impl<T: NrfTimer> BleTimer<T> {
+impl<T: NrfTimerExt> BleTimer<T> {
     /// Initializes the timer.
     pub fn init(mut peripheral: T) -> Self {
         peripheral.init();
@@ -27,6 +27,7 @@ impl<T: NrfTimer> BleTimer<T> {
         }
     }
 
+    /// Configures the timer interrupt to fire according to `next`.
     pub fn configure_interrupt(&mut self, next: NextUpdate) {
         match next {
             NextUpdate::Keep => {
@@ -48,10 +49,19 @@ impl<T: NrfTimer> BleTimer<T> {
         }
     }
 
+    /// Checks whether this timer's interrupt is pending.
+    ///
+    /// This will return `true` when interrupt handler should execute. To prevent spurious wakeups,
+    /// the handler *must* check that this is `true` when it gets executed. The handler should
+    /// acknowledge the interrupt by calling [`clear_interrupt`], otherwise the handler will be run
+    /// immediately after returning.
+    ///
+    /// [`clear_interrupt`]: #method.clear_interrupt
     pub fn is_interrupt_pending(&self) -> bool {
         self.inner.is_pending()
     }
 
+    /// Clears a pending interrupt and disables generation of further interrupts.
     pub fn clear_interrupt(&mut self) {
         self.inner.clear_interrupt();
     }
@@ -62,6 +72,9 @@ impl<T: NrfTimer> BleTimer<T> {
     }
 
     /// Creates a new `StampSource` using this timer.
+    ///
+    /// The `StampSource` can be used to obtain the current time, but can not do anything else. This
+    /// restriction makes it safe to use even when the `BleTimer` it was created from is modified.
     pub fn create_stamp_source(&self) -> StampSource<T> {
         StampSource {
             inner: unsafe { self.inner.duplicate() },
@@ -69,27 +82,31 @@ impl<T: NrfTimer> BleTimer<T> {
     }
 }
 
-impl<T: NrfTimer> Timer for BleTimer<T> {
+impl<T: NrfTimerExt> Timer for BleTimer<T> {
     fn now(&self) -> Instant {
         self.inner.now()
     }
 }
 
 /// A timer interface that only allows reading the current time stamp.
-pub struct StampSource<T: NrfTimer> {
+pub struct StampSource<T: NrfTimerExt> {
     inner: T,
 }
 
-impl<T: NrfTimer> Timer for StampSource<T> {
+impl<T: NrfTimerExt> Timer for StampSource<T> {
     fn now(&self) -> Instant {
         self.inner.now()
     }
 }
 
+mod sealed {
+    pub trait Sealed {}
+}
+
 /// Extension trait implemented for the nRF timer peripherals.
 ///
 /// We use `CC[0]` to read the counter value, and `CC[1]` to set timer interrupts.
-pub trait NrfTimer {
+pub trait NrfTimerExt: sealed::Sealed {
     unsafe fn duplicate(&self) -> Self;
 
     /// Initialize the timer so that it counts at a rate of 1 MHz.
@@ -106,12 +123,13 @@ pub trait NrfTimer {
     /// This must be called by the interrupt handler to avoid spurious timer events.
     fn is_pending(&self) -> bool;
 
+    /// Obtains the current time as an `Instant`.
     fn now(&self) -> Instant;
 }
 
 macro_rules! impl_timer {
     ($ty:ident) => {
-        impl NrfTimer for $ty {
+        impl NrfTimerExt for $ty {
             unsafe fn duplicate(&self) -> Self {
                 mem::transmute_copy(self)
             }
@@ -153,6 +171,8 @@ macro_rules! impl_timer {
                 Instant::from_raw_micros(micros)
             }
         }
+
+        impl sealed::Sealed for $ty {}
     };
 }
 

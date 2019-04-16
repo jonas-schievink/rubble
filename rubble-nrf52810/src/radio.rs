@@ -59,6 +59,7 @@ pub type PacketBuffer = [u8; MAX_PDU_SIZE];
 // BLE inter frame spacing in microseconds.
 //const BLE_TIFS: u8 = 150;
 
+/// An interface to the nRF radio in BLE mode.
 pub struct BleRadio {
     /// `true` if the radio is operating on an advertising channel, `false` if it's a data channel.
     advertising: bool,
@@ -73,6 +74,7 @@ pub struct BleRadio {
 }
 
 impl BleRadio {
+    /// Initializes the radio in BLE mode and takes ownership of the RX and TX buffers.
     // TODO: Use type-safe clock configuration to ensure that chip uses ext. crystal
     pub fn new(
         radio: RADIO,
