@@ -21,7 +21,6 @@ use {
     },
     byteorder::{ByteOrder, LittleEndian},
     core::{fmt, iter},
-    ux::u24,
 };
 
 /// CRC initialization value for advertising channel packets.
@@ -346,7 +345,7 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
 #[derive(Copy, Clone, Debug)]
 pub struct ConnectRequestData {
     access_address: Hex<u32>,
-    crc_init: Hex<u24>,
+    crc_init: Hex<u32>,
     /// Transmit window size in µs.
     win_size: Duration,
     /// Transmit window offset in µs.
@@ -374,7 +373,7 @@ impl ConnectRequestData {
     /// Returns the initialization value for the CRC calculation.
     ///
     /// The CRC *polynomial* is always the same.
-    pub fn crc_init(&self) -> u24 {
+    pub fn crc_init(&self) -> u32 {
         self.crc_init.0
     }
 
@@ -423,7 +422,7 @@ impl FromBytes<'_> for ConnectRequestData {
             crc_init: {
                 let mut le_bytes = [0u8; 4];
                 le_bytes[..3].copy_from_slice(bytes.read_slice(3)?);
-                Hex(u24::new(u32::from_le_bytes(le_bytes)))
+                Hex(u32::from_le_bytes(le_bytes))
             },
             // transmitWindowSize in 1.25 ms steps
             win_size: Duration::from_micros(u32::from(bytes.read_u8()?) * 1250),
