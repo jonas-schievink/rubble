@@ -1,0 +1,23 @@
+[package]
+authors = ["Jonas Schievink <jonasschievink@gmail.com>"]
+description = "Rubble BLE stack demo for nRF52810"
+categories = ["embedded", "no-std"]
+keywords = ["arm", "nrf", "bluetooth", "low", "energy"]
+repository = "https://github.com/jonas-schievink/rubble/"
+license = "0BSD"
+name = "rubble-demo"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+rubble = { path = "../rubble" }
+rubble-nrf52810 = { path = "../rubble-nrf52810" }
+cortex-m = "0.5.8"
+cortex-m-semihosting = "0.3.2"
+cortex-m-rtfm = "0.4.2"
+cortex-m-rt = "0.6.7"
+nrf52810-hal = { git = "https://github.com/nrf-rs/nrf52-hal", features = ["rt"] }
+byteorder = { version = "1.3.1", default-features = false }
+panic-semihosting = "0.5.1"
+bbqueue = "0.3.2"
+log = { git = "https://github.com/rust-lang-nursery/log.git", rev = "75043f9", features = ["release_max_level_warn"] }

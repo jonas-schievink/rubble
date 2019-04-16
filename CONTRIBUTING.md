@@ -66,6 +66,15 @@ What are you interested in?
 We try to extensively document all the code, so you can check out the [hosted
 API docs] or jump straight in.
 
+### Directory Structure
+
+* `rubble` contains the actual BLE stack, which is completely
+  hardware-independent.
+* `rubble-<PLATFORM>` directories contain implementations of Rubble's hardware
+  interface for a specific platform or chip.
+* `rubble-demo` is currently a demo app that we use to develop and debug Rubble.
+  It targets an nRF52810 MCU and uses a serial connection to display logs.
+
 ### Code Style
 
 Generally: Do what's already done in existing files. More specifically, that

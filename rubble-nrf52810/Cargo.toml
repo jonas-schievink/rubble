@@ -1,0 +1,14 @@
+[package]
+authors = ["Jonas Schievink <jonasschievink@gmail.com>"]
+description = "Rubble BLE driver for the nRF52810 radio"
+categories = ["embedded", "no-std"]
+keywords = ["arm", "nrf", "bluetooth", "low", "energy"]
+repository = "https://github.com/jonas-schievink/rubble/"
+license = "0BSD"
+name = "rubble-nrf52810"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+rubble = { path = "../rubble" }
+nrf52810-hal = { git = "https://github.com/nrf-rs/nrf52-hal", features = ["rt"] }
