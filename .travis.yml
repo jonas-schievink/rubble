@@ -22,7 +22,7 @@ jobs:
         - cargo check --target $TARGET_BUILD
     - stage: deploy
       script:
-        - cargo doc
+        - cargo doc --no-deps
         - echo "<meta http-equiv=refresh content=0;url=rubble/ble/index.html>" > target/$TARGET_BUILD/doc/index.html
         - sudo pip install ghp-import
         - ghp-import -n target/$TARGET_BUILD/doc
