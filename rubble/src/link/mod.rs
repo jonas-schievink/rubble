@@ -118,7 +118,7 @@
 
 pub mod ad_structure;
 pub mod advertising;
-pub mod comp_id;
+mod comp_id;
 mod connection;
 pub mod data;
 mod device_address;
@@ -127,6 +127,7 @@ pub mod queue;
 mod responder;
 mod seq_num;
 
+pub use self::comp_id::*;
 pub use self::device_address::*;
 pub use self::features::*;
 pub use self::responder::*;

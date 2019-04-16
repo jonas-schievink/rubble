@@ -2,7 +2,7 @@
 
 use core::fmt;
 
-/// Company identifier for use in link layer Control PDUs
+/// Company identifier for use in link layer Control PDUs.
 #[derive(Copy, Clone)]
 pub struct CompanyId(u16);
 
@@ -13,21 +13,19 @@ impl fmt::Debug for CompanyId {
 }
 
 impl CompanyId {
-    /// Create an unchecked company ID from a u16
+    /// Create a company ID from a raw `u16`.
     pub fn from_raw(raw: u16) -> Self {
         Self(raw)
     }
 
-    /// Get inner value from company identifier
+    /// Get the raw `u16` representing this company identifier.
     pub fn as_u16(&self) -> u16 {
         self.0
     }
 
-    /// Get the full company name from identifer
+    /// Get the full company name from this identifer.
     ///
-    /// *** WARNING ***
-    ///
-    /// Using this method anywhere will add roughly 70KB to your binary size
+    /// **WARNING**: Using this method anywhere will add roughly 70KB to your binary size!
     pub fn name(&self) -> Option<&'static str> {
         match self.0 {
             0x0000 => Some("Ericsson Technology Licensing"),
