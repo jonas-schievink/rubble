@@ -7,11 +7,11 @@
 //!
 //! Refer to the official *Link Layer Specification* for details and more graphics and tables.
 //!
+//! # Packet Format
+//!
 //! All following graphics are based on the Bluetooth specification. If a field is marked with `-`,
 //! it should be set to 0 when sending such a packet, and ignored when receiving it (the spec calls
 //! these "RFU" = Reserved for Future Use).
-//!
-//! # Packet Format
 //!
 //! All values are transmitted in little-endian bit order unless otherwise noted. All fields in
 //! graphics are ordered starting with the field transmitted first (LSB).
@@ -109,8 +109,9 @@
 //! The `NESN` field specifies the **N**ext **E**xpected **S**equence **N**umber. The `SN` field
 //! specifies the **S**equence **N**umber of this PDU.
 //!
-//! The `MD` field specifies that the device sending the packet has more data to send. When both
-//! slave and master send a packet with the `MD` bit set to 0, the connection is closed.
+//! The `MD` field specifies that the device sending the packet has more data to send during this
+//! *connection event*. When both slave and master send a packet with the `MD` bit set to 0, the
+//! connection event ends.
 //!
 //! The `Length` field specifies the length of payload **and `MIC`**. For Bluetooth versions <4.2,
 //! its maximum value is 31, resulting in a 27 octet Payload (the maximum) and a 32-bit `MIC`. 4.2

@@ -34,8 +34,9 @@ use {
 /// The `NESN` field specifies the **N**ext **E**xpected **S**equence **N**umber. The `SN` field
 /// specifies the **S**equence **N**umber of this PDU.
 ///
-/// The `MD` field specifies that the device sending the packet has more data to send. When both
-/// slave and master send a packet with the `MD` bit set to 0, the connection is closed.
+/// The `MD` field specifies that the device sending the packet has more data to send during this
+/// *connection event*. When both slave and master send a packet with the `MD` bit set to 0, the
+/// connection event ends.
 ///
 /// The `Length` field specifies the length of payload **and `MIC`**. Prior to Bluetooth 4.2, this
 /// was a 5-bit field, resulting in payloads + MICs of up to 31 Bytes. With Bluetooth 4.2, devices
