@@ -11,4 +11,4 @@ edition = "2018"
 
 [dependencies]
 rubble = { path = "../rubble" }
-nrf52810-hal = { git = "https://github.com/nrf-rs/nrf52-hal", rev = "6c1ce70", features = ["rt"] }
+nrf52810-hal = { git = "https://github.com/nrf-rs/nrf52-hal", rev = "6c1ce70" }
