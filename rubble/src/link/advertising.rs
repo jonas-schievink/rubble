@@ -809,7 +809,7 @@ enum_with_unknown! {
     ///
     /// [`Header`]: struct.Header.html
     /// [`PduBuf`]: struct.PduBuf.html
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq, Eq)]
     pub enum PduType(u8) {
         /// Connectable undirected advertising event (`ADV_IND`).
         AdvInd = 0b0000,
@@ -839,6 +839,11 @@ enum_with_unknown! {
 }
 
 impl PduType {
+    /// Returns whether this PDU type is a beacon advertisement.
+    pub fn is_beacon(&self) -> bool {
+        *self == PduType::AdvNonconnInd
+    }
+
     /// Whether AD structures can follow the fixed data in a PDU of this type.
     pub fn allows_adv_data(&self) -> bool {
         match self {

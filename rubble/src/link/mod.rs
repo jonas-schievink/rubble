@@ -124,6 +124,7 @@ mod connection;
 pub mod data;
 mod device_address;
 mod features;
+pub mod filter;
 pub mod queue;
 mod responder;
 mod seq_num;

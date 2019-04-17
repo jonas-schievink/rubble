@@ -2,10 +2,19 @@
 
 use {
     super::{
-        link::{ad_structure::AdStructure, advertising::PduBuf, DeviceAddress, Transmitter},
+        link::{
+            ad_structure::AdStructure,
+            advertising::{Header, Pdu, PduBuf},
+            filter::{self, AddressFilter, ScanFilter},
+            Cmd, DeviceAddress, NextUpdate, RadioCmd, Transmitter,
+        },
         phy::AdvertisingChannel,
     },
-    crate::Error,
+    crate::{
+        bytes::*,
+        time::{Duration, Instant},
+        Error,
+    },
 };
 
 /// A BLE beacon.
@@ -48,6 +57,104 @@ impl Beacon {
 
         for channel in AdvertisingChannel::iter_all() {
             tx.transmit_advertising(self.pdu.header(), channel);
+        }
+    }
+}
+
+/// Callback for the `BeaconScanner`.
+pub trait ScanCallback {
+    /// Called when a beacon is received and has passed the configured device address filter.
+    ///
+    /// # Parameters
+    ///
+    /// * **`adv_addr`**: Address of the device sending the beacon.
+    /// * **`adv_data`**: Advertising data structures attached to the beacon.
+    fn beacon<'a, I>(&mut self, adv_addr: DeviceAddress, adv_data: I)
+    where
+        I: Iterator<Item = AdStructure<'a>>;
+}
+
+/// A passive scanner for non-connectable beacon advertisements.
+pub struct BeaconScanner<C: ScanCallback, F: AddressFilter> {
+    cb: C,
+    filter: ScanFilter<F>,
+    interval: Duration,
+    channel: AdvertisingChannel,
+}
+
+impl<C: ScanCallback> BeaconScanner<C, filter::AllowAll> {
+    /// Creates a `BeaconScanner` that will report beacons from any device.
+    pub fn new(callback: C) -> Self {
+        Self::with_filter(callback, filter::AllowAll)
+    }
+}
+
+impl<C: ScanCallback, F: AddressFilter> BeaconScanner<C, F> {
+    /// Creates a `BeaconScanner` with a custom device filter.
+    pub fn with_filter(callback: C, scan_filter: F) -> Self {
+        Self {
+            cb: callback,
+            filter: ScanFilter::new(scan_filter),
+            interval: Duration::from_micros(0),
+            channel: AdvertisingChannel::first(),
+        }
+    }
+
+    /// Configures the `BeaconScanner` and returns a `Cmd` to apply to the radio.
+    ///
+    /// The `next_update` field of the returned `Cmd` specifies when to call `timer_update` the next
+    /// time. The timer used for this does not have to be very accurate, it is only used to switch
+    /// to the next advertising channel after `interval` elapses.
+    pub fn configure(&mut self, now: Instant, interval: Duration) -> Cmd {
+        self.interval = interval;
+        self.channel = AdvertisingChannel::first();
+
+        Cmd {
+            // Switch channels
+            next_update: NextUpdate::At(now + self.interval),
+
+            radio: RadioCmd::ListenAdvertising {
+                channel: self.channel,
+            },
+        }
+    }
+
+    /// Updates the `BeaconScanner` after the configured timer has fired.
+    ///
+    /// This switches to the next advertising channel and will listen there.
+    pub fn timer_update(&mut self, now: Instant) -> Cmd {
+        self.channel = self.channel.cycle();
+
+        Cmd {
+            // Switch channels
+            next_update: NextUpdate::At(now + self.interval),
+
+            radio: RadioCmd::ListenAdvertising {
+                channel: self.channel,
+            },
+        }
+    }
+
+    /// Processes a received advertising channel packet.
+    ///
+    /// This should be called whenever the radio receives a packet on the configured advertising
+    /// channel.
+    pub fn process_adv_packet(&mut self, header: Header, payload: &[u8], crc_ok: bool) -> Cmd {
+        if crc_ok && header.type_().is_beacon() {
+            // Partially decode to get the device ID and run it through the filter
+            if let Ok(pdu) = Pdu::from_header_and_payload(header, &mut ByteReader::new(payload)) {
+                if self.filter.should_scan(*pdu.sender()) {
+                    let ad = pdu.advertising_data().unwrap();
+                    self.cb.beacon(*pdu.sender(), ad);
+                }
+            }
+        }
+
+        Cmd {
+            next_update: NextUpdate::Keep,
+            radio: RadioCmd::ListenAdvertising {
+                channel: self.channel,
+            },
         }
     }
 }
