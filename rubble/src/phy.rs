@@ -161,6 +161,11 @@ impl ChannelMap {
         }
     }
 
+    /// Returns the raw bytes encoding this channel map.
+    pub fn to_raw(&self) -> [u8; 5] {
+        self.raw
+    }
+
     /// Creates a new channel map that marks all data channels as used.
     pub fn with_all_channels() -> Self {
         Self {
@@ -238,5 +243,3 @@ pub trait Radio {
     /// TODO: Document all radio requirements
     fn transmit(&mut self, buf: &mut [u8], freq: u16);
 }
-
-// FIXME Add helpers for parsing adv/data PDU into their headers and payload so they can be passed to the LinkLayer

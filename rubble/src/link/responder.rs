@@ -2,13 +2,11 @@ use {
     crate::{
         l2cap::{ChannelMapper, L2CAPState},
         link::{
-            comp_id::CompanyId,
             data::{ControlPdu, Pdu},
             queue::{Consume, Consumer, Producer},
-            FeatureSet,
         },
-        utils::{Hex, HexSlice},
-        Error, BLUETOOTH_VERSION,
+        utils::HexSlice,
+        Error,
     },
     log::info,
 };
@@ -19,8 +17,9 @@ use {
 /// at a lower priority (eg. being driven in the apps idle loop) and receives and transmits packets
 /// using the packet queue.
 ///
-/// *LL Control PDUs* sent as part of the Link Layer Control Protocol (LLCP) are answered by the
-/// responder directly, and all L2CAP data is forwarded to an `L2CAPState<M>`.
+/// Some *LL Control PDUs* sent as part of the Link Layer Control Protocol (LLCP) are answered by
+/// the responder directly, and all L2CAP data is forwarded to an `L2CAPState<M>`. Note that most
+/// LLCPDUs are handled directly by the real-time code.
 pub struct Responder<M: ChannelMapper> {
     tx: Producer,
     rx: Option<Consumer>,
@@ -57,20 +56,9 @@ impl<M: ChannelMapper> Responder<M> {
                     let pdu = data.read();
                     info!("<- LL Control PDU: {:?}", pdu);
                     let response = match pdu {
-                        ControlPdu::FeatureReq { features_master } => ControlPdu::FeatureRsp {
-                            features_used: features_master & FeatureSet::supported(),
-                        },
-                        ControlPdu::VersionInd { .. } => {
-                            // FIXME this should be something real, and defined somewhere else
-                            let comp_id = 0xFFFF;
-                            // FIXME this should correlate with the Cargo package version
-                            let sub_vers_nr = 0x0000;
-
-                            ControlPdu::VersionInd {
-                                vers_nr: BLUETOOTH_VERSION,
-                                comp_id: CompanyId::from_raw(comp_id),
-                                sub_vers_nr: Hex(sub_vers_nr),
-                            }
+                        // These PDUs are handled by the real-time code:
+                        ControlPdu::FeatureReq { .. } | ControlPdu::VersionInd { .. } => {
+                            unreachable!("LLCPDU not handled by LL");
                         }
                         _ => ControlPdu::UnknownRsp {
                             unknown_type: pdu.opcode(),

@@ -4,6 +4,8 @@ use {
     crate::{
         bytes::*,
         link::{comp_id::CompanyId, FeatureSet, SeqNum},
+        phy::ChannelMap,
+        time::Duration,
         utils::Hex,
         Error,
     },
@@ -265,9 +267,68 @@ impl<'a, L: ToBytes> ToBytes for Pdu<'a, L> {
     }
 }
 
+/// Data transmitted with an `LL_CONNECTION_UPDATE_REQ` Control PDU, containing a new set of
+/// connection parameters.
+#[derive(Debug, Copy, Clone)]
+pub struct ConnectionUpdateData {
+    win_size: u8,
+    win_offset: u16,
+    interval: u16,
+    latency: u16,
+    timeout: u16,
+    instant: u16,
+}
+
+impl ConnectionUpdateData {
+    /// Returns the size of the transmit window for the first PDU of the connection.
+    pub fn win_size(&self) -> Duration {
+        Duration::from_micros(u32::from(self.win_size) * 1_250)
+    }
+
+    /// Returns the offset of the transmit window, as a duration since the `instant`.
+    pub fn win_offset(&self) -> Duration {
+        Duration::from_micros(u32::from(self.win_offset) * 1_250)
+    }
+
+    /// Returns the duration between connection events.
+    pub fn interval(&self) -> Duration {
+        Duration::from_micros(u32::from(self.interval) * 1_250)
+    }
+
+    /// Returns the slave latency.
+    pub fn latency(&self) -> u16 {
+        self.latency
+    }
+
+    /// Returns the connection supervision timeout (`connSupervisionTimeout`).
+    pub fn timeout(&self) -> Duration {
+        Duration::from_micros(u32::from(self.timeout) * 10_000)
+    }
+
+    /// Returns the instant at which these changes should take effect.
+    pub fn instant(&self) -> u16 {
+        self.instant
+    }
+}
+
 /// A structured representation of an LL Control PDU used by the Link Layer Control Protocol (LLCP).
 #[derive(Debug, Copy, Clone)]
 pub enum ControlPdu<'a> {
+    /// `0x00`/`LL_CONNECTION_UPDATE_REQ` - Update connection parameters.
+    ///
+    /// Sent by the master. The slave does not send a response back.
+    ConnectionUpdateReq(ConnectionUpdateData),
+
+    /// `0x01`/`LL_CHANNEL_MAP_REQ` - Update the channel map.
+    ///
+    /// Sent by the master. The slave does not send a response back.
+    ChannelMapReq { map: ChannelMap, instant: u16 },
+
+    /// `0x02`/`LL_TERMINATE_IND` - Close the connection.
+    ///
+    /// Can be sent by master or slave.
+    TerminateInd { error_code: Hex<u8> },
+
     /// `0x07`/`LL_UNKNOWN_RSP` - Response to unknown/unsupported LL Control PDUs.
     ///
     /// This is returned as a response to an incoming LL Control PDU when the opcode is
@@ -314,6 +375,9 @@ impl ControlPdu<'_> {
     /// Returns the opcode of this LL Control PDU.
     pub fn opcode(&self) -> ControlOpcode {
         match self {
+            ControlPdu::ConnectionUpdateReq { .. } => ControlOpcode::ConnectionUpdateReq,
+            ControlPdu::ChannelMapReq { .. } => ControlOpcode::ChannelMapReq,
+            ControlPdu::TerminateInd { .. } => ControlOpcode::TerminateInd,
             ControlPdu::UnknownRsp { .. } => ControlOpcode::UnknownRsp,
             ControlPdu::FeatureReq { .. } => ControlOpcode::FeatureReq,
             ControlPdu::FeatureRsp { .. } => ControlOpcode::FeatureRsp,
@@ -327,6 +391,23 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let opcode = ControlOpcode::from(bytes.read_u8()?);
         Ok(match opcode {
+            ControlOpcode::ConnectionUpdateReq => {
+                ControlPdu::ConnectionUpdateReq(ConnectionUpdateData {
+                    win_size: bytes.read_u8()?,
+                    win_offset: bytes.read_u16_le()?,
+                    interval: bytes.read_u16_le()?,
+                    latency: bytes.read_u16_le()?,
+                    timeout: bytes.read_u16_le()?,
+                    instant: bytes.read_u16_le()?,
+                })
+            }
+            ControlOpcode::ChannelMapReq => ControlPdu::ChannelMapReq {
+                map: ChannelMap::from_raw(bytes.read_array()?),
+                instant: bytes.read_u16_le()?,
+            },
+            ControlOpcode::TerminateInd => ControlPdu::TerminateInd {
+                error_code: Hex(bytes.read_u8()?),
+            },
             ControlOpcode::UnknownRsp => ControlPdu::UnknownRsp {
                 unknown_type: ControlOpcode::from(bytes.read_u8()?),
             },
@@ -353,6 +434,24 @@ impl<'a> ToBytes for ControlPdu<'a> {
     fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
         buffer.write_u8(self.opcode().into())?;
         match self {
+            ControlPdu::ConnectionUpdateReq(data) => {
+                buffer.write_u8(data.win_size)?;
+                buffer.write_u16_le(data.win_offset)?;
+                buffer.write_u16_le(data.interval)?;
+                buffer.write_u16_le(data.latency)?;
+                buffer.write_u16_le(data.timeout)?;
+                buffer.write_u16_le(data.instant)?;
+                Ok(())
+            }
+            ControlPdu::ChannelMapReq { map, instant } => {
+                buffer.write_slice(&map.to_raw())?;
+                buffer.write_u16_le(*instant)?;
+                Ok(())
+            }
+            ControlPdu::TerminateInd { error_code } => {
+                buffer.write_u8(error_code.0)?;
+                Ok(())
+            }
             ControlPdu::UnknownRsp { unknown_type } => {
                 buffer.write_u8(u8::from(*unknown_type))?;
                 Ok(())

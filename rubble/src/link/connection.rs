@@ -1,20 +1,22 @@
-//! Link-Layer connection management.
+//! Link-Layer connection management and LLCP implementation.
 
 use {
     crate::{
         bytes::*,
         link::{
             advertising::ConnectRequestData,
-            data::{self, Header, Llid, Pdu},
+            data::{self, ConnectionUpdateData, ControlPdu, Header, Llid, Pdu},
             queue::{Consume, Consumer, Producer},
-            Cmd, HardwareInterface, NextUpdate, RadioCmd, SeqNum, Transmitter,
+            Cmd, CompanyId, FeatureSet, HardwareInterface, NextUpdate, RadioCmd, SeqNum,
+            Transmitter,
         },
         phy::{ChannelMap, DataChannel},
         time::{Duration, Instant, Timer},
-        utils::HexSlice,
+        utils::{Hex, HexSlice},
+        BLUETOOTH_VERSION,
     },
-    core::marker::PhantomData,
-    log::trace,
+    core::{marker::PhantomData, num::Wrapping},
+    log::{error, info, trace},
 };
 
 /// Connection state.
@@ -28,6 +30,9 @@ pub struct Connection<HW: HardwareInterface> {
 
     /// Connection event interval (duration between the start of 2 subsequent connection events).
     conn_interval: Duration,
+
+    /// Connection event counter (`connEventCount(er)` in the spec).
+    conn_event_count: Wrapping<u16>,
 
     /// Unmapped data channel on which the next connection event will take place.
     ///
@@ -50,6 +55,11 @@ pub struct Connection<HW: HardwareInterface> {
 
     tx: Consumer,
     rx: Producer,
+
+    /// LLCP connection update data received in a previous LL Control PDU.
+    ///
+    /// Contains the *instant* at which it should be applied to the Link Layer state.
+    update_data: Option<LlcpUpdate>,
 
     _p: PhantomData<HW>,
 }
@@ -84,6 +94,7 @@ impl<HW: HardwareInterface> Connection<HW> {
             channel_map: *lldata.channel_map(),
             hop: lldata.hop(),
             conn_interval: lldata.interval(),
+            conn_event_count: Wrapping(0),
 
             unmapped_channel: DataChannel::new(0),
             channel: DataChannel::new(0),
@@ -95,6 +106,7 @@ impl<HW: HardwareInterface> Connection<HW> {
 
             tx,
             rx,
+            update_data: None,
 
             _p: PhantomData,
         };
@@ -121,25 +133,84 @@ impl<HW: HardwareInterface> Connection<HW> {
     /// Returns `Err(())` when the connection is ended (not necessarily due to an error condition).
     pub fn process_data_packet(
         &mut self,
-        _rx_end: Instant,
+        rx_end: Instant,
         tx: &mut HW::Tx,
         timer: &mut HW::Timer,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
     ) -> Result<Cmd, ()> {
+        // If the sequence number of the packet is the same as our next expected sequence number,
+        // the packet contains new data that we should try to process. However, if the CRC is bad,
+        // we'll never try to process the data and instead request a retransmission.
         let is_new = header.sn() == self.next_expected_seq_num && crc_ok;
+
+        // If the packet's "NESN" is equal to our last sent sequence number + 1, the other side has
+        // acknowledged our last packet (and is now expecting one with an incremented seq. num.).
+        // However, if the CRC is bad, the bit might be flipped, so we cannot assume that the packet
+        // was acknowledged and thus always retransmit.
         let acknowledged = header.nesn() == self.transmit_seq_num + SeqNum::ONE && crc_ok;
 
         let is_empty = header.llid() == Llid::DataCont && payload.is_empty();
 
+        if acknowledged {
+            self.received_packet = true;
+            self.transmit_seq_num += SeqNum::ONE;
+        }
+
+        let mut responded = false;
         if is_new {
             if is_empty {
                 // Always acknowledge empty packets, no need to process them
                 self.next_expected_seq_num += SeqNum::ONE;
+            } else if header.llid() == Llid::Control {
+                // LLCP message, try to process it immediately. Certain LLCPDUs might be put in the
+                // channel instead and answered by the non-real-time part.
+
+                match ControlPdu::from_bytes(&mut ByteReader::new(payload)) {
+                    Ok(pdu) => {
+                        // Some LLCPDUs don't need a response, those can always be processed and
+                        // ACKed. For those that do, the other device must have ACKed the last
+                        // packet we sent, because we'll directly use the radio's TX buffer to send
+                        // back the LLCP response.
+
+                        match self.process_control_pdu(pdu, acknowledged) {
+                            Ok(Some(response)) => {
+                                self.next_expected_seq_num += SeqNum::ONE;
+
+                                let rsp = Pdu::from(&response);
+                                let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
+                                let left = payload_writer.space_left();
+                                rsp.to_bytes(&mut payload_writer).unwrap();
+
+                                let mut header = Header::new(Llid::Control);
+                                let pl_len = (left - payload_writer.space_left()) as u8;
+                                header.set_payload_length(pl_len);
+                                self.send(header, tx);
+                                responded = true;
+
+                                info!("LLCP<- {:?}", pdu);
+                                info!("LLCP-> {:?}", response);
+                            }
+                            Ok(None) => {
+                                self.next_expected_seq_num += SeqNum::ONE;
+
+                                info!("LLCP<- {:?}", pdu);
+                                info!("LLCP-> (no response)");
+                            }
+                            Err(LlcpError::ConnectionLost) => return Err(()),
+                            Err(LlcpError::NoSpace) => {
+                                // Do not acknowledge the PDU
+                            }
+                        }
+                    }
+                    _ => {
+                        // NACK
+                    }
+                }
             } else {
-                // Try to buffer the packet. If it fails, we don't acknowledge it, so it will be resent
-                // until we have space.
+                // Try to buffer the packet. If it fails, we don't acknowledge it, so it will be
+                // resent until we have space.
 
                 if self.rx.produce_raw(header, payload).is_ok() {
                     // Acknowledge the packet
@@ -151,26 +222,21 @@ impl<HW: HardwareInterface> Connection<HW> {
         }
 
         if acknowledged {
-            self.received_packet = true;
-            // Here we'll always send a new packet (which might be empty if we don't have anything
-            // to say). If `needs_processing` is set, we'll also process the received PDU before
-            // sending.
+            if !responded {
+                // Send a new data packet.
 
-            self.transmit_seq_num += SeqNum::ONE;
+                // Try to acquire PDU from the tx queue, fall back to an empty PDU.
+                let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
+                let header = match self.tx.consume_raw_with(|header, pl| {
+                    payload_writer.write_slice(pl).expect("TX buf out of space");
+                    Consume::always(Ok(header))
+                }) {
+                    Ok(h) => h,
+                    Err(_) => Header::new(Llid::DataCont),
+                };
 
-            // Send a new packet.
-
-            // Write payload data. Try to acquire PDU from the tx queue, fall back to an empty PDU.
-            let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
-            let header = match self.tx.consume_raw_with(|header, pl| {
-                payload_writer.write_slice(pl).expect("TX buf out of space");
-                Consume::always(Ok(header))
-            }) {
-                Ok(h) => h,
-                Err(_) => Header::new(Llid::DataCont),
-            };
-
-            self.send(header, tx);
+                self.send(header, tx);
+            }
         } else {
             // Last packet not acknowledged, resend.
             // If CRC is bad, this bit could be flipped, so we always retransmit in that case.
@@ -198,11 +264,33 @@ impl<HW: HardwareInterface> Connection<HW> {
 
         let last_channel = self.channel;
 
-        // FIXME: Don't hop if one of the MD bits is set to true
-        self.hop_channel();
+        // FIXME: Don't hop if one of the MD bits is set to true (also don't log then)
+        {
+            // Connection event closes
+            self.conn_event_count += Wrapping(1);
+
+            if let Some(update) = self.update_data.take() {
+                if update.instant() == self.conn_event_count.0 {
+                    // Next conn event will the the first one with these parameters.
+                    let result = self.apply_llcp_update(update, rx_end);
+                    info!("LLCP patch applied: {:?} -> {:?}", update, result);
+                    if let Some(cmd) = result {
+                        return Ok(cmd);
+                    }
+                } else {
+                    // Put it back
+                    self.update_data = Some(update);
+                }
+            }
+
+            // Hop channels after applying LLCP update because it might change the channel map used
+            // by the next event
+            self.hop_channel();
+        }
 
         trace!(
-            "DATA({}->{})<- {}{:?}, {:?}",
+            "#{} DATA({}->{})<- {}{:?}, {:?}",
+            self.conn_event_count,
             last_channel.index(),
             self.channel.index(),
             if crc_ok { "" } else { "BADCRC, " },
@@ -220,16 +308,23 @@ impl<HW: HardwareInterface> Connection<HW> {
         })
     }
 
+    /// Called by the `LinkLayer` when the configured timer expires (according to a `Cmd` returned
+    /// earlier).
+    ///
+    /// Returns `Err(())` when the connection is closed or lost. In that case, the Link-Layer will
+    /// return to standby state.
     pub fn timer_update(&mut self, timer: &mut HW::Timer) -> Result<Cmd, ()> {
         if self.received_packet {
             // No packet from master, skip this connection event and listen on the next channel
 
             let last_channel = self.channel;
             self.hop_channel();
+            self.conn_event_count += Wrapping(1);
             trace!(
-                "DATA({}->{}): missed conn event",
+                "DATA({}->{}): missed conn event #{}",
                 last_channel.index(),
-                self.channel.index()
+                self.channel.index(),
+                self.conn_event_count.0,
             );
 
             Ok(Cmd {
@@ -244,7 +339,9 @@ impl<HW: HardwareInterface> Connection<HW> {
             // Master did not transmit the first packet during this transmit window.
 
             // TODO: Move the transmit window forward by the `connInterval`.
+            // (do we also need to hop channels here?)
 
+            self.conn_event_count += Wrapping(1);
             trace!("missed transmit window");
             Err(())
         }
@@ -291,5 +388,142 @@ impl<HW: HardwareInterface> Connection<HW> {
 
         let pl = &tx.tx_payload_buf()[..usize::from(header.payload_length())];
         trace!("DATA->{:?}, {:?}", header, HexSlice(pl));
+    }
+
+    /// Tries to process and acknowledge an LL Control PDU.
+    ///
+    /// Returns `Err(())` when the connection is closed or lost.
+    ///
+    /// Note this this function is on a time-critical path and thus can not use logging since that's
+    /// currently way too slow. Critical errors can still be logged, since they abort the connection
+    /// anyways.
+    ///
+    /// # Parameters
+    ///
+    /// * **`pdu`**: The LL Control PDU (LLCPDU) to process.
+    /// * **`can_respond`**: Whether the radio's TX buffer may be overwritten to send a response. If
+    ///   this is `false`, this method may choose not to acknowledge the PDU and wait for a
+    ///   retransmission instead.
+    fn process_control_pdu(
+        &mut self,
+        pdu: ControlPdu,
+        can_respond: bool,
+    ) -> Result<Option<ControlPdu<'static>>, LlcpError> {
+        let response = match pdu {
+            ControlPdu::ConnectionUpdateReq(data) => {
+                self.prepare_llcp_update(LlcpUpdate::ConnUpdate(data))?;
+                return Ok(None);
+            }
+            ControlPdu::ChannelMapReq { map, instant } => {
+                self.prepare_llcp_update(LlcpUpdate::ChannelMap { map, instant })?;
+                return Ok(None);
+            }
+            ControlPdu::TerminateInd { error_code } => {
+                info!(
+                    "closing connection due to termination request: code {:?}",
+                    error_code
+                );
+                return Err(LlcpError::ConnectionLost);
+            }
+            ControlPdu::FeatureReq { features_master } => ControlPdu::FeatureRsp {
+                features_used: features_master & FeatureSet::supported(),
+            },
+            ControlPdu::VersionInd { .. } => {
+                // FIXME this should be something real, and defined somewhere else
+                let comp_id = 0xFFFF;
+                // FIXME this should correlate with the Cargo package version
+                let sub_vers_nr = 0x0000;
+
+                ControlPdu::VersionInd {
+                    vers_nr: BLUETOOTH_VERSION,
+                    comp_id: CompanyId::from_raw(comp_id),
+                    sub_vers_nr: Hex(sub_vers_nr),
+                }
+            }
+            _ => ControlPdu::UnknownRsp {
+                unknown_type: pdu.opcode(),
+            },
+        };
+
+        // If we land here, we have a PDU we want to send
+        if can_respond {
+            Ok(Some(response))
+        } else {
+            Err(LlcpError::NoSpace)
+        }
+    }
+
+    /// Stores `update` in the link layer state so that it will be applied once its *instant* is
+    /// reached.
+    fn prepare_llcp_update(&mut self, update: LlcpUpdate) -> Result<(), LlcpError> {
+        // TODO: check that instant is <32767 in the future
+        if let Some(data) = self.update_data {
+            error!(
+                "got update data {:?} while update {:?} is already queued",
+                update, data
+            );
+            Err(LlcpError::ConnectionLost)
+        } else {
+            self.update_data = Some(update);
+            Ok(())
+        }
+    }
+
+    /// Patches the link layer state to incorporate `update`.
+    ///
+    /// Returns a `Cmd` when the usual Link Layer `Cmd` should be overridden. In that case, this
+    /// method must also perform channel hopping.
+    fn apply_llcp_update(&mut self, update: LlcpUpdate, rx_end: Instant) -> Option<Cmd> {
+        match update {
+            LlcpUpdate::ConnUpdate(data) => {
+                assert_eq!(data.latency(), 0, "slave latency not implemented");
+                let old_conn_interval = self.conn_interval;
+                self.conn_interval = data.interval();
+
+                self.hop_channel();
+
+                Some(Cmd {
+                    // Next update after the tx window ends (= missed it)
+                    next_update: NextUpdate::At(
+                        rx_end + old_conn_interval + data.win_offset() + data.win_size(),
+                    ),
+                    // Listen for the transmit window
+                    radio: RadioCmd::ListenData {
+                        channel: self.channel,
+                        access_address: self.access_address,
+                        crc_init: self.crc_init,
+                    },
+                })
+            }
+            LlcpUpdate::ChannelMap { map, .. } => {
+                self.channel_map = map;
+                None
+            }
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+enum LlcpError {
+    /// No space in TX buffer, NACK the incoming PDU and retry later.
+    NoSpace,
+
+    /// Consider the connection lost due to a critical error or timeout.
+    ConnectionLost,
+}
+
+#[derive(Debug, Copy, Clone)]
+enum LlcpUpdate {
+    ConnUpdate(ConnectionUpdateData),
+    ChannelMap { map: ChannelMap, instant: u16 },
+}
+
+impl LlcpUpdate {
+    /// Returns the connection event number at which this update should be applied.
+    fn instant(&self) -> u16 {
+        match self {
+            LlcpUpdate::ConnUpdate(data) => data.instant(),
+            LlcpUpdate::ChannelMap { instant, .. } => *instant,
+        }
     }
 }
