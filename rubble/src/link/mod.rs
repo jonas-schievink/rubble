@@ -395,7 +395,6 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
 
                 // FIXME According to the spec, this has to broadcast on all advertising channels
 
-                //trace!(self.logger, "->[ADV] {} MHz", channel.freq());
                 tx.transmit_advertising(pdu.header(), *channel);
 
                 *next_adv += *interval;

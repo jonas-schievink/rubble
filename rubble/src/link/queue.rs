@@ -1,4 +1,4 @@
-//! A splittable queue for data channel PDUs.
+//! An SPSC queue for data channel PDUs.
 //!
 //! Data channel PDUs are received and transmitted in time-critical code, so they're sent through
 //! this queue to be processed at a later time (perhaps in the application's idle loop).

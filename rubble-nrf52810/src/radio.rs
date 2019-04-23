@@ -56,9 +56,6 @@ use {
 /// A packet buffer that can hold header and payload of any advertising or data channel packet.
 pub type PacketBuffer = [u8; MAX_PDU_SIZE];
 
-// BLE inter frame spacing in microseconds.
-//const BLE_TIFS: u8 = 150;
-
 /// An interface to the nRF radio in BLE mode.
 pub struct BleRadio {
     /// `true` if the radio is operating on an advertising channel, `false` if it's a data channel.
