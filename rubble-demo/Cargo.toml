@@ -13,7 +13,7 @@ edition = "2018"
 rubble = { path = "../rubble" }
 rubble-nrf52810 = { path = "../rubble-nrf52810" }
 cortex-m = "0.5.8"
-cortex-m-semihosting = "0.3.2"
+cortex-m-semihosting = "=0.3.2"
 cortex-m-rtfm = "0.4.2"
 cortex-m-rt = "0.6.7"
 nrf52810-hal = { version = "0.8.0", features = ["rt"] }
