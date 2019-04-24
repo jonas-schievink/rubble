@@ -431,11 +431,18 @@ impl Default for AttPermission {
 }
 
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
+///
+/// TODO: This trait needs to be restructured completely, since it's not always possible to put all
+/// attributes in a slice. Right now this trait is also kind of useless since you could just give
+/// the `&[Attribute]` to the server directly. Rename it to `AttributeProvider` and add methods for
+/// inspecting grouped attributes.
 pub trait Attributes {
     fn attributes(&mut self) -> &[Attribute];
 }
 
 /// An empty attribute set.
+///
+/// FIXME: Is this even legal according to the spec?
 pub struct NoAttributes;
 
 impl Attributes for NoAttributes {
