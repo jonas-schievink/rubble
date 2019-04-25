@@ -23,8 +23,7 @@ panic-semihosting = "0.5.1"
 bbqueue = "0.3.2"
 
 [dependencies.log]
-git = "https://github.com/rust-lang-nursery/log.git"
-rev = "75043f9"
+version = "0.4.6"
 features = ["release_max_level_warn"]
 optional = true
 

@@ -18,6 +18,5 @@ bbqueue = "0.3.2"
 # If the `log` feature is enabled, the `log` crate's macros will be called at various points to dump
 # packets, state, and events. By default, it is disabled.
 [dependencies.log]
-git = "https://github.com/rust-lang-nursery/log.git"
-rev = "75043f9"
+version = "0.4.6"
 optional = true

@@ -133,7 +133,7 @@ pub fn init(timer: StampSource<LogTimer>) -> Consumer {
     interrupt::free(|_| unsafe {
         // Safe, since we're the only thread and interrupts are off
         LOGGER = Some(log);
-        log::set_logger_racy(LOGGER.as_ref().unwrap()).unwrap();
+        log::set_logger(LOGGER.as_ref().unwrap()).unwrap();
     });
     log::set_max_level(LevelFilter::max());
 
