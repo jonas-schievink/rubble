@@ -6,7 +6,7 @@ keywords = ["arm", "cortex-m", "bluetooth", "low", "energy"]
 repository = "https://github.com/jonas-schievink/rubble/"
 license = "0BSD"
 name = "rubble"
-version = "0.1.0"
+version = "0.0.0"
 edition = "2018"
 
 [dependencies]

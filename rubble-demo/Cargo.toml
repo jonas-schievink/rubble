@@ -6,8 +6,9 @@ keywords = ["arm", "nrf", "bluetooth", "low", "energy"]
 repository = "https://github.com/jonas-schievink/rubble/"
 license = "0BSD"
 name = "rubble-demo"
-version = "0.1.0"
+version = "0.0.0"
 edition = "2018"
+publish = false
 
 [dependencies]
 rubble = { path = "../rubble", default-features = false }
