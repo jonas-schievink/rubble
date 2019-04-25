@@ -20,6 +20,7 @@ jobs:
       script:
         - cargo fmt --all -- --check
         - cargo check --target $TARGET_BUILD
+        - cd rubble-demo && cargo check --target $TARGET_BUILD --no-default-features
     - stage: deploy
       script:
         - cargo doc --no-deps

@@ -34,7 +34,6 @@ use {
         Error,
     },
     core::fmt,
-    log::{debug, warn},
 };
 
 /// An L2CAP channel identifier (CID).

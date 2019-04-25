@@ -22,6 +22,8 @@
 #![no_std]
 
 #[macro_use]
+mod log;
+#[macro_use]
 mod utils;
 pub mod att;
 pub mod beacon;

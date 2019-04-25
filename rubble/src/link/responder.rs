@@ -1,14 +1,11 @@
-use {
-    crate::{
-        l2cap::{ChannelMapper, L2CAPState},
-        link::{
-            data::{ControlPdu, Pdu},
-            queue::{Consume, Consumer, Producer},
-        },
-        utils::HexSlice,
-        Error,
+use crate::{
+    l2cap::{ChannelMapper, L2CAPState},
+    link::{
+        data::{ControlPdu, Pdu},
+        queue::{Consume, Consumer, Producer},
     },
-    log::info,
+    utils::HexSlice,
+    Error,
 };
 
 /// Data channel packet processor.

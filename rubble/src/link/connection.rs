@@ -16,7 +16,6 @@ use {
         BLUETOOTH_VERSION,
     },
     core::{marker::PhantomData, num::Wrapping},
-    log::{error, info, trace},
 };
 
 /// Connection state.
@@ -198,7 +197,9 @@ impl<HW: HardwareInterface> Connection<HW> {
                                 info!("LLCP<- {:?}", pdu);
                                 info!("LLCP-> (no response)");
                             }
-                            Err(LlcpError::ConnectionLost) => return Err(()),
+                            Err(LlcpError::ConnectionLost) => {
+                                return Err(());
+                            }
                             Err(LlcpError::NoSpace) => {
                                 // Do not acknowledge the PDU
                             }

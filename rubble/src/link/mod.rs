@@ -152,7 +152,6 @@ use {
     },
     byteorder::{ByteOrder, LittleEndian},
     core::ops::Range,
-    log::{debug, trace},
 };
 
 /// The CRC polynomial to use for CRC24 generation.

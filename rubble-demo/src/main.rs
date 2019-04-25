@@ -7,12 +7,10 @@ extern crate panic_semihosting;
 mod logger;
 
 use {
-    crate::logger::{BbqLogger, StampedLogger},
     bbqueue::{bbq, BBQueue, Consumer},
     byteorder::{ByteOrder, LittleEndian},
     core::fmt::Write,
     cortex_m_semihosting::hprintln,
-    log::{info, LevelFilter},
     nrf52810_hal::{
         self as hal,
         gpio::Level,
@@ -34,11 +32,9 @@ use {
     },
     rubble_nrf52810::{
         radio::{BleRadio, PacketBuffer},
-        timer::{BleTimer, StampSource},
+        timer::BleTimer,
     },
 };
-
-type Logger = StampedLogger<StampSource<pac::TIMER0>, BbqLogger>;
 
 /// Hardware interface for the BLE stack (nRF52810 implementation).
 pub struct HwNRf52810 {}
@@ -53,9 +49,6 @@ impl HardwareInterface for HwNRf52810 {
 /// This is just used to test different code paths. Note that you can't do both
 /// at the same time unless you also generate separate device addresses.
 const TEST_BEACON: bool = false;
-
-/// Stores the global logger used by the `log` crate.
-static mut LOGGER: Option<logger::WriteLogger<Logger>> = None;
 
 #[app(device = nrf52810_hal::nrf52810_pac)]
 const APP: () = {
@@ -149,19 +142,7 @@ const APP: () = {
         )
         .unwrap();
 
-        let log_stamper = ble_timer.create_stamp_source();
-        let (tx, log_sink) = bbq![10000].unwrap().split();
-        let logger = StampedLogger::new(BbqLogger::new(tx), log_stamper);
-
-        let log = logger::WriteLogger::new(logger);
-        // Safe, since we're the only thread and interrupts are off
-        unsafe {
-            LOGGER = Some(log);
-            log::set_logger_racy(LOGGER.as_ref().unwrap()).unwrap();
-        }
-        log::set_max_level(LevelFilter::max());
-
-        info!("READY");
+        let log_sink = logger::init(ble_timer.create_stamp_source());
 
         // Create TX/RX queues
         let (tx, tx_cons) = queue::create(bbq![1024].unwrap());
@@ -237,12 +218,14 @@ const APP: () = {
     fn idle() -> ! {
         // Drain the logging buffer through the serial connection
         loop {
-            while let Ok(grant) = resources.LOG_SINK.read() {
-                for chunk in grant.buf().chunks(255) {
-                    resources.SERIAL.write(chunk).unwrap();
-                }
+            if cfg!(feature = "log") {
+                while let Ok(grant) = resources.LOG_SINK.read() {
+                    for chunk in grant.buf().chunks(255) {
+                        resources.SERIAL.write(chunk).unwrap();
+                    }
 
-                resources.LOG_SINK.release(grant.buf().len(), grant);
+                    resources.LOG_SINK.release(grant.buf().len(), grant);
+                }
             }
 
             if resources.BLE_R.has_work() {

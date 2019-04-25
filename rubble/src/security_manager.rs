@@ -104,7 +104,6 @@ use {
     },
     bitflags::bitflags,
     core::fmt,
-    log::{trace, warn},
 };
 
 /// Supported security levels.

@@ -10,5 +10,5 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-rubble = { path = "../rubble" }
+rubble = { path = "../rubble", default-features = false }
 nrf52810-hal = "0.8.0"

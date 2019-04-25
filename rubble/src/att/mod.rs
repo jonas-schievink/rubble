@@ -33,7 +33,6 @@ use {
         utils::HexSlice,
         Error,
     },
-    log::{debug, trace},
 };
 
 pub use self::handle::AttHandle;
