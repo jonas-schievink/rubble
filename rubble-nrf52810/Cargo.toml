@@ -4,11 +4,12 @@ description = "Rubble driver for the nRF52810 BLE radio"
 categories = ["embedded", "no-std"]
 keywords = ["ble", "nrf", "bluetooth", "low", "energy"]
 repository = "https://github.com/jonas-schievink/rubble/"
+readme = "../README.md"
 license = "0BSD"
 name = "rubble-nrf52810"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2018"
 
 [dependencies]
-rubble = { path = "../rubble", version = "0.0.1", default-features = false }
+rubble = { path = "../rubble", version = "0.0.2", default-features = false }
 nrf52810-hal = "0.8.0"

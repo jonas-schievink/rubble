@@ -4,9 +4,10 @@ description = "An embedded BLE stack"
 categories = ["embedded", "no-std"]
 keywords = ["arm", "cortex-m", "bluetooth", "low", "energy"]
 repository = "https://github.com/jonas-schievink/rubble/"
+readme = "../README.md"
 license = "0BSD"
 name = "rubble"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2018"
 
 [dependencies]
