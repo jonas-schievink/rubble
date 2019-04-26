@@ -321,11 +321,7 @@ impl<M: ChannelMapper> L2CAPState<M> {
             let free = tx.free_space();
             let needed = usize::from(chdata.response_pdu_size() + Header::SIZE);
             if free < needed {
-                debug!(
-                    "{} free bytes, need {}; waiting",
-                    free,
-                    chdata.response_pdu_size()
-                );
+                debug!("{} free bytes, need {}; waiting", free, needed);
                 return Consume::never(Ok(()));
             }
 
