@@ -46,7 +46,7 @@ use {
     rubble::{
         link::{
             advertising, data, HardwareInterface, LinkLayer, NextUpdate, RadioCmd, Transmitter,
-            CRC_POLY, MIN_PAYLOAD_BUF, MIN_PDU_BUF,
+            CRC_POLY, MIN_PDU_BUF,
         },
         phy::{AdvertisingChannel, DataChannel},
         time::{Duration, Instant},
@@ -83,11 +83,14 @@ impl BleRadio {
         radio.mode.write(|w| w.mode().ble_1mbit());
         radio.txpower.write(|w| w.txpower().pos4d_bm());
 
+        let max_payload = rx_buf.len() - 2;
+        assert!(max_payload <= usize::from(u8::max_value()));
+
         unsafe {
             radio.pcnf1.write(|w| {
                 // no packet length limit
                 w.maxlen()
-                    .bits(MIN_PAYLOAD_BUF as u8)
+                    .bits(max_payload as u8)
                     // 3-Byte Base Address + 1-Byte Address Prefix
                     .balen()
                     .bits(3)
