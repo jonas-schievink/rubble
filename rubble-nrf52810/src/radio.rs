@@ -46,7 +46,7 @@ use {
     rubble::{
         link::{
             advertising, data, HardwareInterface, LinkLayer, NextUpdate, RadioCmd, Transmitter,
-            CRC_POLY, MAX_PAYLOAD_SIZE, MAX_PDU_SIZE,
+            CRC_POLY, MIN_PAYLOAD_BUF, MIN_PDU_BUF,
         },
         phy::{AdvertisingChannel, DataChannel},
         time::{Duration, Instant},
@@ -54,7 +54,7 @@ use {
 };
 
 /// A packet buffer that can hold header and payload of any advertising or data channel packet.
-pub type PacketBuffer = [u8; MAX_PDU_SIZE];
+pub type PacketBuffer = [u8; MIN_PDU_BUF];
 
 /// An interface to the nRF radio in BLE mode.
 pub struct BleRadio {
@@ -87,7 +87,7 @@ impl BleRadio {
             radio.pcnf1.write(|w| {
                 // no packet length limit
                 w.maxlen()
-                    .bits(MAX_PAYLOAD_SIZE as u8)
+                    .bits(MIN_PAYLOAD_BUF as u8)
                     // 3-Byte Base Address + 1-Byte Address Prefix
                     .balen()
                     .bits(3)

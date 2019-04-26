@@ -25,7 +25,7 @@ use {
         l2cap::{BleChannelMap, L2CAPState},
         link::{
             ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
-            LinkLayer, Responder, MAX_PDU_SIZE,
+            LinkLayer, Responder, MIN_PDU_BUF,
         },
         security_manager::NoSecurity,
         time::{Duration, Timer},
@@ -52,8 +52,8 @@ const TEST_BEACON: bool = false;
 
 #[app(device = nrf52810_hal::nrf52810_pac)]
 const APP: () = {
-    static mut BLE_TX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
-    static mut BLE_RX_BUF: PacketBuffer = [0; MAX_PDU_SIZE];
+    static mut BLE_TX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
+    static mut BLE_RX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
     static mut BLE_LL: LinkLayer<HwNRf52810> = ();
     static mut BLE_R: Responder<BleChannelMap<GattServer<'static>, NoSecurity>> = ();
     static mut RADIO: BleRadio = ();
@@ -145,8 +145,10 @@ const APP: () = {
         let log_sink = logger::init(ble_timer.create_stamp_source());
 
         // Create TX/RX queues
-        let (tx, tx_cons) = queue::create(bbq![1024].unwrap());
-        let (rx_prod, rx) = queue::create(bbq![1024].unwrap());
+        // FIXME: Because of how bbqueue works, these have to be 2x the max. PDU size. We don't need
+        // contiguous segments though, so we could use a "normal" queue instead.
+        let (tx, tx_cons) = queue::create(bbq![MIN_PDU_BUF * 2].unwrap());
+        let (rx_prod, rx) = queue::create(bbq![MIN_PDU_BUF * 2].unwrap());
 
         // Create the actual BLE stack objects
         let mut ll = LinkLayer::<HwNRf52810>::new(device_address, ble_timer);

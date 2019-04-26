@@ -168,14 +168,32 @@ use {
 /// `x^24 + x^10 + x^9 + x^6 + x^4 + x^3 + x + 1`
 pub const CRC_POLY: u32 = 0b00000001_00000000_00000110_01011011;
 
-/// Max. PDU payload size in Bytes (for both advertising and data channels).
-pub const MAX_PAYLOAD_SIZE: usize = 255;
+/// Min. size a PDU payload buffer must have (to cover both advertising and data channels).
+///
+/// The Advertising PDU header has a length field that is limited to 37 octets, while data channel
+/// PDUs in Bluetooth 4.0 and 4.1 only have a 5-bit length field, limiting the user payload to 27
+/// octets (after subtracting the optional 4-Byte MIC). Bluetooth 4.2 added the optional Packet
+/// Length Extension, which allows data channel PDUs containing up to 251 user payload bytes,
+/// however Rubble doesn't support that yet.
+pub const MIN_PAYLOAD_BUF: usize = 37;
 
-/// Max. PDU size in octets (header + payload).
-pub const MAX_PDU_SIZE: usize = MAX_PAYLOAD_SIZE + 2; // data & adv. have a 16-bit header
+/// Min. size a Link-Layer PDU buffer must have (to cover both advertising and data channels).
+///
+/// Bluetooth 4.2 also allows exchanging larger PDUs using the Packet Length Extension, but Rubble
+/// does not currently support that.
+pub const MIN_PDU_BUF: usize = MIN_PAYLOAD_BUF + 2 /* 16-bit header */;
 
-/// Max. total Link-Layer packet size in octets.
-pub const MAX_PACKET_SIZE: usize = 1 /* preamble */ + 4 /* access addr */ + MAX_PDU_SIZE + 3 /* crc */;
+/// Min. size a buffer for Link-Layer packets must have to comply with the spec.
+///
+/// The packet contains everything that ends up being transmitted over the air: Preamble, Access
+/// Address, the actual PDU, and the CRC checksum.
+///
+/// Bluetooth 4.2 also allows exchanging larger packets than this using the Packet Length Extension.
+pub const MIN_PACKET_BUF: usize =
+    1 /* preamble */ +
+    4 /* access addr */ +
+    MIN_PDU_BUF +
+    3 /* crc */;
 
 /// Defines types that provide platform-dependent functionality.
 pub trait HardwareInterface {
@@ -554,19 +572,19 @@ pub trait Transmitter {
 ///
 /// This implements preamble generation, CRC calculation and whitening in software.
 pub struct RawTransmitter<R: Radio> {
-    tx_buf: [u8; MAX_PACKET_SIZE],
+    tx_buf: [u8; MIN_PACKET_BUF],
     radio: R,
 }
 
 // First 5 octets are Preamble and Access Address
 const PDU_START: usize = 5;
 const HEADER_RANGE: Range<usize> = PDU_START..PDU_START + 2;
-const PAYLOAD_RANGE: Range<usize> = PDU_START + 2..PDU_START + MAX_PDU_SIZE;
+const PAYLOAD_RANGE: Range<usize> = PDU_START + 2..PDU_START + MIN_PDU_BUF;
 
 impl<R: Radio> RawTransmitter<R> {
     pub fn new(radio: R) -> Self {
         Self {
-            tx_buf: [0; MAX_PACKET_SIZE as usize],
+            tx_buf: [0; MIN_PACKET_BUF as usize],
             radio,
         }
     }
@@ -585,7 +603,7 @@ impl<R: Radio> RawTransmitter<R> {
             &self.tx_buf[PDU_START..PDU_START + 2 + payload_length as usize],
             crc_iv,
         );
-        LittleEndian::write_u24(&mut self.tx_buf[MAX_PACKET_SIZE - 3..], crc);
+        LittleEndian::write_u24(&mut self.tx_buf[MIN_PACKET_BUF - 3..], crc);
 
         // TODO whitening
         if true {
