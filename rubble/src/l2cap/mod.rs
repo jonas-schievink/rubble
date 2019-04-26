@@ -28,6 +28,7 @@ use {
         link::{
             data::Llid,
             queue::{Consume, Producer},
+            MIN_PAYLOAD_BUF,
         },
         security_manager::{NoSecurity, SecurityLevel, SecurityManager},
         utils::HexSlice,
@@ -138,6 +139,19 @@ pub struct ChannelData<'a> {
 }
 
 impl<'a> ChannelData<'a> {
+    fn new<P: Protocol>(response_channel: Channel, protocol: &'a mut P) -> Self {
+        assert!(
+            usize::from(P::RSP_PDU_SIZE + Header::SIZE) <= MIN_PAYLOAD_BUF,
+            "protocol min PDU is smaller than data channel PDU (L2CAP reassembly NYI)"
+        );
+
+        ChannelData {
+            response_channel,
+            rsp_pdu: P::RSP_PDU_SIZE,
+            protocol,
+        }
+    }
+
     /// Returns the `Channel` to which the response should be sent.
     pub fn response_channel(&self) -> Channel {
         self.response_channel
@@ -200,17 +214,11 @@ impl<A: Attributes> BleChannelMap<A, NoSecurity> {
 impl<A: Attributes, S: SecurityLevel> ChannelMapper for BleChannelMap<A, S> {
     fn lookup(&mut self, channel: Channel) -> Option<ChannelData> {
         match channel {
-            Channel::ATT => Some(ChannelData {
-                response_channel: Channel::ATT,
-                protocol: &mut self.att,
-                rsp_pdu: AttributeServer::<A>::RSP_PDU_SIZE,
-            }),
-            Channel::LE_SECURITY_MANAGER => Some(ChannelData {
-                response_channel: Channel::LE_SECURITY_MANAGER,
-                protocol: &mut self.sm,
-                rsp_pdu: SecurityManager::<S>::RSP_PDU_SIZE,
-            }),
-            // FIXME implement the rest
+            Channel::ATT => Some(ChannelData::new(Channel::ATT, &mut self.att)),
+            Channel::LE_SECURITY_MANAGER => {
+                Some(ChannelData::new(Channel::LE_SECURITY_MANAGER, &mut self.sm))
+            }
+            // FIXME implement the LE Signaling Channel
             _ => None,
         }
     }
