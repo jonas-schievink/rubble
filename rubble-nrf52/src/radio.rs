@@ -41,9 +41,18 @@
 //! length), the `Length` field, and the `S1` field (which just contains 2 unused bits, but they
 //! must still be sent, of course).
 
+#[cfg(feature = "52810")]
+use nrf52810_hal::nrf52810_pac as pac;
+
+#[cfg(feature = "52832")]
+use nrf52832_hal::nrf52832_pac as pac;
+
+#[cfg(feature = "52840")]
+use nrf52840_hal::nrf52840_pac as pac;
+
 use {
     core::cmp,
-    nrf52810_hal::nrf52810_pac::{radio::state::STATER, RADIO},
+    pac::{radio::state::STATER, RADIO},
     rubble::{
         link::{
             advertising, data, HardwareInterface, LinkLayer, NextUpdate, RadioCmd, Transmitter,
@@ -99,11 +108,21 @@ impl BleRadio {
                     .whiteen()
                     .set_bit()
             });
+
+            #[cfg(not(feature = "52840"))]
             radio.crccnf.write(|w| {
                 // skip address since only the S0, Length, S1 and Payload need CRC
                 // 3 Bytes = CRC24
                 w.skipaddr().set_bit().len().three()
             });
+
+            #[cfg(feature = "52840")]
+            radio.crccnf.write(|w| {
+                // skip address since only the S0, Length, S1 and Payload need CRC
+                // 3 Bytes = CRC24
+                w.skipaddr().bits(1).len().three()
+            });
+
             radio
                 .crcpoly
                 .write(|w| w.crcpoly().bits(CRC_POLY & 0x00FFFFFF));

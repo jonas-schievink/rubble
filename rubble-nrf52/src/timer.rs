@@ -1,8 +1,17 @@
 //! Generic `Timer` implementation that works with all 3 timers on the chip.
 
+#[cfg(feature = "52810")]
+use nrf52810_hal::nrf52810_pac as pac;
+
+#[cfg(feature = "52832")]
+use nrf52832_hal::nrf52832_pac as pac;
+
+#[cfg(feature = "52840")]
+use nrf52840_hal::nrf52840_pac as pac;
+
 use {
     core::mem,
-    nrf52810_hal::nrf52810_pac::{TIMER0, TIMER1, TIMER2},
+    pac::{TIMER0, TIMER1, TIMER2},
     rubble::{
         link::NextUpdate,
         time::{Instant, Timer},
@@ -139,8 +148,8 @@ macro_rules! impl_timer {
                 // 2^4 = 16
                 // 16 MHz / 16 = 1 MHz = µs resolution
                 self.prescaler.write(|w| unsafe { w.prescaler().bits(4) });
-                self.tasks_clear.write(|w| w.tasks_clear().trigger());
-                self.tasks_start.write(|w| w.tasks_start().trigger());
+                self.tasks_clear.write(|w| unsafe { w.bits(1) });
+                self.tasks_start.write(|w| unsafe { w.bits(1) });
             }
 
             fn set_interrupt(&mut self, at: Instant) {
@@ -159,14 +168,11 @@ macro_rules! impl_timer {
             }
 
             fn is_pending(&self) -> bool {
-                self.events_compare[1]
-                    .read()
-                    .events_compare()
-                    .is_generated()
+                self.events_compare[1].read().bits() == 1u32
             }
 
             fn now(&self) -> Instant {
-                self.tasks_capture[0].write(|w| w.tasks_capture().trigger());
+                self.tasks_capture[0].write(|w| unsafe { w.bits(1) });
                 let micros = self.cc[0].read().bits();
                 Instant::from_raw_micros(micros)
             }
