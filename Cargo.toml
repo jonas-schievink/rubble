@@ -1,8 +1,7 @@
 [workspace]
 members = [
     "rubble",
-    "rubble-nrf52810",
-
+    "rubble-nrf52",
     "rubble-demo",
 ]
 

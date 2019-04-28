@@ -6,7 +6,7 @@ use {
     cortex_m::interrupt::{self, Mutex},
     nrf52810_hal::nrf52810_pac as pac,
     rubble::time::Timer,
-    rubble_nrf52810::timer::StampSource,
+    rubble_nrf52::timer::StampSource,
 };
 
 #[cfg(feature = "log")]

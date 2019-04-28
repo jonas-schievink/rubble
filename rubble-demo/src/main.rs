@@ -30,7 +30,7 @@ use {
         security_manager::NoSecurity,
         time::{Duration, Timer},
     },
-    rubble_nrf52810::{
+    rubble_nrf52::{
         radio::{BleRadio, PacketBuffer},
         timer::BleTimer,
     },
