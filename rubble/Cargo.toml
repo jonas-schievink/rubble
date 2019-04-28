@@ -13,7 +13,7 @@ edition = "2018"
 [dependencies]
 byteorder = { version = "1.3.1", default-features = false }
 bitflags = "1.0.4"
-uuid = { version = "0.7.2", default-features = false }
+uuid = { version = "0.7.4", default-features = false }
 bbqueue = "0.3.2"
 
 # If the `log` feature is enabled, the `log` crate's macros will be called at various points to dump
