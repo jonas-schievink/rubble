@@ -42,6 +42,7 @@
 //! must still be sent, of course).
 
 use {
+    core::cmp,
     nrf52810_hal::nrf52810_pac::{radio::state::STATER, RADIO},
     rubble::{
         link::{
@@ -51,7 +52,6 @@ use {
         phy::{AdvertisingChannel, DataChannel},
         time::{Duration, Instant},
     },
-    core::cmp,
 };
 
 /// A packet buffer that can hold header and payload of any advertising or data channel packet.
