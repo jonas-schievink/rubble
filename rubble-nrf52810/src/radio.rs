@@ -51,6 +51,7 @@ use {
         phy::{AdvertisingChannel, DataChannel},
         time::{Duration, Instant},
     },
+    core::cmp,
 };
 
 /// A packet buffer that can hold header and payload of any advertising or data channel packet.
@@ -250,14 +251,8 @@ impl BleRadio {
 
             // check that `payload_length` is in bounds
             let rx_buf = self.rx_buf.take().unwrap();
-            let payload = match rx_buf.get(2..2 + header.payload_length() as usize) {
-                Some(pl) => pl,
-                None => {
-                    // `payload_length` is too large, ignore the packet
-                    self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
-                    return NextUpdate::Keep;
-                }
-            };
+            let pl_lim = cmp::min(2 + usize::from(header.payload_length()), rx_buf.len());
+            let payload = &rx_buf[2..pl_lim];
             let cmd = ll.process_adv_packet(timestamp, self, header, payload, crc_ok);
             self.rx_buf = Some(rx_buf);
             cmd
@@ -269,14 +264,8 @@ impl BleRadio {
 
             // check that `payload_length` is in bounds
             let rx_buf = self.rx_buf.take().unwrap();
-            let payload = match rx_buf.get(2..2 + header.payload_length() as usize) {
-                Some(pl) => pl,
-                None => {
-                    // `payload_length` is too large, ignore the packet
-                    self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
-                    return NextUpdate::Keep;
-                }
-            };
+            let pl_lim = cmp::min(2 + usize::from(header.payload_length()), rx_buf.len());
+            let payload = &rx_buf[2..pl_lim];
             let cmd = ll.process_data_packet(timestamp, self, header, payload, crc_ok);
             self.rx_buf = Some(rx_buf);
             cmd
