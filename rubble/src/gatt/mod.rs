@@ -3,6 +3,8 @@
 //! GATT describes a service framework that uses the Attribute Protocol for discovery and
 //! interaction
 
+pub mod characteristic;
+
 use crate::{
     att::{AttHandle, AttPermission, AttUuid, Attribute, AttributeProvider},
     utils::HexSlice,
