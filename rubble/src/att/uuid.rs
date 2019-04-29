@@ -46,6 +46,18 @@ impl PartialEq for AttUuid {
     }
 }
 
+impl PartialEq<Uuid16> for AttUuid {
+    fn eq(&self, other: &Uuid16) -> bool {
+        self == &Self::from(*other)
+    }
+}
+
+impl PartialEq<Uuid> for AttUuid {
+    fn eq(&self, other: &Uuid) -> bool {
+        self == &Self::from(*other)
+    }
+}
+
 impl From<Uuid16> for AttUuid {
     fn from(uu: Uuid16) -> Self {
         AttUuid::Uuid16(uu)

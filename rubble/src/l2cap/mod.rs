@@ -23,7 +23,7 @@
 
 use {
     crate::{
-        att::{AttributeServer, Attributes, NoAttributes},
+        att::{AttributeProvider, AttributeServer, NoAttributes},
         bytes::*,
         link::{
             data::Llid,
@@ -183,7 +183,7 @@ impl<'a> ChannelData<'a> {
 /// * `0x0004`: Attribute protocol (ATT).
 /// * `0x0005`: LE L2CAP signaling channel.
 /// * `0x0006`: LE Security Manager protocol.
-pub struct BleChannelMap<A: Attributes, S: SecurityLevel> {
+pub struct BleChannelMap<A: AttributeProvider, S: SecurityLevel> {
     att: AttributeServer<A>,
     sm: SecurityManager<S>,
 }
@@ -202,7 +202,7 @@ impl BleChannelMap<NoAttributes, NoSecurity> {
     }
 }
 
-impl<A: Attributes> BleChannelMap<A, NoSecurity> {
+impl<A: AttributeProvider> BleChannelMap<A, NoSecurity> {
     pub fn with_attributes(att: A) -> Self {
         Self {
             att: AttributeServer::new(att),
@@ -211,7 +211,7 @@ impl<A: Attributes> BleChannelMap<A, NoSecurity> {
     }
 }
 
-impl<A: Attributes, S: SecurityLevel> ChannelMapper for BleChannelMap<A, S> {
+impl<A: AttributeProvider, S: SecurityLevel> ChannelMapper for BleChannelMap<A, S> {
     fn lookup(&mut self, channel: Channel) -> Option<ChannelData> {
         match channel {
             Channel::ATT => Some(ChannelData::new(Channel::ATT, &mut self.att)),

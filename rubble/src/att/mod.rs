@@ -146,12 +146,16 @@ enum AttMsg<'a> {
 }
 
 /// *Read By Group Type* response PDU holding an iterator.
-struct ReadByGroupRsp<'a, I: Iterator<Item = ByGroupAttData<'a>>> {
-    items: I,
+struct ReadByGroupRsp<
+    F: FnMut(&mut FnMut(ByGroupAttData) -> Result<(), Error>) -> Result<(), Error>,
+> {
+    item_fn: F,
 }
 
-impl<'a, I: Iterator<Item = ByGroupAttData<'a>>> ReadByGroupRsp<'a, I> {
-    fn encode(self, writer: &mut ByteWriter) -> Result<(), Error> {
+impl<'a, F: FnMut(&mut FnMut(ByGroupAttData) -> Result<(), Error>) -> Result<(), Error>>
+    ReadByGroupRsp<F>
+{
+    fn encode(mut self, writer: &mut ByteWriter) -> Result<(), Error> {
         // This is pretty complicated to encode: The length depends on the attributes we fetch from
         // the iterator, and has to be written last, but is located at the start.
         // All the attributes we encode must have the same length. If they don't, we simply stop
@@ -166,21 +170,22 @@ impl<'a, I: Iterator<Item = ByGroupAttData<'a>>> ReadByGroupRsp<'a, I> {
         // Encode attribute data until we run out of space or the encoded size differs from the
         // first entry. This might write partial data, but we set the preceding length correctly, so
         // it shouldn't matter.
-        for att in self.items {
+        (self.item_fn)(&mut |att: ByGroupAttData| {
             trace!("read by group rsp: {:?}", att);
-            if let Err(_) = att.to_bytes(writer) {
-                break;
-            }
+            att.to_bytes(writer)?;
 
             let used = left - writer.space_left();
             if let Some(expected_size) = size {
                 if used != expected_size {
-                    break;
+                    return Err(Error::InvalidLength);
                 }
             } else {
                 size = Some(used);
             }
-        }
+
+            Ok(())
+        })
+        .ok();
 
         let size = size.expect("empty response");
         assert!(size <= usize::from(u8::max_value()));
@@ -430,13 +435,40 @@ impl Default for AttPermission {
 }
 
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
-///
-/// TODO: This trait needs to be restructured completely, since it's not always possible to put all
-/// attributes in a slice. Right now this trait is also kind of useless since you could just give
-/// the `&[Attribute]` to the server directly. Rename it to `AttributeProvider` and add methods for
-/// inspecting grouped attributes.
-pub trait Attributes {
-    fn attributes(&mut self) -> &[Attribute];
+pub trait AttributeProvider {
+    /// Calls a closure `f` with every attribute stored in `self`.
+    ///
+    /// All attributes will have ascending, consecutive handle values starting at `0x0001`.
+    fn for_each_attr(
+        &mut self,
+        f: &mut dyn FnMut(&mut Attribute) -> Result<(), Error>,
+    ) -> Result<(), Error>;
+
+    /// Returns whether the `filter` closure matches any attribute in `self`.
+    fn any(&mut self, filter: &mut dyn FnMut(&mut Attribute) -> bool) -> bool {
+        match self.for_each_attr(&mut |att| {
+            if filter(att) {
+                Err(Error::Eof)
+            } else {
+                Ok(())
+            }
+        }) {
+            Err(Error::Eof) => true,
+            _ => false,
+        }
+    }
+
+    /// Returns whether `uuid` is a valid grouping attribute that can be used in *Read By Group
+    /// Type* requests.
+    fn is_grouping_attr(&self, uuid: AttUuid) -> bool;
+
+    /// Queries the last attribute that is part of the attribute group denoted by the grouping
+    /// attribute at `handle`.
+    ///
+    /// If `handle` does not refer to a grouping attribute, returns `None`.
+    ///
+    /// TODO: Human-readable docs that explain what grouping is
+    fn group_end(&self, handle: AttHandle) -> Option<&Attribute>;
 }
 
 /// An empty attribute set.
@@ -444,25 +476,36 @@ pub trait Attributes {
 /// FIXME: Is this even legal according to the spec?
 pub struct NoAttributes;
 
-impl Attributes for NoAttributes {
-    fn attributes(&mut self) -> &[Attribute] {
-        &[]
+impl AttributeProvider for NoAttributes {
+    fn for_each_attr(
+        &mut self,
+        _: &mut dyn FnMut(&mut Attribute) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn is_grouping_attr(&self, _uuid: AttUuid) -> bool {
+        false
+    }
+
+    fn group_end(&self, _handle: AttHandle) -> Option<&Attribute> {
+        None
     }
 }
 
 /// An Attribute Protocol server providing read and write access to stored attributes.
-pub struct AttributeServer<A: Attributes> {
+pub struct AttributeServer<A: AttributeProvider> {
     attrs: A,
 }
 
-impl<A: Attributes> AttributeServer<A> {
+impl<A: AttributeProvider> AttributeServer<A> {
     /// Creates an AttributeServer with Attributes
     pub fn new(attrs: A) -> Self {
         Self { attrs }
     }
 }
 
-impl<A: Attributes> AttributeServer<A> {
+impl<A: AttributeProvider> AttributeServer<A> {
     /// Process an incoming request (or command) PDU and return a response.
     ///
     /// This may return an `AttError`, which the caller will then send as a response. In the success
@@ -498,35 +541,45 @@ impl<A: Attributes> AttributeServer<A> {
                 let range = handle_range.check()?;
 
                 // TODO: Ask GATT whether `group_type` is a grouping attribute, reject if not
-
-                let requested_attrs = self
-                    .attrs
-                    .attributes()
-                    .iter()
-                    .filter(|att| att.att_type == group_type && range.contains(att.handle))
-                    .map(|att| {
-                        ByGroupAttData {
-                            handle: att.handle,
-                            end_group_handle: att.handle, // TODO: Ask GATT where the group ends
-                            value: att.value,
-                        }
+                if !self.attrs.is_grouping_attr(group_type) {
+                    return Err(AttError {
+                        code: ErrorCode::UnsupportedGroupType,
+                        handle: range.start(),
                     });
+                }
+
+                let mut filter =
+                    |att: &mut Attribute| att.att_type == group_type && range.contains(att.handle);
 
                 let result = responder.respond_with(|writer| {
                     // If no attributes match request, return `AttributeNotFound` error, else send
                     // `ReadByGroupResponse` with at least one entry
-                    if requested_attrs.clone().next().is_none() {
+                    if self.attrs.any(&mut filter) {
+                        ReadByGroupRsp {
+                            item_fn: |cb: &mut FnMut(ByGroupAttData) -> Result<(), Error>| {
+                                // Build the `ByGroupAttData`s for all matching attributes and call
+                                // `cb` with them.
+                                self.attrs.for_each_attr(&mut |att: &mut Attribute| {
+                                    if att.att_type == group_type && range.contains(att.handle) {
+                                        cb(ByGroupAttData {
+                                            handle: att.handle,
+                                            end_group_handle: att.handle, // TODO: Ask GATT where the group ends
+                                            value: att.value,
+                                        })?;
+                                    }
+
+                                    Ok(())
+                                })
+                            },
+                        }
+                        .encode(writer)?;
+                        Ok(())
+                    } else {
                         Err(AttError {
                             code: ErrorCode::AttributeNotFound,
                             handle: AttHandle::NULL,
                         }
                         .into())
-                    } else {
-                        ReadByGroupRsp {
-                            items: requested_attrs,
-                        }
-                        .encode(writer)?;
-                        Ok(())
                     }
                 });
 
@@ -566,7 +619,7 @@ impl<A: Attributes> AttributeServer<A> {
     }
 }
 
-impl<A: Attributes> ProtocolObj for AttributeServer<A> {
+impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
     fn process_message(
         &mut self,
         message: &[u8],
@@ -591,7 +644,7 @@ impl<A: Attributes> ProtocolObj for AttributeServer<A> {
     }
 }
 
-impl<A: Attributes> Protocol for AttributeServer<A> {
+impl<A: AttributeProvider> Protocol for AttributeServer<A> {
     // FIXME: Would it be useful to have this as a runtime parameter instead?
     const RSP_PDU_SIZE: u8 = 23;
 }

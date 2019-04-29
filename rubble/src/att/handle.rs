@@ -12,7 +12,7 @@ use {
 /// A 16-bit handle uniquely identifying an attribute on an ATT server.
 ///
 /// The `0x0000` handle (`NULL`) is invalid and must not be used.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct AttHandle(u16);
 
 impl AttHandle {
@@ -91,5 +91,9 @@ impl HandleRange {
     /// Checks if an AttHandle is in a HandleRange
     pub fn contains(&self, handle: AttHandle) -> bool {
         self.0.start().0 <= handle.as_u16() && self.0.end().0 >= handle.as_u16()
+    }
+
+    pub fn start(&self) -> AttHandle {
+        *self.0.start()
     }
 }

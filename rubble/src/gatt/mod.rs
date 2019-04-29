@@ -4,9 +4,10 @@
 //! interaction
 
 use crate::{
-    att::{AttHandle, AttPermission, AttUuid, Attribute, Attributes},
+    att::{AttHandle, AttPermission, AttUuid, Attribute, AttributeProvider},
     utils::HexSlice,
     uuid::Uuid16,
+    Error,
 };
 
 /// A collection of data and associated behaviors to accomplish a particular function or feature
@@ -39,6 +40,8 @@ impl<'a> Service<'a> {
 pub struct Characteristic {}
 
 /// A GATT server to run on top of an ATT server
+///
+/// TODO: This is all temporary and need to offer a better interface for defining services
 pub struct GattServer<'a> {
     _services: &'a [Service<'a>],
     attributes: [Attribute<'a>; 1],
@@ -58,8 +61,28 @@ impl<'a> GattServer<'a> {
     }
 }
 
-impl<'a> Attributes for GattServer<'a> {
-    fn attributes(&mut self) -> &[Attribute] {
-        &self.attributes
+impl<'a> AttributeProvider for GattServer<'a> {
+    fn for_each_attr(
+        &mut self,
+        f: &mut dyn FnMut(&mut Attribute) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        for att in &mut self.attributes {
+            f(att)?;
+        }
+        Ok(())
+    }
+
+    fn is_grouping_attr(&self, uuid: AttUuid) -> bool {
+        uuid == Uuid16(0x2800)
+    }
+
+    fn group_end(&self, handle: AttHandle) -> Option<&Attribute> {
+        for att in &self.attributes {
+            if att.handle == handle && att.att_type == Uuid16(0x2800) {
+                return Some(att);
+            }
+        }
+
+        None
     }
 }
