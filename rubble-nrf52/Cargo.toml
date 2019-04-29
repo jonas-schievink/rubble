@@ -7,11 +7,11 @@ repository = "https://github.com/jonas-schievink/rubble/"
 readme = "../README.md"
 license = "0BSD"
 name = "rubble-nrf52"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2018"
 
 [dependencies]
-rubble = { path = "../rubble", version = "0.0.2", default-features = false }
+rubble = { path = "../rubble", version = "0.0.3", default-features = false }
 nrf52810-hal = { version = "0.8.1", optional = true }
 nrf52832-hal = { version = "0.8.1", optional = true }
 nrf52840-hal = { version = "0.8.1", optional = true }
