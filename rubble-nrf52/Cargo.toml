@@ -4,7 +4,6 @@ description = "Rubble driver for the nRF52-series radios"
 categories = ["embedded", "no-std"]
 keywords = ["ble", "nrf", "bluetooth", "low", "energy"]
 repository = "https://github.com/jonas-schievink/rubble/"
-readme = "../README.md"
 license = "0BSD"
 name = "rubble-nrf52"
 version = "0.0.3"
