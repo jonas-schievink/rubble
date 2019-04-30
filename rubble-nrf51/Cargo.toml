@@ -1,0 +1,14 @@
+[package]
+authors = ["Ferdia McKeogh <ferdia@mckeogh.tech>"]
+description = "Rubble driver for the nRF51-series radios"
+categories = ["embedded", "no-std"]
+keywords = ["ble", "nrf", "bluetooth", "low", "energy"]
+repository = "https://github.com/jonas-schievink/rubble/"
+license = "0BSD"
+name = "rubble-nrf51"
+version = "0.0.1"
+edition = "2018"
+
+[dependencies]
+rubble = { path = "../rubble", version = "0.0.3", default-features = false }
+nrf51-hal = "0.6.2"
