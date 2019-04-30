@@ -310,8 +310,7 @@ impl<'a> Pdu<'a> {
 
     /// Returns an iterator over all AD structures encoded in the PDU.
     ///
-    /// If this PDU doesn't support attaching AD structures, this will return
-    /// `None`.
+    /// If this PDU doesn't support attaching AD structures, this will return `None`.
     pub fn advertising_data(&self) -> Option<impl Iterator<Item = AdStructure<'a>>> {
         use self::Pdu::*;
 
@@ -331,8 +330,7 @@ impl<'a> Pdu<'a> {
     }
 }
 
-/// Decodes an advertising channel PDU (consisting of header and payload) from
-/// raw bytes.
+/// Decodes an advertising channel PDU (consisting of header and payload) from raw bytes.
 impl<'a> FromBytes<'a> for Pdu<'a> {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let header = Header::from_bytes(bytes)?;
@@ -340,8 +338,7 @@ impl<'a> FromBytes<'a> for Pdu<'a> {
     }
 }
 
-/// Connection parameters sent along with a `ConnectRequest` PDU (also known as
-/// `LLData`).
+/// Connection parameters sent along with a `ConnectRequest` PDU (also known as `LLData`).
 #[derive(Copy, Clone, Debug)]
 pub struct ConnectRequestData {
     access_address: Hex<u32>,
