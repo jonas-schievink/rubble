@@ -2,7 +2,7 @@
 authors = ["Jonas Schievink <jonasschievink@gmail.com>"]
 description = "An embedded BLE stack"
 categories = ["embedded", "no-std"]
-keywords = ["arm", "cortex-m", "bluetooth", "low", "energy"]
+keywords = ["arm", "ble", "bluetooth", "low", "energy"]
 repository = "https://github.com/jonas-schievink/rubble/"
 readme = "../README.md"
 license = "0BSD"
