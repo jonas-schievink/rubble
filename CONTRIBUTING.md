@@ -84,7 +84,7 @@ includes:
   you set up your IDE to automatically run `rustfmt` on save for working on
   Rubble.
 * Maximum line length is 100 columns. Documentation should also wrap after 100
-  columns to save vertical space.
+  columns (not 80) to save vertical space.
 * All `use` imports should be grouped into a single one (instead of adding a
   `use` per imported crate or module).
 
@@ -96,7 +96,7 @@ without allocations, but still needs to deal with variable-length data while
 also offering more type-safety than a plain `&[u8]` makes this difficult.
 
 Our current solution for these problems is `bytes.rs`. Check out its
-[API docs][hosted API docs] to learn more about it.
+[API docs][bytes.rs] to learn more about it.
 
 [bt-specs]: https://www.bluetooth.com/specifications/archived-specifications
-[hosted API docs]: https://jonas-schievink.github.io/rubble/
+[bytes.rs]: https://jonas-schievink.github.io/rubble/rubble/bytes

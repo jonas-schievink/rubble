@@ -4,12 +4,16 @@
 [![docs.rs](https://docs.rs/rubble/badge.svg)](https://docs.rs/rubble/)
 [![Build Status](https://travis-ci.org/jonas-schievink/rubble.svg?branch=master)](https://travis-ci.org/jonas-schievink/rubble)
 
-This is a work in progress Bluetooth® Low Energy compatible, zero-allocation
-protocol stack for embedded Rust.
+Rubble is a Bluetooth® Low Energy compatible protocol stack for embedded Rust.
+
+Currently, Rubble supports Nordic's nRF52-series of MCUs. However, it was
+designed to be hardware-independent, so support crates for other MCU families
+are always welcome.
 
 [API documentation (master)](https://jonas-schievink.github.io/rubble/)
 
-**NOTE: None of this has passed the Bluetooth® Qualification Process, so it cannot be used in commercial products!**
+**NOTE: None of this has passed the Bluetooth® Qualification Process, so it
+must not be used in commercial products!**
 
 ## Contributing
 
