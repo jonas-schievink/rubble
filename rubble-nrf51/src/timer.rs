@@ -1,8 +1,8 @@
-//! Generic `Timer` implementation that works with all 3 timers on the chip.
+//! Generic `Timer` implementation that works with TIMER0 on the chip.
 
 use {
     core::mem,
-    nrf51_hal::nrf51::{TIMER0, TIMER1, TIMER2},
+    nrf51_hal::nrf51::{TIMER0},
     rubble::{
         link::NextUpdate,
         time::{Instant, Timer},
@@ -174,5 +174,3 @@ macro_rules! impl_timer {
 }
 
 impl_timer!(TIMER0);
-impl_timer!(TIMER1);
-impl_timer!(TIMER2);

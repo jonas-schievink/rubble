@@ -20,7 +20,7 @@ cortex-m-rt = "0.6.8"
 nrf52810-hal = { version = "0.8.1", features = ["rt"] }
 byteorder = { version = "1.3.1", default-features = false }
 panic-semihosting = "0.5.2"
-bbqueue = "0.3.2"
+bbqueue = { git = "https://github.com/chocol4te/bbqueue" }
 
 [dependencies.log]
 version = "0.4.6"

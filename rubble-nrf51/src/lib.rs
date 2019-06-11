@@ -1,4 +1,4 @@
-//! A Rubble BLE driver for the nRF52-series radios.
+//! A Rubble BLE driver for the nRF51-series radios.
 
 #![no_std]
 

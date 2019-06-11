@@ -14,7 +14,7 @@ edition = "2018"
 byteorder = { version = "1.3.1", default-features = false }
 bitflags = "1.0.4"
 uuid = { version = "0.7.4", default-features = false }
-bbqueue = { git = "https://github.com/chocol4te/bbqueue", features = ["cortex-m"] }
+bbqueue = { git = "https://github.com/chocol4te/bbqueue" }
 
 # If the `log` feature is enabled, the `log` crate's macros will be called at various points to dump
 # packets, state, and events. By default, it is disabled.
@@ -23,4 +23,4 @@ git = "https://github.com/rust-lang-nursery/log"
 optional = true
 
 [features]
-cortex-m = ["bbqueue/cortex-m"]
+thumbv6 = ["bbqueue/cortex-m"]
