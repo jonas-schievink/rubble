@@ -1,4 +1,4 @@
-//! Generic `Timer` implementation that works with TIMER0 on the chip.
+//! Generic `Timer` implementation that works with `TIMER0` on the chip.
 
 use {
     core::mem,
