@@ -2,7 +2,7 @@
 
 use {
     core::mem,
-    nrf51_hal::nrf51::{TIMER0},
+    nrf51_hal::nrf51::TIMER0,
     rubble::{
         link::NextUpdate,
         time::{Instant, Timer},
