@@ -9,7 +9,7 @@ use {
     },
 };
 
-/// Implements Rubble's `Timer` trait for the timers on the nRF chip.
+/// Implements Rubble's `Timer` trait for `TIMER0` on the nRF51 chips.
 pub struct BleTimer<T: NrfTimerExt> {
     inner: T,
     next: Instant,
