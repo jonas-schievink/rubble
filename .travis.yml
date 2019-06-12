@@ -1,5 +1,5 @@
 language: rust
-rust: beta
+rust: stable
 env:
   global:
     - TARGET_BUILD=thumbv7em-none-eabi
