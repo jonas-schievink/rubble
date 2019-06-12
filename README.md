@@ -6,7 +6,7 @@
 
 Rubble is a Bluetooth® Low Energy compatible protocol stack for embedded Rust.
 
-Currently, Rubble supports Nordic's nRF52-series of MCUs. However, it was
+Currently, Rubble supports Nordic's nRF52 and nRF51 series of MCUs. However, it was
 designed to be hardware-independent, so support crates for other MCU families
 are always welcome.
 
