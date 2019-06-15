@@ -43,7 +43,7 @@
 
 use {
     core::cmp,
-    nrf51_hal::nrf51::{radio::state::STATER, RADIO},
+    nrf51_hal::nrf51::{radio::state::STATER, FICR, RADIO},
     rubble::{
         link::{
             advertising, data, HardwareInterface, LinkLayer, NextUpdate, RadioCmd, Transmitter,
@@ -76,10 +76,34 @@ impl BleRadio {
     // TODO: Use type-safe clock configuration to ensure that chip uses ext. crystal
     pub fn new(
         radio: RADIO,
+        ficr: &FICR,
         tx_buf: &'static mut PacketBuffer,
         rx_buf: &'static mut PacketBuffer,
     ) -> Self {
         assert!(radio.state.read().state().is_disabled());
+
+        if ficr.overrideen.read().ble_1mbit().is_override_() {
+            unsafe {
+                radio
+                    .override0
+                    .write(|w| w.override0().bits(ficr.ble_1mbit[0].read().bits()));
+                radio
+                    .override1
+                    .write(|w| w.override1().bits(ficr.ble_1mbit[1].read().bits()));
+                radio
+                    .override2
+                    .write(|w| w.override2().bits(ficr.ble_1mbit[2].read().bits()));
+                radio
+                    .override3
+                    .write(|w| w.override3().bits(ficr.ble_1mbit[3].read().bits()));
+                radio.override4.write(|w| {
+                    w.override4()
+                        .bits(ficr.ble_1mbit[4].read().bits())
+                        .enable()
+                        .set_bit()
+                });
+            }
+        }
 
         radio.mode.write(|w| w.mode().ble_1mbit());
         radio.txpower.write(|w| w.txpower().pos4d_bm());
@@ -100,18 +124,10 @@ impl BleRadio {
                     .set_bit()
             });
 
-            #[cfg(not(feature = "52840"))]
             radio.crccnf.write(|w| {
                 // skip address since only the S0, Length, S1 and Payload need CRC
                 // 3 Bytes = CRC24
                 w.skipaddr().set_bit().len().three()
-            });
-
-            #[cfg(feature = "52840")]
-            radio.crccnf.write(|w| {
-                // skip address since only the S0, Length, S1 and Payload need CRC
-                // 3 Bytes = CRC24
-                w.skipaddr().bits(1).len().three()
             });
 
             radio

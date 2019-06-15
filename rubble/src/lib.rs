@@ -22,6 +22,8 @@
 // We're `#[no_std]`, except when we're testing
 #![cfg_attr(not(test), no_std)]
 
+pub extern crate log as extern_log;
+
 #[macro_use]
 mod log;
 #[macro_use]
