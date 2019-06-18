@@ -36,3 +36,4 @@ default = ["rubble/log", "log"]
 [[bin]]
 name = "rubble-demo"
 doc = false
+test = false
