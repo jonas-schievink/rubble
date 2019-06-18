@@ -17,11 +17,7 @@ stages:
 jobs:
   include:
     - stage: test
-      script:
-        - cargo fmt --all -- --check
-        - cargo check --target $TARGET_BUILD
-        - cd rubble-nrf52 && cargo check --features="52810" && cargo check --features="52832" && cargo check --features="52840" && cd ..
-        - cd rubble-demo && cargo check --target $TARGET_BUILD --no-default-features
+      script: ci/test.sh
     - stage: deploy
       script:
         - cargo doc --no-deps
