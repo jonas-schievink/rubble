@@ -119,6 +119,7 @@
 
 pub mod ad_structure;
 pub mod advertising;
+mod channel_map;
 mod comp_id;
 mod connection;
 pub mod data;

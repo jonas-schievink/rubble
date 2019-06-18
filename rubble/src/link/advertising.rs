@@ -8,13 +8,13 @@
 //! do employ a range of sanity checks that prevent bogus packets from being sent by the stack.
 
 use {
-    super::{
-        ad_structure::{AdStructure, Flags},
-        AddressKind, DeviceAddress,
-    },
     crate::{
+        link::{
+            ad_structure::{AdStructure, Flags},
+            AddressKind, DeviceAddress,
+            channel_map::ChannelMap,
+        },
         bytes::*,
-        phy::ChannelMap,
         time::Duration,
         utils::{Hex, HexSlice},
         Error,
