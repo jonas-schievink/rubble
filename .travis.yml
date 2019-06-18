@@ -20,7 +20,7 @@ jobs:
       script: ci/test.sh
     - stage: deploy
       script:
-        - cargo doc --no-deps
+        - cargo doc --no-deps --target=$TARGET_BUILD
         - echo "<meta http-equiv=refresh content=0;url=rubble/index.html>" > target/$TARGET_BUILD/doc/index.html
         - sudo pip install ghp-import
         - ghp-import -n target/$TARGET_BUILD/doc
