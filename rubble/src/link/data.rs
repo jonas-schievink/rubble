@@ -3,7 +3,7 @@
 use {
     crate::{
         bytes::*,
-        link::{comp_id::CompanyId, FeatureSet, SeqNum, channel_map::ChannelMap},
+        link::{channel_map::ChannelMap, comp_id::CompanyId, FeatureSet, SeqNum},
         time::Duration,
         utils::Hex,
         Error,

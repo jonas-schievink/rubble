@@ -9,12 +9,12 @@
 
 use {
     crate::{
+        bytes::*,
         link::{
             ad_structure::{AdStructure, Flags},
-            AddressKind, DeviceAddress,
             channel_map::ChannelMap,
+            AddressKind, DeviceAddress,
         },
-        bytes::*,
         time::Duration,
         utils::{Hex, HexSlice},
         Error,
