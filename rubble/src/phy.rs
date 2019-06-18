@@ -83,11 +83,11 @@ impl AdvertisingChannel {
 /// One of 37 data channels on which data channel PDUs are sent between connected devices.
 ///
 /// (channel indices 0..=36)
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct DataChannel(u8);
 
 impl DataChannel {
-    /// Creates a `DataChannelIndex` from a raw index.
+    /// Creates a `DataChannel` from a raw index.
     ///
     /// # Panics
     ///

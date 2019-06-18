@@ -99,3 +99,39 @@ impl fmt::Debug for ChannelMap {
         write!(f, "{} ({:?})", self, self.raw)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn single_channel() {
+        // Channel map where only channel 0 is used.
+        // Not valid, since only 1 channel in the map. Still useful for testing.
+        let map = ChannelMap::from_raw([0x01, 0, 0, 0, 0]);
+        assert_eq!(map.num_used_channels(), 1);
+        assert!(map.is_used(DataChannel::new(0)));
+        assert!(!map.is_used(DataChannel::new(1)));
+        assert!(!map.is_used(DataChannel::new(2)));
+        assert!(!map.is_used(DataChannel::new(7)));
+        assert!(!map.is_used(DataChannel::new(8)));
+        assert!(!map.is_used(DataChannel::new(36)));
+        assert_eq!(map.by_index(0), DataChannel::new(0));
+        assert!(map.iter_used().eq(vec![DataChannel::new(0)]));
+    }
+
+    #[test]
+    fn from_raw() {
+        let map = ChannelMap::from_raw([0xff; 5]);
+        assert_eq!(map.num_used_channels(), 37);
+        assert_eq!(map, ChannelMap::with_all_channels());
+    }
+
+    #[test]
+    fn all_channels() {
+        let map = ChannelMap::with_all_channels();
+        for ch in 0..=36 {
+            assert!(map.is_used(DataChannel::new(ch)));
+        }
+    }
+}

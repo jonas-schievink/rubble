@@ -19,7 +19,8 @@
 //! [`Timer`]: time/trait.Timer.html
 //! [`Transmitter`]: link/trait.Transmitter.html
 
-#![no_std]
+// We're `#[no_std]`, except when we're testing
+#![cfg_attr(not(test), no_std)]
 
 #[macro_use]
 mod log;
