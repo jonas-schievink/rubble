@@ -1,12 +1,5 @@
 pub(crate) mod link {
-    use core::fmt::Write;
-
-    pub(crate) fn process_data_packet() {
-        fn get() -> crate::ble::Duration {
-            unimplemented!()
-        }
-        let _ = write!(crate::Logger, "{}", get());
-    }
+    pub(crate) fn process_data_packet() {}
 }
 
 use core::fmt::{self, Debug, Display};
