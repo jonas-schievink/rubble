@@ -514,10 +514,23 @@ enum LlcpError {
     ConnectionLost,
 }
 
+/// A Link-Layer state update that may be applied with a delay.
 #[derive(Debug, Copy, Clone)]
 enum LlcpUpdate {
+    /// Update connection parameters and await the configured transmit window.
+    ///
+    /// This effectively reset the connection to the state just after the connection request was
+    /// received.
     ConnUpdate(ConnectionUpdateData),
-    ChannelMap { map: ChannelMap, instant: u16 },
+
+    /// Start using a different `ChannelMap`.
+    ChannelMap {
+        /// The new `ChannelMap` to switch to.
+        map: ChannelMap,
+
+        /// The connection event at which to switch.
+        instant: u16,
+    },
 }
 
 impl LlcpUpdate {
