@@ -15,7 +15,7 @@ cargo test --all
 # Check that the device crates build with all feature combinations.
 # Only use `cargo check` because the PAC crates are very slow to build.
 (
-    echo "Checking `rubble-nrf52`..."
+    echo "Checking rubble-nrf52..."
     cd rubble-nrf52
     cargo check --features="52810"
     cargo check --features="52832"
@@ -25,7 +25,7 @@ cargo test --all
 # Check that the demo app builds with all feature combination.
 # Here we do a proper build to also make sure linking the final binary works.
 (
-    echo "Checking `rubble-demo`..."
+    echo "Checking rubble-demo..."
     cd rubble-demo
     cargo build --target $TARGET_BUILD --no-default-features
     cargo build --target $TARGET_BUILD
