@@ -44,15 +44,59 @@ pub struct Characteristic {}
 /// A GATT server to run on top of an ATT server
 ///
 /// TODO: This is all temporary and need to offer a better interface for defining services
-pub struct GattServer<'a> {
-    _services: &'a [Service<'a>],
+pub struct GattServerSingle<'a> {
+    attributes: [Attribute<'a>; 1],
+}
+
+impl<'a> GattServerSingle<'a> {
+    pub fn new() -> Self {
+        Self {
+            attributes: [Attribute {
+                att_type: AttUuid::Uuid16(Uuid16(0x2800)),
+                handle: AttHandle::from_raw(0x0001),
+                value: HexSlice(&[0xCD, 0xAB]),
+                permission: AttPermission::default(),
+            }],
+        }
+    }
+}
+
+impl<'a> AttributeProvider for GattServerSingle<'a> {
+    fn for_each_attr(
+        &mut self,
+        f: &mut dyn FnMut(&mut Attribute<'_>) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        for att in &mut self.attributes {
+            f(att)?;
+        }
+        Ok(())
+    }
+
+    fn is_grouping_attr(&self, uuid: AttUuid) -> bool {
+        uuid == Uuid16(0x2800)
+    }
+
+    fn group_end(&self, handle: AttHandle) -> Option<&Attribute<'_>> {
+        for att in &self.attributes {
+            if att.handle == handle && att.att_type == Uuid16(0x2800) {
+                return Some(att);
+            }
+        }
+
+        None
+    }
+}
+
+/// A GATT server to run on top of an ATT server
+///
+/// TODO: This is all temporary and need to offer a better interface for defining services
+pub struct GattServerComplex<'a> {
     attributes: [Attribute<'a>; 44],
 }
 
-impl<'a> GattServer<'a> {
+impl<'a> GattServerComplex<'a> {
     pub fn new() -> Self {
         Self {
-            _services: &[],
             attributes: [
                 // http://dev.ti.com/tirex/content/simplelink_cc2640r2_sdk_1_40_00_45/docs/blestack/ble_user_guide/html/ble-stack-3.x/gatt.html#gatt-characteristics-and-attributes
 
@@ -63,7 +107,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(&[0x00, 0x18]),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -77,7 +120,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Rubble Peripheral"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -91,7 +133,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Simple BLE Peripheral"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -105,7 +146,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(&[0x50, 0x00, 0xA0, 0x00, 0x00, 0x00, 0xE8, 0x03]),
                     permission: AttPermission::default(),
                 },
-
                 // Profile declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2800)),
@@ -113,7 +153,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(&[0x01, 0x18]),
                     permission: AttPermission::default(),
                 },
-
                 // Profile declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2800)),
@@ -121,7 +160,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(&[0x0A, 0x18]),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -135,7 +173,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(&[0x88, 0xA9, 0x08, 0x00, 0x00, 0x0B, 0xC9, 0x68]),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -149,7 +186,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Model number"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -163,7 +199,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Serial number"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -177,7 +212,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Firmware revision"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -204,7 +238,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Software revision"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -218,7 +251,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Manufacturer name"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -232,7 +264,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"regulatory_cert"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -246,7 +277,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(&[0x01, 0x0D, 0x00, 0x00, 0x00, 0x10, 0x01]),
                     permission: AttPermission::default(),
                 },
-
                 // Profile declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2800)),
@@ -254,7 +284,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(&[0x5D, 0xFE]),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -274,7 +303,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Characteristic 1"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -294,7 +322,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Characteristic 2"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -314,7 +341,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Characteristic 3"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -340,7 +366,6 @@ impl<'a> GattServer<'a> {
                     value: HexSlice(b"Characteristic 4"),
                     permission: AttPermission::default(),
                 },
-
                 // Characteristic declaration
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
@@ -365,7 +390,7 @@ impl<'a> GattServer<'a> {
     }
 }
 
-impl<'a> AttributeProvider for GattServer<'a> {
+impl<'a> AttributeProvider for GattServerComplex<'a> {
     fn for_each_attr(
         &mut self,
         f: &mut dyn FnMut(&mut Attribute<'_>) -> Result<(), Error>,
