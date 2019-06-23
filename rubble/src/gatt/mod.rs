@@ -66,7 +66,7 @@ impl<'a> GattServer<'a> {
 impl<'a> AttributeProvider for GattServer<'a> {
     fn for_each_attr(
         &mut self,
-        f: &mut dyn FnMut(&mut Attribute) -> Result<(), Error>,
+        f: &mut dyn FnMut(&mut Attribute<'_>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         for att in &mut self.attributes {
             f(att)?;
@@ -78,7 +78,7 @@ impl<'a> AttributeProvider for GattServer<'a> {
         uuid == Uuid16(0x2800)
     }
 
-    fn group_end(&self, handle: AttHandle) -> Option<&Attribute> {
+    fn group_end(&self, handle: AttHandle) -> Option<&Attribute<'_>> {
         for att in &self.attributes {
             if att.handle == handle && att.att_type == Uuid16(0x2800) {
                 return Some(att);

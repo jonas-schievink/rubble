@@ -109,8 +109,8 @@ impl DataChannel {
     /// RF channels 1-11 and 13-38 are used for data transmission.
     pub fn rf_channel(&self) -> u8 {
         match self.0 {
-            ch @ 0...10 => ch + 1,
-            ch @ 11...36 => ch + 2,
+            ch @ 0..=10 => ch + 1,
+            ch @ 11..=36 => ch + 2,
             _ => unreachable!(),
         }
     }

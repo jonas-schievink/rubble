@@ -71,7 +71,7 @@ impl<'a> ToBytes for AdStructure<'a> {
     /// Lowers this AD structure into a Byte buffer.
     ///
     /// Returns the number of Bytes of `buf` that are used by this AD structure.
-    fn to_bytes(&self, buf: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, buf: &mut ByteWriter<'_>) -> Result<(), Error> {
         // First Byte = Length of record. Start encoding at offset 1, write length later.
         let first = match buf.split_next_mut() {
             None => return Err(Error::Eof),
@@ -235,7 +235,7 @@ impl<'a, T: IsUuid> FromBytes<'a> for ServiceUuids<'a, T> {
 }
 
 impl<'a, T: IsUuid> ToBytes for ServiceUuids<'a, T> {
-    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter<'_>) -> Result<(), Error> {
         buffer.write_u8(self.type_())?;
         self.data.to_bytes(buffer)
     }

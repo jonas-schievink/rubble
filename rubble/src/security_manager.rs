@@ -113,6 +113,7 @@ pub trait SecurityLevel {
 }
 
 /// *LE Secure Connections* are not supported and will not be established.
+#[derive(Debug)]
 pub struct NoSecurity;
 impl SecurityLevel for NoSecurity {
     /// 23 Bytes when *LE Secure Connections* are unsupported
@@ -120,6 +121,7 @@ impl SecurityLevel for NoSecurity {
 }
 
 /// Indicates support for *LE Secure Connections*.
+#[derive(Debug)]
 pub struct SecureConnections;
 impl SecurityLevel for SecureConnections {
     /// 65 Bytes when *LE Secure Connections* are supported
@@ -129,6 +131,7 @@ impl SecurityLevel for SecureConnections {
 /// The LE Security Manager.
 ///
 /// Manages pairing and key generation and exchange.
+#[derive(Debug)]
 pub struct SecurityManager<S: SecurityLevel> {
     _security: S,
 }
@@ -142,7 +145,11 @@ impl SecurityManager<NoSecurity> {
 }
 
 impl<S: SecurityLevel> ProtocolObj for SecurityManager<S> {
-    fn process_message(&mut self, message: &[u8], _responder: L2CAPResponder) -> Result<(), Error> {
+    fn process_message(
+        &mut self,
+        message: &[u8],
+        _responder: L2CAPResponder<'_>,
+    ) -> Result<(), Error> {
         let cmd = Command::from_bytes(&mut ByteReader::new(message))?;
         trace!("SMP cmd {:?}, {:?}", cmd, HexSlice(message));
         match cmd {
@@ -312,7 +319,7 @@ impl AuthReq {
 }
 
 impl fmt::Debug for AuthReq {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AuthReq")
             .field("bonding_type", &self.bonding_type())
             .field("mitm", &self.mitm())

@@ -41,7 +41,7 @@ impl DeviceAddress {
 }
 
 impl fmt::Debug for DeviceAddress {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, b) in self.bytes.iter().enumerate() {
             if i != 0 {
                 f.write_str(":")?;

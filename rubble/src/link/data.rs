@@ -170,7 +170,7 @@ impl Header {
 }
 
 impl fmt::Debug for Header {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Header")
             .field("LLID", &self.llid())
             .field("NESN", &self.nesn())
@@ -258,7 +258,7 @@ impl<'a> From<&'a ControlPdu<'a>> for Pdu<'a, &'a [u8]> {
 ///
 /// The PDU header must be constructed using Link-Layer state (and `Pdu::llid`).
 impl<'a, L: ToBytes> ToBytes for Pdu<'a, L> {
-    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter<'_>) -> Result<(), Error> {
         match self {
             Pdu::DataCont { message } | Pdu::DataStart { message } => message.to_bytes(buffer),
             Pdu::Control { data } => data.to_bytes(buffer),
@@ -430,7 +430,7 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
 }
 
 impl<'a> ToBytes for ControlPdu<'a> {
-    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter<'_>) -> Result<(), Error> {
         buffer.write_u8(self.opcode().into())?;
         match self {
             ControlPdu::ConnectionUpdateReq(data) => {

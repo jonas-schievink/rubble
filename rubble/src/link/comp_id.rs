@@ -7,7 +7,7 @@ use core::fmt;
 pub struct CompanyId(u16);
 
 impl fmt::Debug for CompanyId {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "CompanyId(0x{:X})", self.as_u16())
     }
 }

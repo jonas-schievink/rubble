@@ -21,6 +21,9 @@
 
 // We're `#[no_std]`, except when we're testing
 #![cfg_attr(not(test), no_std)]
+// Deny a few warnings in doctests, since rustdoc `allow`s many warnings by default
+#![doc(test(attr(deny(unused_imports, unused_must_use))))]
+#![warn(rust_2018_idioms)]
 
 #[macro_use]
 mod log;

@@ -74,7 +74,7 @@ impl FeatureSet {
 }
 
 impl ToBytes for FeatureSet {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u64_le(self.bits())
     }
 }

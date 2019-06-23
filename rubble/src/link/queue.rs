@@ -47,7 +47,7 @@ impl Producer {
     /// set in the header. The payload size is determined and written to the header automatically.
     pub fn produce_with<E>(
         &mut self,
-        f: impl FnOnce(&mut ByteWriter) -> Result<Llid, E>,
+        f: impl FnOnce(&mut ByteWriter<'_>) -> Result<Llid, E>,
     ) -> Result<(), E>
     where
         E: From<Error>,
@@ -93,7 +93,7 @@ impl Producer {
     ///
     /// Returns `Error::Eof` when the queue does not have enough free space for both header and
     /// payload.
-    pub fn produce_pdu<L: ToBytes>(&mut self, payload: data::Pdu<L>) -> Result<(), Error> {
+    pub fn produce_pdu<L: ToBytes>(&mut self, payload: data::Pdu<'_, L>) -> Result<(), Error> {
         self.produce_with(|w| {
             payload.to_bytes(w)?;
             Ok(payload.llid())
@@ -146,7 +146,7 @@ impl Consumer {
     /// parsing the data fails).
     pub fn consume_pdu_with<R>(
         &mut self,
-        f: impl FnOnce(data::Header, data::Pdu<&[u8]>) -> Consume<R>,
+        f: impl FnOnce(data::Header, data::Pdu<'_, &[u8]>) -> Consume<R>,
     ) -> Result<R, Error> {
         self.consume_raw_with(|header, raw| {
             let pdu = match data::Pdu::parse(header, raw) {
@@ -186,6 +186,7 @@ impl Consumer {
 }
 
 /// Bundles a `T` along with information telling a queue whether to consume a packet.
+#[derive(Debug)]
 pub struct Consume<T> {
     consume: bool,
     result: Result<T, Error>,

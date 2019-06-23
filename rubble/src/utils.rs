@@ -52,7 +52,7 @@ where
     T: AsRef<[u8]>;
 
 impl<T: AsRef<[u8]>> fmt::Debug for HexSlice<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("[")?;
         for (i, byte) in self.0.as_ref().iter().enumerate() {
             if i != 0 {
@@ -71,7 +71,7 @@ where
     T: fmt::LowerHex;
 
 impl<T: fmt::LowerHex> fmt::Debug for Hex<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:#x}", self.0)
     }
 }

@@ -408,7 +408,7 @@ impl<HW: HardwareInterface> Connection<HW> {
     ///   retransmission instead.
     fn process_control_pdu(
         &mut self,
-        pdu: ControlPdu,
+        pdu: ControlPdu<'_>,
         can_respond: bool,
     ) -> Result<Option<ControlPdu<'static>>, LlcpError> {
         let response = match pdu {

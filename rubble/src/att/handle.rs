@@ -32,13 +32,13 @@ impl AttHandle {
 }
 
 impl fmt::Debug for AttHandle {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:#06X}", self.0)
     }
 }
 
 impl FromBytes<'_> for AttHandle {
-    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         Ok(AttHandle(bytes.read_u16_le()?))
     }
 }
@@ -67,7 +67,7 @@ impl RawHandleRange {
 }
 
 impl FromBytes<'_> for RawHandleRange {
-    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         Ok(Self {
             start: AttHandle::from_bytes(bytes)?,
             end: AttHandle::from_bytes(bytes)?,
@@ -76,7 +76,7 @@ impl FromBytes<'_> for RawHandleRange {
 }
 
 impl ToBytes for RawHandleRange {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.start.as_u16())?;
         writer.write_u16_le(self.end.as_u16())?;
         Ok(())

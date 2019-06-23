@@ -13,7 +13,7 @@ pub enum AttUuid {
 }
 
 impl FromBytes<'_> for AttUuid {
-    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         Ok(match bytes.bytes_left() {
             2 => AttUuid::Uuid16(Uuid16::from_bytes(bytes)?),
             16 => AttUuid::Uuid128(<Uuid as FromBytes>::from_bytes(bytes)?),
@@ -23,7 +23,7 @@ impl FromBytes<'_> for AttUuid {
 }
 
 impl ToBytes for AttUuid {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         match self {
             AttUuid::Uuid16(uuid) => uuid.to_bytes(writer),
             AttUuid::Uuid128(uuid) => uuid.to_bytes(writer),
@@ -86,7 +86,7 @@ impl Into<Uuid> for AttUuid {
 }
 
 impl fmt::Debug for AttUuid {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             AttUuid::Uuid16(u) => u.fmt(f),
             AttUuid::Uuid128(u) => u.fmt(f),

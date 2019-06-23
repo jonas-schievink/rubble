@@ -100,7 +100,7 @@ impl SubAssign for Duration {
 }
 
 impl fmt::Display for Duration {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.0 >= 1_000_000 {
             // s
             let (secs, subsec_micros) = (self.whole_secs(), self.subsec_micros());
@@ -125,7 +125,7 @@ impl fmt::Display for Duration {
 }
 
 impl fmt::Debug for Duration {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         <Self as fmt::Display>::fmt(self, f)
     }
 }
@@ -240,7 +240,7 @@ impl SubAssign<Duration> for Instant {
 }
 
 impl fmt::Display for Instant {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.0 >= 1_000_000 {
             // s
             let (secs, subsec_micros) = (self.0 / 1_000_000, self.0 % 1_000_000);
@@ -265,7 +265,7 @@ impl fmt::Display for Instant {
 }
 
 impl fmt::Debug for Instant {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         <Self as fmt::Display>::fmt(self, f)
     }
 }

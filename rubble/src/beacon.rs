@@ -36,7 +36,7 @@ impl Beacon {
     /// # Errors
     ///
     /// If `data` doesn't fit in a single PDU, an error will be returned.
-    pub fn new(addr: DeviceAddress, data: &[AdStructure]) -> Result<Self, Error> {
+    pub fn new(addr: DeviceAddress, data: &[AdStructure<'_>]) -> Result<Self, Error> {
         let pdu = PduBuf::beacon(addr, data)?;
         Ok(Self { pdu })
     }

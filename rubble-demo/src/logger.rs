@@ -101,11 +101,11 @@ impl<W: fmt::Write + Send> WriteLogger<W> {
 
 #[cfg(feature = "log")]
 impl<W: fmt::Write + Send> Log for WriteLogger<W> {
-    fn enabled(&self, _metadata: &Metadata) -> bool {
+    fn enabled(&self, _metadata: &Metadata<'_>) -> bool {
         true
     }
 
-    fn log(&self, record: &Record) {
+    fn log(&self, record: &Record<'_>) {
         if self.enabled(record.metadata()) {
             interrupt::free(|cs| {
                 let mut writer = self.writer.borrow(cs).borrow_mut();

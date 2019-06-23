@@ -268,7 +268,7 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
     pub fn start_advertise(
         &mut self,
         interval: Duration,
-        data: &[AdStructure],
+        data: &[AdStructure<'_>],
         transmitter: &mut HW::Tx,
         tx: Consumer,
         rx: Producer,

@@ -412,7 +412,7 @@ impl ConnectRequestData {
 }
 
 impl FromBytes<'_> for ConnectRequestData {
-    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         let sca;
         Ok(Self {
             access_address: Hex(bytes.read_u32_le()?),
@@ -488,7 +488,7 @@ impl PduBuf {
     fn adv(
         ty: PduType,
         adv: DeviceAddress,
-        adv_data: &mut Iterator<Item = &AdStructure>,
+        adv_data: &mut dyn Iterator<Item = &AdStructure<'_>>,
     ) -> Result<Self, Error> {
         let mut payload = [0; MAX_PAYLOAD_SIZE];
         let mut buf = ByteWriter::new(&mut payload[..]);
@@ -518,7 +518,7 @@ impl PduBuf {
     /// * `adv_data`: Additional advertising data to send.
     pub fn connectable_undirected(
         advertiser_addr: DeviceAddress,
-        advertiser_data: &[AdStructure],
+        advertiser_data: &[AdStructure<'_>],
     ) -> Result<Self, Error> {
         Self::adv(
             PduType::AdvInd,
@@ -554,7 +554,7 @@ impl PduBuf {
     /// building a beacon PDU to improve clarity.
     pub fn nonconnectable_undirected(
         advertiser_addr: DeviceAddress,
-        advertiser_data: &[AdStructure],
+        advertiser_data: &[AdStructure<'_>],
     ) -> Result<Self, Error> {
         Self::adv(
             PduType::AdvNonconnInd,
@@ -568,7 +568,7 @@ impl PduBuf {
     /// Note that scanning is not supported at the moment.
     pub fn scannable_undirected(
         advertiser_addr: DeviceAddress,
-        advertiser_data: &[AdStructure],
+        advertiser_data: &[AdStructure<'_>],
     ) -> Result<Self, Error> {
         Self::adv(
             PduType::AdvScanInd,
@@ -585,7 +585,7 @@ impl PduBuf {
     /// advertising data (this flags is mandatory).
     pub fn beacon(
         advertiser_addr: DeviceAddress,
-        advertiser_data: &[AdStructure],
+        advertiser_data: &[AdStructure<'_>],
     ) -> Result<Self, Error> {
         Self::adv(
             PduType::AdvNonconnInd,
@@ -607,7 +607,7 @@ impl PduBuf {
     /// advertisement must be sent instead.
     pub fn discoverable(
         advertiser_addr: DeviceAddress,
-        advertiser_data: &[AdStructure],
+        advertiser_data: &[AdStructure<'_>],
     ) -> Result<Self, Error> {
         // TODO what's the difference between "general" and "limited" discoverability?
         Self::adv(
@@ -636,7 +636,7 @@ impl PduBuf {
     /// Note that scanning is not yet implemented.
     pub fn scan_response(
         advertiser_addr: DeviceAddress,
-        scan_data: &[AdStructure],
+        scan_data: &[AdStructure<'_>],
     ) -> Result<Self, Error> {
         let mut payload = [0; MAX_PAYLOAD_SIZE];
         let mut buf = ByteWriter::new(&mut payload[..]);
@@ -668,7 +668,7 @@ impl PduBuf {
 }
 
 impl fmt::Debug for PduBuf {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({:?}, {:?})", self.header(), HexSlice(self.payload()))
     }
 }
@@ -776,7 +776,7 @@ impl Header {
 }
 
 impl fmt::Debug for Header {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Header")
             .field("PDU Type", &self.type_())
             .field("TxAdd", &self.tx_add())
@@ -794,7 +794,7 @@ impl<'a> FromBytes<'a> for Header {
 }
 
 impl ToBytes for Header {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.0)
     }
 }

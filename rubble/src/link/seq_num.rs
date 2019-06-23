@@ -19,13 +19,13 @@ impl SeqNum {
 }
 
 impl fmt::Display for SeqNum {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_char(if self.0 { '1' } else { '0' })
     }
 }
 
 impl fmt::Debug for SeqNum {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         <Self as fmt::Display>::fmt(self, f)
     }
 }

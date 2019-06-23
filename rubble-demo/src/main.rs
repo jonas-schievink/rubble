@@ -1,8 +1,9 @@
 #![no_std]
 #![no_main]
+#![warn(rust_2018_idioms)]
 
 // We need to import this crate explicitly so we have a panic handler
-extern crate panic_semihosting;
+use panic_semihosting as _;
 
 mod logger;
 

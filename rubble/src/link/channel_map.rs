@@ -85,7 +85,7 @@ impl ChannelMap {
 }
 
 impl fmt::Display for ChannelMap {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for b in &self.raw[..4] {
             write!(f, "{:08b}", b.reverse_bits_ext())?;
         }
@@ -95,7 +95,7 @@ impl fmt::Display for ChannelMap {
 }
 
 impl fmt::Debug for ChannelMap {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} ({:?})", self, self.raw)
     }
 }

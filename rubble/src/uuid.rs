@@ -61,56 +61,58 @@ impl Into<Uuid> for Uuid32 {
 }
 
 impl ToBytes for Uuid16 {
-    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter<'_>) -> Result<(), Error> {
         buffer.write_slice(&self.0.to_le_bytes())
     }
 }
 
 impl ToBytes for Uuid32 {
-    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter<'_>) -> Result<(), Error> {
         buffer.write_slice(&self.0.to_le_bytes())
     }
 }
 
 impl ToBytes for Uuid {
-    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter<'_>) -> Result<(), Error> {
         buffer.write_slice(self.as_bytes())
     }
 }
 
 impl FromBytes<'_> for Uuid16 {
-    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         let array = bytes.read_array()?;
         Ok(Uuid16(u16::from_le_bytes(array)))
     }
 }
 
 impl FromBytes<'_> for Uuid32 {
-    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         let array = bytes.read_array()?;
         Ok(Uuid32(u32::from_le_bytes(array)))
     }
 }
 
 impl FromBytes<'_> for Uuid {
-    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         let array = bytes.read_array()?;
         Ok(Uuid::from_bytes(array))
     }
 }
 
 impl fmt::Debug for Uuid16 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Uuid16({:04x})", self.0)
     }
 }
 
 impl fmt::Debug for Uuid32 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Uuid32({:08x})", self.0)
     }
 }
 
+/// List of the supported UUID types.
+#[derive(Debug, Copy, Clone)]
 pub enum UuidKind {
     Uuid16,
     Uuid32,

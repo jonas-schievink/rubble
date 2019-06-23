@@ -101,19 +101,19 @@ impl Channel {
 }
 
 impl fmt::Debug for Channel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:#06X}", self.0)
     }
 }
 
 impl FromBytes<'_> for Channel {
-    fn from_bytes(bytes: &mut ByteReader) -> Result<Self, Error> {
+    fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         Ok(Channel(bytes.read_u16_le()?))
     }
 }
 
 impl ToBytes for Channel {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.0)
     }
 }
@@ -121,7 +121,7 @@ impl ToBytes for Channel {
 /// Trait for L2CAP channel mappers that provide access to the protocol or service behind a CID.
 pub trait ChannelMapper {
     /// Look up what's connected to `channel` (eg. the `Protocol` to which to forward).
-    fn lookup(&mut self, channel: Channel) -> Option<ChannelData>;
+    fn lookup(&mut self, channel: Channel) -> Option<ChannelData<'_>>;
 }
 
 /// Data associated with a connected L2CAP channel.
@@ -133,7 +133,7 @@ pub struct ChannelData<'a> {
     response_channel: Channel,
 
     /// The protocol listening on this channel.
-    protocol: &'a mut ProtocolObj,
+    protocol: &'a mut dyn ProtocolObj,
 
     rsp_pdu: u8,
 }
@@ -170,7 +170,7 @@ impl<'a> ChannelData<'a> {
     }
 
     /// Returns the protocol connected to the channel.
-    pub fn protocol(&mut self) -> &mut ProtocolObj {
+    pub fn protocol(&mut self) -> &mut dyn ProtocolObj {
         self.protocol
     }
 }
@@ -212,7 +212,7 @@ impl<A: AttributeProvider> BleChannelMap<A, NoSecurity> {
 }
 
 impl<A: AttributeProvider, S: SecurityLevel> ChannelMapper for BleChannelMap<A, S> {
-    fn lookup(&mut self, channel: Channel) -> Option<ChannelData> {
+    fn lookup(&mut self, channel: Channel) -> Option<ChannelData<'_>> {
         match channel {
             Channel::ATT => Some(ChannelData::new(Channel::ATT, &mut self.att)),
             Channel::LE_SECURITY_MANAGER => {
@@ -239,7 +239,11 @@ pub trait ProtocolObj {
     /// recovered from and that can not be reported back to the connected device using the protocol.
     /// This means that only things like unrecoverable protocol parsing errors should return an
     /// error here.
-    fn process_message(&mut self, message: &[u8], responder: L2CAPResponder) -> Result<(), Error>;
+    fn process_message(
+        &mut self,
+        message: &[u8],
+        responder: L2CAPResponder<'_>,
+    ) -> Result<(), Error>;
 }
 
 /// Trait for protocols that sit on top of L2CAP (non-object-safe part).
@@ -276,7 +280,7 @@ impl<'a> FromBytes<'a> for Header {
 }
 
 impl ToBytes for Header {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.length)?;
         writer.write_u16_le(self.channel.as_raw())?;
         Ok(())
@@ -305,7 +309,7 @@ impl<'a, P: FromBytes<'a>> FromBytes<'a> for Message<P> {
 }
 
 impl<P: ToBytes> ToBytes for Message<P> {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         self.header.to_bytes(writer)?;
         self.payload.to_bytes(writer)?;
         Ok(())
@@ -313,6 +317,7 @@ impl<P: ToBytes> ToBytes for Message<P> {
 }
 
 /// L2CAP channel manager and responder.
+#[derive(Debug)]
 pub struct L2CAPState<M: ChannelMapper> {
     mapper: M,
 }
@@ -400,7 +405,7 @@ impl<'a> L2CAPResponder<'a> {
     /// available in the `ByteWriter` passed to the closure.
     pub fn respond_with<T, E>(
         &mut self,
-        f: impl FnOnce(&mut ByteWriter) -> Result<T, E>,
+        f: impl FnOnce(&mut ByteWriter<'_>) -> Result<T, E>,
     ) -> Result<T, E>
     where
         E: From<Error>,

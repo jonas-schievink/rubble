@@ -147,15 +147,17 @@ enum AttMsg<'a> {
 
 /// *Read By Group Type* response PDU holding an iterator.
 struct ReadByGroupRsp<
-    F: FnMut(&mut FnMut(ByGroupAttData) -> Result<(), Error>) -> Result<(), Error>,
+    F: FnMut(&mut dyn FnMut(ByGroupAttData<'_>) -> Result<(), Error>) -> Result<(), Error>,
 > {
     item_fn: F,
 }
 
-impl<'a, F: FnMut(&mut FnMut(ByGroupAttData) -> Result<(), Error>) -> Result<(), Error>>
-    ReadByGroupRsp<F>
+impl<
+        'a,
+        F: FnMut(&mut dyn FnMut(ByGroupAttData<'_>) -> Result<(), Error>) -> Result<(), Error>,
+    > ReadByGroupRsp<F>
 {
-    fn encode(mut self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn encode(mut self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         // This is pretty complicated to encode: The length depends on the attributes we fetch from
         // the iterator, and has to be written last, but is located at the start.
         // All the attributes we encode must have the same length. If they don't, we simply stop
@@ -170,7 +172,7 @@ impl<'a, F: FnMut(&mut FnMut(ByGroupAttData) -> Result<(), Error>) -> Result<(),
         // Encode attribute data until we run out of space or the encoded size differs from the
         // first entry. This might write partial data, but we set the preceding length correctly, so
         // it shouldn't matter.
-        (self.item_fn)(&mut |att: ByGroupAttData| {
+        (self.item_fn)(&mut |att: ByGroupAttData<'_>| {
             trace!("read by group rsp: {:?}", att);
             att.to_bytes(writer)?;
 
@@ -252,7 +254,7 @@ impl<'a> FromBytes<'a> for OutgoingPdu<'a> {
 }
 
 impl ToBytes for OutgoingPdu<'_> {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u8(self.0.opcode().into())?;
         match self.0 {
             AttMsg::ErrorRsp {
@@ -345,7 +347,7 @@ impl<'a> FromBytes<'a> for IncomingPdu<'a> {
 }
 
 impl ToBytes for IncomingPdu<'_> {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u8(self.opcode.into())?;
         match self.params {
             AttMsg::ErrorRsp {
@@ -441,11 +443,11 @@ pub trait AttributeProvider {
     /// All attributes will have ascending, consecutive handle values starting at `0x0001`.
     fn for_each_attr(
         &mut self,
-        f: &mut dyn FnMut(&mut Attribute) -> Result<(), Error>,
+        f: &mut dyn FnMut(&mut Attribute<'_>) -> Result<(), Error>,
     ) -> Result<(), Error>;
 
     /// Returns whether the `filter` closure matches any attribute in `self`.
-    fn any(&mut self, filter: &mut dyn FnMut(&mut Attribute) -> bool) -> bool {
+    fn any(&mut self, filter: &mut dyn FnMut(&mut Attribute<'_>) -> bool) -> bool {
         match self.for_each_attr(&mut |att| {
             if filter(att) {
                 Err(Error::Eof)
@@ -468,7 +470,7 @@ pub trait AttributeProvider {
     /// If `handle` does not refer to a grouping attribute, returns `None`.
     ///
     /// TODO: Human-readable docs that explain what grouping is
-    fn group_end(&self, handle: AttHandle) -> Option<&Attribute>;
+    fn group_end(&self, handle: AttHandle) -> Option<&Attribute<'_>>;
 }
 
 /// An empty attribute set.
@@ -479,7 +481,7 @@ pub struct NoAttributes;
 impl AttributeProvider for NoAttributes {
     fn for_each_attr(
         &mut self,
-        _: &mut dyn FnMut(&mut Attribute) -> Result<(), Error>,
+        _: &mut dyn FnMut(&mut Attribute<'_>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         Ok(())
     }
@@ -488,7 +490,7 @@ impl AttributeProvider for NoAttributes {
         false
     }
 
-    fn group_end(&self, _handle: AttHandle) -> Option<&Attribute> {
+    fn group_end(&self, _handle: AttHandle) -> Option<&Attribute<'_>> {
         None
     }
 }
@@ -512,8 +514,8 @@ impl<A: AttributeProvider> AttributeServer<A> {
     /// case, this method will send the response (if any).
     fn process_request<'a>(
         &mut self,
-        pdu: IncomingPdu,
-        responder: &mut L2CAPResponder,
+        pdu: IncomingPdu<'_>,
+        responder: &mut L2CAPResponder<'_>,
     ) -> Result<(), AttError> {
         /// Error returned when an ATT error should be sent back.
         ///
@@ -540,7 +542,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
             } => {
                 let range = handle_range.check()?;
 
-                // TODO: Ask GATT whether `group_type` is a grouping attribute, reject if not
+                // Reject if `group_type` is not a grouping attribute
                 if !self.attrs.is_grouping_attr(group_type) {
                     return Err(AttError {
                         code: ErrorCode::UnsupportedGroupType,
@@ -548,18 +550,23 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     });
                 }
 
-                let mut filter =
-                    |att: &mut Attribute| att.att_type == group_type && range.contains(att.handle);
+                let mut filter = |att: &mut Attribute<'_>| {
+                    att.att_type == group_type && range.contains(att.handle)
+                };
 
                 let result = responder.respond_with(|writer| {
                     // If no attributes match request, return `AttributeNotFound` error, else send
                     // `ReadByGroupResponse` with at least one entry
                     if self.attrs.any(&mut filter) {
                         ReadByGroupRsp {
-                            item_fn: |cb: &mut FnMut(ByGroupAttData) -> Result<(), Error>| {
+                            // FIXME very poor formatting on rustfmt's part here :/
+                            item_fn: |cb: &mut dyn FnMut(
+                                ByGroupAttData<'_>,
+                            )
+                                -> Result<(), Error>| {
                                 // Build the `ByGroupAttData`s for all matching attributes and call
                                 // `cb` with them.
-                                self.attrs.for_each_attr(&mut |att: &mut Attribute| {
+                                self.attrs.for_each_attr(&mut |att: &mut Attribute<'_>| {
                                     if att.att_type == group_type && range.contains(att.handle) {
                                         cb(ByGroupAttData {
                                             handle: att.handle,
@@ -623,7 +630,7 @@ impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
     fn process_message(
         &mut self,
         message: &[u8],
-        mut responder: L2CAPResponder,
+        mut responder: L2CAPResponder<'_>,
     ) -> Result<(), Error> {
         let pdu = IncomingPdu::from_bytes(&mut ByteReader::new(message))?;
         let opcode = pdu.opcode;
@@ -716,7 +723,7 @@ impl<'a> FromBytes<'a> for ByTypeAttData<'a> {
 }
 
 impl<'a> ToBytes for ByTypeAttData<'a> {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.handle.as_u16())?;
         writer.write_slice(self.value.0)?;
         Ok(())
@@ -744,7 +751,7 @@ impl<'a> FromBytes<'a> for ByGroupAttData<'a> {
 
 /// The `ToBytes` impl will truncate the value if it doesn't fit.
 impl<'a> ToBytes for ByGroupAttData<'a> {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.handle.as_u16())?;
         writer.write_u16_le(self.end_group_handle.as_u16())?;
         if writer.space_left() >= self.value.0.len() {

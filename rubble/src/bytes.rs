@@ -90,13 +90,13 @@ impl<'a, T: ?Sized> Copy for BytesOr<'a, T> {}
 impl<'a, T: ?Sized> Copy for Inner<'a, T> {}
 
 impl<'a, T: fmt::Debug + FromBytes<'a> + Copy> fmt::Debug for BytesOr<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.read().fmt(f)
     }
 }
 
 impl<'a, T: fmt::Debug + FromBytes<'a> + Copy> fmt::Debug for BytesOr<'a, [T]> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()
     }
 }
@@ -154,7 +154,7 @@ impl<'a, T: FromBytes<'a>> FromBytes<'a> for BytesOr<'a, [T]> {
 }
 
 impl<'a, T: ToBytes + ?Sized> ToBytes for BytesOr<'a, T> {
-    fn to_bytes(&self, buffer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, buffer: &mut ByteWriter<'_>) -> Result<(), Error> {
         match self.0 {
             Inner::Bytes(b) => buffer.write_slice(b),
             Inner::Or(t) => t.to_bytes(buffer),
@@ -510,7 +510,7 @@ pub trait ToBytes {
     ///
     /// If `writer` does not contain enough space, an error will be returned and the state of the
     /// buffer is unspecified (eg. `self` may be partially written into `writer`).
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error>;
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error>;
 }
 
 /// Trait for decoding values from a byte slice.
@@ -524,7 +524,7 @@ pub trait FromBytes<'a>: Sized {
 }
 
 impl<T: ToBytes> ToBytes for [T] {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         for t in self {
             t.to_bytes(writer)?;
         }
@@ -533,7 +533,7 @@ impl<T: ToBytes> ToBytes for [T] {
 }
 
 impl<'a> ToBytes for &'a [u8] {
-    fn to_bytes(&self, writer: &mut ByteWriter) -> Result<(), Error> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_slice(*self)
     }
 }
