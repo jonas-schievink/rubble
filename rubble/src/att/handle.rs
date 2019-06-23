@@ -43,6 +43,13 @@ impl FromBytes<'_> for AttHandle {
     }
 }
 
+impl ToBytes for AttHandle {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
+        writer.write_u16_le(self.as_u16())?;
+        Ok(())
+    }
+}
+
 /// A (de)serializable handle range that isn't checked for validity.
 #[derive(Debug, Copy, Clone)]
 pub struct RawHandleRange {
