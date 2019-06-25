@@ -384,7 +384,7 @@ impl<'a> AttMsg<'a> {
             }
             AttMsg::FindInformationRsp { format, data } => {
                 writer.write_u8(format)?;
-                writer.write_slice(data.0)?;
+                writer.write_slice(data.as_ref())?;
             }
             AttMsg::FindByTypeReq {
                 handle_range,
@@ -393,12 +393,12 @@ impl<'a> AttMsg<'a> {
             } => {
                 handle_range.to_bytes(writer)?;
                 writer.write_u16_le(attribute_type)?;
-                writer.write_slice(attribute_value.0)?;
+                writer.write_slice(attribute_value.as_ref())?;
             }
             AttMsg::FindByTypeRsp {
                 handles_information_list,
             } => {
-                writer.write_slice(handles_information_list.0)?;
+                writer.write_slice(handles_information_list.as_ref())?;
             }
             AttMsg::ReadByTypeReq {
                 handle_range,
@@ -409,26 +409,26 @@ impl<'a> AttMsg<'a> {
             }
             AttMsg::ReadByTypeRsp { length, data_list } => {
                 writer.write_u8(length)?;
-                writer.write_slice(data_list.0)?;
+                writer.write_slice(data_list.as_ref())?;
             }
             AttMsg::ReadReq { handle } => {
                 handle.to_bytes(writer)?;
             }
             AttMsg::ReadRsp { value } => {
-                writer.write_slice(value.0)?;
+                writer.write_slice(value.as_ref())?;
             }
             AttMsg::ReadBlobReq { handle, offset } => {
                 handle.to_bytes(writer)?;
                 writer.write_u16_le(offset)?;
             }
             AttMsg::ReadBlobRsp { value } => {
-                writer.write_slice(value.0)?;
+                writer.write_slice(value.as_ref())?;
             }
             AttMsg::ReadMultipleReq { handles } => {
-                writer.write_slice(handles.0)?;
+                writer.write_slice(handles.as_ref())?;
             }
             AttMsg::ReadMultipleRsp { values } => {
-                writer.write_slice(values.0)?;
+                writer.write_slice(values.as_ref())?;
             }
             AttMsg::ReadByGroupReq {
                 handle_range,
@@ -439,16 +439,16 @@ impl<'a> AttMsg<'a> {
             }
             AttMsg::ReadByGroupRsp { length, data_list } => {
                 writer.write_u8(length)?;
-                writer.write_slice(data_list.0)?;
+                writer.write_slice(data_list.as_ref())?;
             }
             AttMsg::WriteReq { handle, value } => {
                 handle.to_bytes(writer)?;
-                writer.write_slice(value.0)?;
+                writer.write_slice(value.as_ref())?;
             }
             AttMsg::WriteRsp => {}
             AttMsg::WriteCommand { handle, value } => {
                 handle.to_bytes(writer)?;
-                writer.write_slice(value.0)?;
+                writer.write_slice(value.as_ref())?;
             }
             AttMsg::SignedWriteCommand {
                 handle,
@@ -456,8 +456,8 @@ impl<'a> AttMsg<'a> {
                 signature,
             } => {
                 handle.to_bytes(writer)?;
-                writer.write_slice(value.0)?;
-                writer.write_slice(signature.0)?;
+                writer.write_slice(value.as_ref())?;
+                writer.write_slice(signature.as_ref())?;
             }
             AttMsg::PrepareWriteReq {
                 handle,
@@ -466,7 +466,7 @@ impl<'a> AttMsg<'a> {
             } => {
                 handle.to_bytes(writer)?;
                 writer.write_u16_le(offset)?;
-                writer.write_slice(value.0)?;
+                writer.write_slice(value.as_ref())?;
             }
             AttMsg::PrepareWriteRsp {
                 handle,
@@ -475,7 +475,7 @@ impl<'a> AttMsg<'a> {
             } => {
                 handle.to_bytes(writer)?;
                 writer.write_u16_le(offset)?;
-                writer.write_slice(value.0)?;
+                writer.write_slice(value.as_ref())?;
             }
             AttMsg::ExecuteWriteReq { flags } => {
                 writer.write_u8(flags)?;
@@ -483,15 +483,15 @@ impl<'a> AttMsg<'a> {
             AttMsg::ExecuteWriteRsp => {}
             AttMsg::HandleValueNotification { handle, value } => {
                 handle.to_bytes(writer)?;
-                writer.write_slice(value.0)?;
+                writer.write_slice(value.as_ref())?;
             }
             AttMsg::HandleValueIndication { handle, value } => {
                 handle.to_bytes(writer)?;
-                writer.write_slice(value.0)?;
+                writer.write_slice(value.as_ref())?;
             }
             AttMsg::HandleValueConfirmation => {}
             AttMsg::Unknown { opcode: _, params } => {
-                writer.write_slice(params.0)?;
+                writer.write_slice(params.as_ref())?;
             }
         }
 
@@ -665,7 +665,7 @@ impl ToBytes for IncomingPdu<'_> {
         self.params.to_writer(writer)?;
 
         if let Some(sig) = self.signature {
-            writer.write_slice(sig.0)?;
+            writer.write_slice(sig.as_ref())?;
         }
         Ok(())
     }
@@ -1015,7 +1015,7 @@ impl<'a> FromBytes<'a> for ByTypeAttData<'a> {
 impl<'a> ToBytes for ByTypeAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.handle.as_u16())?;
-        writer.write_slice(self.value.0)?;
+        writer.write_slice(self.value.as_ref())?;
         Ok(())
     }
 }
@@ -1044,11 +1044,11 @@ impl<'a> ToBytes for ByGroupAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.handle.as_u16())?;
         writer.write_u16_le(self.end_group_handle.as_u16())?;
-        if writer.space_left() >= self.value.0.len() {
-            writer.write_slice(self.value.0)?;
+        if writer.space_left() >= self.value.as_ref().len() {
+            writer.write_slice(self.value.as_ref())?;
         } else {
             writer
-                .write_slice(&self.value.0[..writer.space_left()])
+                .write_slice(&self.value.as_ref()[..writer.space_left()])
                 .unwrap();
         }
         Ok(())

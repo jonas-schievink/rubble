@@ -64,6 +64,12 @@ impl<T: AsRef<[u8]>> fmt::Debug for HexSlice<T> {
     }
 }
 
+impl<T: AsRef<[u8]>> AsRef<T> for HexSlice<T> {
+    fn as_ref(&self) -> &T {
+        &self.0
+    }
+}
+
 /// `Debug`-formats its contents in hexadecimal.
 #[derive(Copy, Clone)]
 pub struct Hex<T>(pub T)
