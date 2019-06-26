@@ -824,6 +824,64 @@ impl<A: AttributeProvider> AttributeServer<A> {
         }
 
         match pdu.params {
+            AttMsg::ExchangeMtuReq { mtu: _mtu } => {
+                responder
+                    .respond(OutgoingPdu(AttMsg::ExchangeMtuRsp {
+                        mtu: u16::from(Self::RSP_PDU_SIZE),
+                    }))
+                    .unwrap();
+                Ok(())
+            }
+            AttMsg::ReadByTypeReq {
+                handle_range,
+                attribute_type,
+            } => {
+                let range = handle_range.check()?;
+
+                let mut filter = |att: &mut Attribute<'_>| {
+                    att.att_type == attribute_type && range.contains(att.handle)
+                };
+
+                let result = responder.respond_with(|writer| {
+                    // If no attributes match request, return `AttributeNotFound` error, else send
+                    // `ReadByTypeResponse` with at least one entry
+                    if self.attrs.any(&mut filter) {
+                        ReadByTypeRsp {
+                            // FIXME very poor formatting on rustfmt's part here :/
+                            item_fn: |cb: &mut dyn FnMut(
+                                ByTypeAttData<'_>,
+                            )
+                                -> Result<(), Error>| {
+                                // Build the `ByGroupAttData`s for all matching attributes and call
+                                // `cb` with them.
+                                self.attrs.for_each_attr(&mut |att: &mut Attribute<'_>| {
+                                    if att.att_type == attribute_type && range.contains(att.handle) {
+                                        cb(ByTypeAttData {
+                                            handle: att.handle,
+                                            value: att.value,
+                                        })?;
+                                    }
+
+                                    Ok(())
+                                })
+                            },
+                        }
+                        .encode(writer)?;
+                        Ok(())
+                    } else {
+                        Err(AttError {
+                            code: ErrorCode::AttributeNotFound,
+                            handle: AttHandle::NULL,
+                        }
+                        .into())
+                    }
+                });
+
+                match result {
+                    Ok(()) => Ok(()),
+                    Err(RspError(e)) => Err(e),
+                }
+            }
             AttMsg::ReadByGroupReq {
                 handle_range,
                 group_type,
@@ -882,14 +940,6 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     Ok(()) => Ok(()),
                     Err(RspError(e)) => Err(e),
                 }
-            }
-            AttMsg::ExchangeMtuReq { mtu: _mtu } => {
-                responder
-                    .respond(OutgoingPdu(AttMsg::ExchangeMtuRsp {
-                        mtu: u16::from(Self::RSP_PDU_SIZE),
-                    }))
-                    .unwrap();
-                Ok(())
             }
 
             AttMsg::Unknown { .. } => {
