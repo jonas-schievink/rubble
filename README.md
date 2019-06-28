@@ -15,6 +15,18 @@ are always welcome.
 **NOTE: None of this has passed the Bluetooth® Qualification Process, so it
 must not be used in commercial products!**
 
+## Usage
+
+See [rubble-demo](./rubble-demo) for a usage example.
+
+```bash
+$ cd rubble-demo
+$ cp .gdbinit-openocd .gdbinit
+$ cargo run
+```
+
+Logging is done over UART, TX and RX on pin 06 and 08 respectively, at 1MBd.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
