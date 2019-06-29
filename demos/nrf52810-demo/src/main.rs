@@ -22,7 +22,7 @@ use {
     rtfm::app,
     rubble::{
         beacon::Beacon,
-        gatt::GattServerComplex,
+        gatt::GattServerSimple,
         l2cap::{BleChannelMap, L2CAPState},
         link::{
             ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
@@ -56,7 +56,7 @@ const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
     static mut BLE_RX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
     static mut BLE_LL: LinkLayer<HwNRf52810> = ();
-    static mut BLE_R: Responder<BleChannelMap<GattServerComplex<'static>, NoSecurity>> = ();
+    static mut BLE_R: Responder<BleChannelMap<GattServerSimple<'static>, NoSecurity>> = ();
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
     static mut BEACON_TIMER: pac::TIMER1 = ();
@@ -157,7 +157,7 @@ const APP: () = {
         let resp = Responder::new(
             tx,
             rx,
-            L2CAPState::new(BleChannelMap::with_attributes(GattServerComplex::new())),
+            L2CAPState::new(BleChannelMap::with_attributes(GattServerSimple::new())),
         );
 
         if !TEST_BEACON {
