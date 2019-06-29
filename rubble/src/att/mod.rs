@@ -680,48 +680,6 @@ pub struct Attribute<'a> {
     /// Attribute values can be any fixed length or variable length octet array, which if too large
     /// can be sent across multiple PDUs
     pub value: HexSlice<&'a [u8]>,
-    /// Permissions associated with the attribute
-    pub permission: AttPermission,
-}
-
-/// Permissions associated with an attribute
-pub struct AttPermission {
-    _access: AccessPermission,
-    _encryption: EncryptionPermission,
-    _authentication: AuthenticationPermission,
-    _authorization: AuthorizationPermission,
-}
-
-pub enum AccessPermission {
-    Readable,
-    Writeable,
-    ReadableWritable,
-}
-
-pub enum EncryptionPermission {
-    EncryptionRequired,
-    EncryptionNotRequired,
-}
-
-pub enum AuthenticationPermission {
-    AuthenticationRequired,
-    AuthenticationNotRequired,
-}
-
-pub enum AuthorizationPermission {
-    AuthorizationRequired,
-    AuthorizationNotRequired,
-}
-
-impl Default for AttPermission {
-    fn default() -> Self {
-        Self {
-            _access: AccessPermission::Readable,
-            _encryption: EncryptionPermission::EncryptionNotRequired,
-            _authentication: AuthenticationPermission::AuthenticationNotRequired,
-            _authorization: AuthorizationPermission::AuthorizationNotRequired,
-        }
-    }
 }
 
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
@@ -823,6 +781,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
             }
         }
 
+        // Should be in its own module?
         match pdu.params {
             AttMsg::ExchangeMtuReq { mtu: _mtu } => {
                 responder
@@ -831,56 +790,6 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     }))
                     .unwrap();
                 Ok(())
-            }
-            AttMsg::ReadByTypeReq {
-                handle_range,
-                attribute_type,
-            } => {
-                let range = handle_range.check()?;
-
-                let mut filter = |att: &mut Attribute<'_>| {
-                    att.att_type == attribute_type && range.contains(att.handle)
-                };
-
-                let result = responder.respond_with(|writer| {
-                    // If no attributes match request, return `AttributeNotFound` error, else send
-                    // `ReadByTypeResponse` with at least one entry
-                    if self.attrs.any(&mut filter) {
-                        ReadByTypeRsp {
-                            // FIXME very poor formatting on rustfmt's part here :/
-                            item_fn: |cb: &mut dyn FnMut(
-                                ByTypeAttData<'_>,
-                            )
-                                -> Result<(), Error>| {
-                                // Build the `ByGroupAttData`s for all matching attributes and call
-                                // `cb` with them.
-                                self.attrs.for_each_attr(&mut |att: &mut Attribute<'_>| {
-                                    if att.att_type == attribute_type && range.contains(att.handle) {
-                                        cb(ByTypeAttData {
-                                            handle: att.handle,
-                                            value: att.value,
-                                        })?;
-                                    }
-
-                                    Ok(())
-                                })
-                            },
-                        }
-                        .encode(writer)?;
-                        Ok(())
-                    } else {
-                        Err(AttError {
-                            code: ErrorCode::AttributeNotFound,
-                            handle: AttHandle::NULL,
-                        }
-                        .into())
-                    }
-                });
-
-                match result {
-                    Ok(()) => Ok(()),
-                    Err(RspError(e)) => Err(e),
-                }
             }
             AttMsg::ReadByGroupReq {
                 handle_range,
