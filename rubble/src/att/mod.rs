@@ -550,6 +550,55 @@ impl<
     }
 }
 
+/// *Read By Type* response PDU holding an iterator.
+struct ReadByTypeRsp<
+    F: FnMut(&mut dyn FnMut(ByTypeAttData<'_>) -> Result<(), Error>) -> Result<(), Error>,
+> {
+    item_fn: F,
+}
+
+impl<'a, F: FnMut(&mut dyn FnMut(ByTypeAttData<'_>) -> Result<(), Error>) -> Result<(), Error>>
+    ReadByTypeRsp<F>
+{
+    fn encode(mut self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
+        // This is pretty complicated to encode: The length depends on the attributes we fetch from
+        // the iterator, and has to be written last, but is located at the start.
+        // All the attributes we encode must have the same length. If they don't, we simply stop
+        // when reaching the first one with a different size.
+
+        writer.write_u8(Opcode::ReadByTypeRsp.into())?;
+        let mut length = writer.split_off(1)?;
+
+        let mut size = None;
+        let left = writer.space_left();
+
+        // Encode attribute data until we run out of space or the encoded size differs from the
+        // first entry. This might write partial data, but we set the preceding length correctly, so
+        // it shouldn't matter.
+        (self.item_fn)(&mut |att: ByTypeAttData<'_>| {
+            trace!("read by group rsp: {:?}", att);
+            att.to_bytes(writer)?;
+
+            let used = left - writer.space_left();
+            if let Some(expected_size) = size {
+                if used != expected_size {
+                    return Err(Error::InvalidLength);
+                }
+            } else {
+                size = Some(used);
+            }
+
+            Ok(())
+        })
+        .ok();
+
+        let size = size.expect("empty response");
+        assert!(size <= usize::from(u8::max_value()));
+        length.write_u8(size as u8).unwrap();
+        Ok(())
+    }
+}
+
 impl AttMsg<'_> {
     fn opcode(&self) -> Opcode {
         match self {
@@ -791,6 +840,58 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     .unwrap();
                 Ok(())
             }
+
+            AttMsg::ReadByTypeReq {
+                handle_range,
+                attribute_type,
+            } => {
+                let range = handle_range.check()?;
+
+                let mut filter = |att: &mut Attribute<'_>| {
+                    att.att_type == attribute_type && range.contains(att.handle)
+                };
+
+                let result = responder.respond_with(|writer| {
+                    // If no attributes match request, return `AttributeNotFound` error, else send
+                    // `ReadByTypeResponse` with at least one entry
+                    if self.attrs.any(&mut filter) {
+                        ReadByTypeRsp {
+                            item_fn: |cb: &mut dyn FnMut(
+                                ByTypeAttData<'_>,
+                            )
+                                -> Result<(), Error>| {
+                                // Build the `ByTypeAttData`s for all matching attributes and call
+                                // `cb` with them.
+                                self.attrs.for_each_attr(&mut |att: &mut Attribute<'_>| {
+                                    if att.att_type == attribute_type && range.contains(att.handle)
+                                    {
+                                        cb(ByTypeAttData {
+                                            handle: att.handle,
+                                            value: att.value,
+                                        })?;
+                                    }
+
+                                    Ok(())
+                                })
+                            },
+                        }
+                        .encode(writer)?;
+                        Ok(())
+                    } else {
+                        Err(AttError {
+                            code: ErrorCode::AttributeNotFound,
+                            handle: AttHandle::NULL,
+                        }
+                        .into())
+                    }
+                });
+
+                match result {
+                    Ok(()) => Ok(()),
+                    Err(RspError(e)) => Err(e),
+                }
+            }
+
             AttMsg::ReadByGroupReq {
                 handle_range,
                 group_type,
@@ -825,7 +926,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                                     if att.att_type == group_type && range.contains(att.handle) {
                                         cb(ByGroupAttData {
                                             handle: att.handle,
-                                            end_group_handle: att.handle, // TODO: Ask GATT where the group ends
+                                            end_group_handle: AttHandle::from_raw(0x003), // TODO: Ask GATT where the group ends
                                             value: att.value,
                                         })?;
                                     }
@@ -849,6 +950,27 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     Ok(()) => Ok(()),
                     Err(RspError(e)) => Err(e),
                 }
+            }
+
+            AttMsg::ReadReq { handle } => {
+                self.attrs
+                    .for_each_attr(&mut |att: &mut Attribute<'_>| {
+                        // Handles are unique so this can only occur once
+                        if att.handle == handle {
+                            responder
+                                .respond(OutgoingPdu(AttMsg::ReadRsp { value: att.value }))
+                                .unwrap();
+                            return Ok(());
+                        }
+
+                        Ok(())
+                    })
+                    .unwrap();
+
+                Err(AttError {
+                    code: ErrorCode::AttributeNotFound,
+                    handle: AttHandle::NULL,
+                })
             }
 
             AttMsg::Unknown { .. } => {
