@@ -45,7 +45,7 @@ pub struct Characteristic {}
 ///
 /// TODO: This is all temporary and need to offer a better interface for defining services
 pub struct GattServerSimple<'a> {
-    attributes: [Attribute<'a>; 5],
+    attributes: [Attribute<'a>; 3],
 }
 
 impl<'a> GattServerSimple<'a> {
@@ -55,12 +55,28 @@ impl<'a> GattServerSimple<'a> {
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2800)),
                     handle: AttHandle::from_raw(0x0001),
-                    value: HexSlice(&[0x18, 0x00]),
+                    value: HexSlice(&[0x0F, 0x18]),
                 },
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
                     handle: AttHandle::from_raw(0x0002),
-                    value: HexSlice(&[0x02, 0x00, 0x03, 0x2A, 0x00]),
+                    // 1 byte properties = 0x02
+                    // 2 bytes handle = 0x0003
+                    // 2 bytes UUID = 0x2A19
+                    value: HexSlice(&[0x2A, 0x19, 0x00, 0x07, 0x02]),
+                },
+                // Characteristic declaration (Battery Level value)
+                Attribute {
+                    att_type: AttUuid::Uuid16(Uuid16(0x2A19)),
+                    handle: AttHandle::from_raw(0x0003),
+                    // 48%
+                    value: HexSlice(&[41u8]),
+                },
+                /*
+                Attribute {
+                    att_type: AttUuid::Uuid16(Uuid16(0x2803)),
+                    handle: AttHandle::from_raw(0x0002),
+                    value: HexSlice(&[0x02, 0x03, 0x00, 0x00, 0x2A]),
                 },
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2A00)),
@@ -70,13 +86,42 @@ impl<'a> GattServerSimple<'a> {
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2803)),
                     handle: AttHandle::from_raw(0x0004),
-                    value: HexSlice(&[0x02, 0x00, 0x05, 0x2A, 0x01]),
+                    value: HexSlice(&[0x02, 0x05, 0x00, 0x01, 0x2A]),
                 },
                 Attribute {
                     att_type: AttUuid::Uuid16(Uuid16(0x2A01)),
                     handle: AttHandle::from_raw(0x0005),
                     value: HexSlice(&[0x00, 0x00]),
                 },
+                Attribute {
+                    att_type: AttUuid::Uuid16(Uuid16(0x2803)),
+                    handle: AttHandle::from_raw(0x0006),
+                    value: HexSlice(&[0x02, 0x07, 0x00, 0x01, 0x2A]),
+                },
+                Attribute {
+                    att_type: AttUuid::Uuid16(Uuid16(0x2A04)),
+                    handle: AttHandle::from_raw(0x0007),
+                    value: HexSlice(&[0x50, 0x00, 0xA0, 0x00, 0x00, 0x00, 0xE8, 0x03]),
+                },
+                */
+                /*
+                // Characteristic definition (Battery Level)
+                Attribute {
+                    att_type: AttUuid::Uuid16(Uuid16(0x2803)),
+                    handle: AttHandle::from_raw(0x0006),
+                    // 1 byte properties = 0x02
+                    // 2 bytes handle = 0x0003
+                    // 2 bytes UUID = 0x2A19
+                    value: HexSlice(&[0x2A, 0x19, 0x00, 0x07, 0x02]),
+                },
+                // Characteristic declaration (Battery Level value)
+                Attribute {
+                    att_type: AttUuid::Uuid16(Uuid16(0x2A19)),
+                    handle: AttHandle::from_raw(0x0007),
+                    // 48%
+                    value: HexSlice(&[41u8]),
+                },
+                */
             ],
         }
     }
