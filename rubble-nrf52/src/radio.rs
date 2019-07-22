@@ -51,7 +51,10 @@ use nrf52832_hal::nrf52832_pac as pac;
 use nrf52840_hal::nrf52840_pac as pac;
 
 use {
-    core::cmp,
+    core::{
+        cmp,
+        sync::atomic::{compiler_fence, Ordering},
+    },
     pac::{radio::state::STATER, RADIO},
     rubble::{
         link::{
@@ -204,6 +207,9 @@ impl BleRadio {
                 // Match on logical address 0 only
                 self.radio.rxaddresses.write(|w| w.addr0().enabled());
 
+                // "Preceding reads and writes cannot be moved past subsequent writes."
+                compiler_fence(Ordering::Release);
+
                 // ...and enter RX mode
                 self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
             }
@@ -237,6 +243,9 @@ impl BleRadio {
                 // Match on logical address 1 only
                 self.radio.rxaddresses.write(|w| w.addr1().enabled());
 
+                // "Preceding reads and writes cannot be moved past subsequent writes."
+                compiler_fence(Ordering::Release);
+
                 // ...and enter RX mode
                 self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
             }
@@ -256,6 +265,9 @@ impl BleRadio {
         if self.radio.events_disabled.read().bits() == 0 {
             return NextUpdate::Keep;
         }
+
+        // "Subsequent reads and writes cannot be moved ahead of preceding reads."
+        compiler_fence(Ordering::Acquire);
 
         // Acknowledge DISABLED event:
         self.radio.events_disabled.reset();
@@ -386,11 +398,17 @@ impl BleRadio {
             // Acknowledge left-over disable event
             self.radio.events_disabled.reset(); // FIXME unnecessary, right?
 
+            // "Preceding reads and writes cannot be moved past subsequent writes."
+            compiler_fence(Ordering::Release);
+
             // ...and kick off the transmission
             self.radio.tasks_txen.write(|w| w.bits(1));
 
             // Then wait until disable event is triggered
             while self.radio.events_disabled.read().bits() == 0 {}
+
+            // "Subsequent reads and writes cannot be moved ahead of preceding reads."
+            compiler_fence(Ordering::Acquire);
 
             // Now our `tx_buf` can be used again.
         }
@@ -399,6 +417,9 @@ impl BleRadio {
 
 impl Transmitter for BleRadio {
     fn tx_payload_buf(&mut self) -> &mut [u8] {
+        // FIXME: Some check must be done to ensure that no transaction is being processed
+        // Also, a suitable compiler fence must be added
+
         // Leave 2 Bytes for the data/advertising PDU header.
         &mut self.tx_buf[2..]
     }
@@ -445,6 +466,9 @@ impl Transmitter for BleRadio {
         self.radio
             .packetptr
             .write(|w| unsafe { w.bits(self.tx_buf as *const _ as u32) });
+
+        // "Preceding reads and writes cannot be moved past subsequent writes."
+        compiler_fence(Ordering::Release);
 
         // ...and kick off the transmission
         self.radio
