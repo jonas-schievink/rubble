@@ -1,4 +1,4 @@
-# `rubble-demo`
+# `nrf52810-demo`
 
 This is a demo application we're using when hacking on Rubble. It targets the
 nRF52810.

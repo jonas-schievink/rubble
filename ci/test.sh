@@ -22,11 +22,13 @@ cargo test --all
     cargo check --features="52840"
 )
 
-# Check that the demo app builds with all feature combination.
+# Check that the demo app builds with all feature combinations.
 # Here we do a proper build to also make sure linking the final binary works.
-(
-    echo "Checking rubble-demo..."
-    cd rubble-demo
-    cargo build --target $TARGET_BUILD --no-default-features
-    cargo build --target $TARGET_BUILD
-)
+for dir in demos/*; do
+    (
+        echo "Checking $dir..."
+        cd "$dir"
+        cargo build --target "$TARGET_BUILD" --no-default-features
+        cargo build --target "$TARGET_BUILD"
+    )
+done

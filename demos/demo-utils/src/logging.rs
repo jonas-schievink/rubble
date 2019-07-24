@@ -1,16 +1,12 @@
-#![cfg_attr(not(feature = "log"), allow(unused))]
+//! Logging-related utilities and adapters.
 
 use {
-    bbqueue::{bbq, BBQueue, Consumer, Producer},
+    bbqueue::Producer,
     core::{cell::RefCell, fmt},
     cortex_m::interrupt::{self, Mutex},
-    nrf52810_hal::nrf52810_pac as pac,
+    log::{Log, Metadata, Record},
     rubble::time::Timer,
-    rubble_nrf52::timer::StampSource,
 };
-
-#[cfg(feature = "log")]
-use log::{LevelFilter, Log, Metadata, Record};
 
 /// A `fmt::Write` adapter that prints a timestamp before each line.
 pub struct StampedLogger<T: Timer, L: fmt::Write> {
@@ -99,7 +95,6 @@ impl<W: fmt::Write + Send> WriteLogger<W> {
     }
 }
 
-#[cfg(feature = "log")]
 impl<W: fmt::Write + Send> Log for WriteLogger<W> {
     fn enabled(&self, _metadata: &Metadata<'_>) -> bool {
         true
@@ -115,34 +110,4 @@ impl<W: fmt::Write + Send> Log for WriteLogger<W> {
     }
 
     fn flush(&self) {}
-}
-
-type Logger = StampedLogger<StampSource<LogTimer>, BbqLogger>;
-
-type LogTimer = pac::TIMER0;
-
-/// Stores the global logger used by the `log` crate.
-static mut LOGGER: Option<WriteLogger<Logger>> = None;
-
-#[cfg(feature = "log")]
-pub fn init(timer: StampSource<LogTimer>) -> Consumer {
-    let (tx, log_sink) = bbq![10000].unwrap().split();
-    let logger = StampedLogger::new(BbqLogger::new(tx), timer);
-
-    let log = WriteLogger::new(logger);
-    interrupt::free(|_| unsafe {
-        // Safe, since we're the only thread and interrupts are off
-        LOGGER = Some(log);
-        log::set_logger(LOGGER.as_ref().unwrap()).unwrap();
-    });
-    log::set_max_level(LevelFilter::max());
-
-    log::info!("Logger ready");
-
-    log_sink
-}
-
-#[cfg(not(feature = "log"))]
-pub fn init(timer: StampSource<LogTimer>) -> Consumer {
-    bbq![1].unwrap().split().1
 }

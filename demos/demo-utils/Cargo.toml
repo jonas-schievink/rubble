@@ -1,0 +1,20 @@
+[package]
+authors = ["Jonas Schievink <jonasschievink@gmail.com>"]
+description = "Common utilities used by Rubble demos"
+categories = ["embedded", "no-std"]
+keywords = ["arm", "nrf", "bluetooth", "low", "energy"]
+repository = "https://github.com/jonas-schievink/rubble/"
+license = "0BSD"
+name = "demo-utils"
+version = "0.0.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+rubble = { path = "../../rubble", default-features = false }
+cortex-m = "0.6.0"
+bbqueue = "0.3.2"
+
+[dependencies.log]
+version = "0.4.6"
+features = ["release_max_level_warn"]

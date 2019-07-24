@@ -5,14 +5,15 @@ categories = ["embedded", "no-std"]
 keywords = ["arm", "nrf", "bluetooth", "low", "energy"]
 repository = "https://github.com/jonas-schievink/rubble/"
 license = "0BSD"
-name = "rubble-demo"
+name = "nrf52810-demo"
 version = "0.0.0"
 edition = "2018"
 publish = false
 
 [dependencies]
-rubble = { path = "../rubble", default-features = false }
-rubble-nrf52 = { path = "../rubble-nrf52", features = ["52810"] }
+rubble = { path = "../../rubble", default-features = false }
+rubble-nrf52 = { path = "../../rubble-nrf52", features = ["52810"] }
+demo-utils = { path = "../demo-utils" }
 cortex-m = "0.6.0"
 cortex-m-semihosting = "0.3.3"
 cortex-m-rtfm = "0.4.3"
@@ -34,6 +35,6 @@ default = ["rubble/log", "log"]
 
 # Disable documentation to avoid spurious rustdoc warnings
 [[bin]]
-name = "rubble-demo"
+name = "nrf52810-demo"
 doc = false
 test = false

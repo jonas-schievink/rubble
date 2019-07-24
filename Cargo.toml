@@ -2,7 +2,7 @@
 members = [
     "rubble",
     "rubble-nrf52",
-    "rubble-demo",
+    "demos/*",
 ]
 
 [profile.dev]
