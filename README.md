@@ -17,7 +17,7 @@ must not be used in commercial products!**
 
 ## Usage
 
-See [rubble-demo](./rubble-demo) for a usage example.
+See [demos](./demos/) for usage examples.
 
 ```bash
 $ cd rubble-demo
