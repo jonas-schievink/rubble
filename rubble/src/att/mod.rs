@@ -221,7 +221,7 @@ enum AttMsg<'a> {
     },
     ExecuteWriteReq {
         /// 0x00 – Cancel all prepared writes
-        /// 0x01 – Immediately write all pend- ing prepared values
+        /// 0x01 – Immediately write all pending prepared values
         flags: u8,
     },
     ExecuteWriteRsp,
