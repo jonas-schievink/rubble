@@ -53,24 +53,24 @@ impl<'a> GattServerSimple<'a> {
         Self {
             attributes: [
                 Attribute {
-                    att_type: AttUuid::Uuid16(Uuid16(0x2800)),
+                    att_type: Uuid16(0x2800).into(), // "Primary Service"
                     handle: AttHandle::from_raw(0x0001),
-                    value: HexSlice(&[0x0F, 0x18]),
+                    value: HexSlice(&[0x0F, 0x18]), // "Battery Service" = 0x180F
                 },
                 Attribute {
-                    att_type: AttUuid::Uuid16(Uuid16(0x2803)),
+                    att_type: Uuid16(0x2803).into(), // "Characteristic"
                     handle: AttHandle::from_raw(0x0002),
-                    // 1 byte properties = 0x02
-                    // 2 bytes handle = 0x0003
-                    // 2 bytes UUID = 0x2A19
-                    value: HexSlice(&[0x2A, 0x19, 0x00, 0x07, 0x02]),
+                    value: HexSlice(&[
+                        0x02, // 1 byte properties: READ = 0x02
+                        0x03, 0x00, // 2 bytes handle = 0x0003
+                        0x19, 0x2A, // 2 bytes UUID = 0x2A19 (Battery Level)
+                    ]),
                 },
-                // Characteristic declaration (Battery Level value)
+                // Characteristic value (Battery Level)
                 Attribute {
-                    att_type: AttUuid::Uuid16(Uuid16(0x2A19)),
+                    att_type: AttUuid::Uuid16(Uuid16(0x2A19)), // "Battery Level"
                     handle: AttHandle::from_raw(0x0003),
-                    // 48%
-                    value: HexSlice(&[41u8]),
+                    value: HexSlice(&[48u8]),
                 },
                 /*
                 Attribute {
