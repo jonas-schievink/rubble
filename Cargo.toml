@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "rubble",
-    "rubble-derive",
     "rubble-nrf52",
     "demos/*",
 ]
