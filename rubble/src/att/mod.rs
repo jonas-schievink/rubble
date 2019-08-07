@@ -66,8 +66,8 @@ enum_with_unknown! {
         ExchangeMtuRsp = 0x03,
         FindInformationReq = 0x04,
         FindInformationRsp = 0x05,
-        FindByTypeReq = 0x06,
-        FindByTypeRsp = 0x07,
+        FindByTypeValueReq = 0x06,
+        FindByTypeValueRsp = 0x07,
         ReadByTypeReq = 0x08,
         ReadByTypeRsp = 0x09,
         ReadReq = 0x0A,
@@ -146,14 +146,14 @@ enum AttMsg<'a> {
         /// minimum size of 4 bytes
         data: HexSlice<&'a [u8]>,
     },
-    /// Used to obtain the handles of attributes given the type and value
-    FindByTypeReq {
+    /// Used to obtain the handles of attributes with a given type and value.
+    FindByTypeValueReq {
         handle_range: RawHandleRange,
         attribute_type: u16,
         attribute_value: HexSlice<&'a [u8]>,
     },
-    FindByTypeRsp {
-        /// A single "Handles Information" is 2 octects found handle, 2 octects
+    FindByTypeValueRsp {
+        /// A single "Handles Information" is 2 octets found handle, 2 octets
         /// group end handle
         handles_information_list: HexSlice<&'a [u8]>,
     },
@@ -263,14 +263,14 @@ impl<'a> AttMsg<'a> {
                 format: bytes.read_u8()?,
                 data: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
             },
-            Opcode::FindByTypeReq => AttMsg::FindByTypeReq {
+            Opcode::FindByTypeValueReq => AttMsg::FindByTypeValueReq {
                 handle_range: RawHandleRange::from_bytes(bytes)?,
                 attribute_type: bytes.read_u16_le()?,
                 attribute_value: HexSlice(
                     bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?,
                 ),
             },
-            Opcode::FindByTypeRsp => AttMsg::FindByTypeRsp {
+            Opcode::FindByTypeValueRsp => AttMsg::FindByTypeValueRsp {
                 handles_information_list: HexSlice(
                     bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?,
                 ),
@@ -386,7 +386,7 @@ impl<'a> AttMsg<'a> {
                 writer.write_u8(format)?;
                 writer.write_slice(data.as_ref())?;
             }
-            AttMsg::FindByTypeReq {
+            AttMsg::FindByTypeValueReq {
                 handle_range,
                 attribute_type,
                 attribute_value,
@@ -395,7 +395,7 @@ impl<'a> AttMsg<'a> {
                 writer.write_u16_le(attribute_type)?;
                 writer.write_slice(attribute_value.as_ref())?;
             }
-            AttMsg::FindByTypeRsp {
+            AttMsg::FindByTypeValueRsp {
                 handles_information_list,
             } => {
                 writer.write_slice(handles_information_list.as_ref())?;
@@ -609,8 +609,8 @@ impl AttMsg<'_> {
             AttMsg::ReadByTypeRsp { .. } => Opcode::ReadByTypeRsp,
             AttMsg::FindInformationReq { .. } => Opcode::FindInformationReq,
             AttMsg::FindInformationRsp { .. } => Opcode::FindInformationRsp,
-            AttMsg::FindByTypeReq { .. } => Opcode::FindByTypeReq,
-            AttMsg::FindByTypeRsp { .. } => Opcode::FindByTypeRsp,
+            AttMsg::FindByTypeValueReq { .. } => Opcode::FindByTypeValueReq,
+            AttMsg::FindByTypeValueRsp { .. } => Opcode::FindByTypeValueRsp,
             AttMsg::ReadReq { .. } => Opcode::ReadReq,
             AttMsg::ReadRsp { .. } => Opcode::ReadRsp,
             AttMsg::ReadBlobReq { .. } => Opcode::ReadBlobReq,
