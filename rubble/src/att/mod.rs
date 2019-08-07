@@ -576,7 +576,7 @@ impl<'a, F: FnMut(&mut dyn FnMut(ByTypeAttData<'_>) -> Result<(), Error>) -> Res
         // first entry. This might write partial data, but we set the preceding length correctly, so
         // it shouldn't matter.
         (self.item_fn)(&mut |att: ByTypeAttData<'_>| {
-            trace!("read by group rsp: {:?}", att);
+            trace!("read by type rsp: {:?}", att);
             att.to_bytes(writer)?;
 
             let used = left - writer.space_left();
