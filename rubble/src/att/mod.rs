@@ -1097,6 +1097,7 @@ impl<'a> ToBytes for ByTypeAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.handle.as_u16())?;
         writer.write_slice(self.value.as_ref())?;
+        // FIXME: The value should be truncated if it doesn't fit.
         Ok(())
     }
 }
