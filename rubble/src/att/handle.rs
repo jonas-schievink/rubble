@@ -63,10 +63,7 @@ impl RawHandleRange {
     /// Returns an `AttError` that should be sent as a response if the range is invalid.
     pub fn check(&self) -> Result<HandleRange, AttError> {
         if self.start.0 > self.end.0 || self.start.0 == 0 {
-            Err(AttError {
-                code: ErrorCode::InvalidHandle,
-                handle: self.start,
-            })
+            Err(AttError::new(ErrorCode::InvalidHandle, self.start))
         } else {
             Ok(HandleRange(self.start..=self.end))
         }
