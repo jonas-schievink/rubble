@@ -3,7 +3,7 @@
 use {
     super::{
         pdus::{AttMsg, ByGroupAttData, ByTypeAttData, ErrorCode, ReadByGroupRsp, ReadByTypeRsp},
-        AttError, AttHandle, Attribute, AttributeProvider, IncomingPdu, OutgoingPdu,
+        AttError, AttHandle, Attribute, AttributeProvider,
     },
     crate::{
         bytes::{ByteReader, FromBytes},
@@ -31,7 +31,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
     /// case, this method will send the response (if any).
     fn process_request<'a>(
         &mut self,
-        pdu: IncomingPdu<'_>,
+        msg: &AttMsg<'_>,
         responder: &mut L2CAPResponder<'_>,
     ) -> Result<(), AttError> {
         /// Error returned when an ATT error should be sent back.
@@ -52,12 +52,12 @@ impl<A: AttributeProvider> AttributeServer<A> {
             }
         }
 
-        match pdu.att_msg() {
+        match msg {
             AttMsg::ExchangeMtuReq { mtu: _mtu } => {
                 responder
-                    .respond(OutgoingPdu(AttMsg::ExchangeMtuRsp {
+                    .respond(AttMsg::ExchangeMtuRsp {
                         mtu: u16::from(Self::RSP_PDU_SIZE),
-                    }))
+                    })
                     .unwrap();
                 Ok(())
             }
@@ -168,7 +168,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                         // Handles are unique so this can only occur once (no bail-out required)
                         if att.handle == *handle {
                             responder
-                                .respond(OutgoingPdu(AttMsg::ReadRsp { value: att.value }))
+                                .respond(AttMsg::ReadRsp { value: att.value })
                                 .unwrap();
                         }
 
@@ -179,8 +179,8 @@ impl<A: AttributeProvider> AttributeServer<A> {
                 Err(AttError::attribute_not_found())
             }
 
-            AttMsg::Unknown { .. } => {
-                if pdu.opcode().is_command() {
+            AttMsg::Unknown { opcode, .. } => {
+                if opcode.is_command() {
                     // According to the spec, unknown Command PDUs should be ignored
                     Ok(())
                 } else {
@@ -197,7 +197,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                 Err(AttError::new(ErrorCode::InvalidPdu, AttHandle::NULL))
             }
 
-            _ => unimplemented!("Tried to process unknown request: {:?}", pdu.att_msg()),
+            _ => unimplemented!("unknown ATT message: {:?}", msg),
         }
     }
 }
@@ -208,7 +208,7 @@ impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
         message: &[u8],
         mut responder: L2CAPResponder<'_>,
     ) -> Result<(), Error> {
-        let pdu = IncomingPdu::from_bytes(&mut ByteReader::new(message))?;
+        let pdu = &AttMsg::from_bytes(&mut ByteReader::new(message))?;
         let opcode = pdu.opcode();
         debug!("ATT msg received: {:?}", pdu);
 
@@ -217,11 +217,11 @@ impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
             Err(att_error) => {
                 debug!("ATT error: {:?}", att_error);
 
-                responder.respond(OutgoingPdu(AttMsg::ErrorRsp {
+                responder.respond(AttMsg::ErrorRsp {
                     opcode: opcode,
                     handle: att_error.handle(),
                     error_code: att_error.error_code(),
-                }))
+                })
             }
         }
     }

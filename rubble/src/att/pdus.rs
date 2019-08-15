@@ -361,9 +361,9 @@ pub enum AttMsg<'a> {
     },
 }
 
-impl<'a> AttMsg<'a> {
-    /// Reads the parameters of an ATT message from `bytes`.
-    pub fn from_reader(bytes: &mut ByteReader<'a>, opcode: Opcode) -> Result<Self, Error> {
+impl<'a> FromBytes<'a> for AttMsg<'a> {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
+        let opcode = Opcode::from(bytes.read_u8()?);
         Ok(match opcode {
             Opcode::ErrorRsp => AttMsg::ErrorRsp {
                 opcode: Opcode::from(bytes.read_u8()?),
@@ -469,8 +469,12 @@ impl<'a> AttMsg<'a> {
             },
         })
     }
+}
 
-    pub fn to_writer(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
+impl<'a> ToBytes for AttMsg<'a> {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
+        writer.write_u8(self.opcode().into())?;
+
         match *self {
             AttMsg::ErrorRsp {
                 opcode,
@@ -605,7 +609,9 @@ impl<'a> AttMsg<'a> {
 
         Ok(())
     }
+}
 
+impl AttMsg<'_> {
     pub fn opcode(&self) -> Opcode {
         match self {
             AttMsg::ErrorRsp { .. } => Opcode::ErrorRsp,
@@ -737,48 +743,6 @@ impl<'a, F: FnMut(&mut dyn FnMut(ByTypeAttData<'_>) -> Result<(), Error>) -> Res
         let size = size.expect("empty response");
         assert!(size <= usize::from(u8::max_value()));
         length.write_u8(size as u8).unwrap();
-        Ok(())
-    }
-}
-
-/// An ATT PDU transferred from client to server as the L2CAP protocol payload.
-///
-/// Outgoing PDUs are just `AttMsg`s.
-#[derive(Debug)]
-pub struct IncomingPdu<'a> {
-    /// The 1-Byte opcode value. It is kept around since it needs to be returned in error responses.
-    opcode: Opcode,
-    /// Decoded message (request or command) including parameters.
-    params: AttMsg<'a>,
-}
-
-impl<'a> IncomingPdu<'a> {
-    pub fn opcode(&self) -> Opcode {
-        self.opcode
-    }
-
-    pub fn att_msg(&self) -> &AttMsg<'a> {
-        &self.params
-    }
-}
-
-impl<'a> FromBytes<'a> for IncomingPdu<'a> {
-    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
-        let opcode = Opcode::from(bytes.read_u8()?);
-
-        Ok(Self {
-            opcode,
-            params: AttMsg::from_reader(bytes, opcode)?,
-        })
-    }
-}
-
-impl ToBytes for IncomingPdu<'_> {
-    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
-        writer.write_u8(self.opcode.into())?;
-
-        self.params.to_writer(writer)?;
-
         Ok(())
     }
 }
