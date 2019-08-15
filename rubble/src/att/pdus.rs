@@ -346,14 +346,22 @@ pub enum AttMsg<'a> {
         flags: u8,
     },
     ExecuteWriteRsp,
+
+    /// Attribute value change notification sent from server to client.
+    ///
+    /// Not acknowledged by client.
     HandleValueNotification {
         handle: AttHandle,
         value: HexSlice<&'a [u8]>,
     },
+
+    /// Attribute value change indication sent by server, acknowledged by client.
     HandleValueIndication {
         handle: AttHandle,
         value: HexSlice<&'a [u8]>,
     },
+
+    /// Confirmation returned by client in response to a `HandleValueIndication`.
     HandleValueConfirmation,
     Unknown {
         opcode: Opcode,
