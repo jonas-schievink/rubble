@@ -243,9 +243,7 @@ enum AttMsg<'a> {
 
 impl<'a> AttMsg<'a> {
     fn from_reader(bytes: &mut ByteReader<'a>, opcode: Opcode) -> Result<Self, Error> {
-        let auth = opcode.is_authenticated();
-
-        let msg = match opcode {
+        Ok(match opcode {
             Opcode::ErrorRsp => AttMsg::ErrorRsp {
                 opcode: Opcode::from(bytes.read_u8()?),
                 handle: AttHandle::from_bytes(bytes)?,
@@ -262,19 +260,15 @@ impl<'a> AttMsg<'a> {
             },
             Opcode::FindInformationRsp => AttMsg::FindInformationRsp {
                 format: bytes.read_u8()?,
-                data: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
+                data: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::FindByTypeValueReq => AttMsg::FindByTypeValueReq {
                 handle_range: RawHandleRange::from_bytes(bytes)?,
                 attribute_type: bytes.read_u16_le()?,
-                attribute_value: HexSlice(
-                    bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?,
-                ),
+                attribute_value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::FindByTypeValueRsp => AttMsg::FindByTypeValueRsp {
-                handles_information_list: HexSlice(
-                    bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?,
-                ),
+                handles_information_list: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::ReadByTypeReq => AttMsg::ReadByTypeReq {
                 handle_range: RawHandleRange::from_bytes(bytes)?,
@@ -282,30 +276,26 @@ impl<'a> AttMsg<'a> {
             },
             Opcode::ReadByTypeRsp => AttMsg::ReadByTypeRsp {
                 length: bytes.read_u8()?,
-                data_list: HexSlice(
-                    bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?,
-                ),
+                data_list: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::ReadReq => AttMsg::ReadReq {
                 handle: AttHandle::from_bytes(bytes)?,
             },
             Opcode::ReadRsp => AttMsg::ReadRsp {
-                value: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
+                value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::ReadBlobReq => AttMsg::ReadBlobReq {
                 handle: AttHandle::from_bytes(bytes)?,
                 offset: bytes.read_u16_le()?,
             },
             Opcode::ReadBlobRsp => AttMsg::ReadBlobRsp {
-                value: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
+                value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::ReadMultipleReq => AttMsg::ReadMultipleReq {
-                handles: HexSlice(
-                    bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?,
-                ),
+                handles: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::ReadMultipleRsp => AttMsg::ReadMultipleRsp {
-                values: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
+                values: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::ReadByGroupReq => AttMsg::ReadByGroupReq {
                 handle_range: RawHandleRange::from_bytes(bytes)?,
@@ -313,33 +303,31 @@ impl<'a> AttMsg<'a> {
             },
             Opcode::ReadByGroupRsp => AttMsg::ReadByGroupRsp {
                 length: bytes.read_u8()?,
-                data_list: HexSlice(
-                    bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?,
-                ),
+                data_list: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::WriteReq => AttMsg::WriteReq {
                 handle: AttHandle::from_bytes(bytes)?,
-                value: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
+                value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::WriteRsp => AttMsg::WriteRsp {},
             Opcode::WriteCommand => AttMsg::WriteCommand {
                 handle: AttHandle::from_bytes(bytes)?,
-                value: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
+                value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::SignedWriteCommand => AttMsg::SignedWriteCommand {
                 handle: AttHandle::from_bytes(bytes)?,
-                value: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 24 } else { 12 })?),
+                value: HexSlice(bytes.read_slice(bytes.bytes_left() - 12)?),
                 signature: HexSlice(bytes.read_slice(12)?.try_into().unwrap()),
             },
             Opcode::PrepareWriteReq => AttMsg::PrepareWriteReq {
                 handle: AttHandle::from_bytes(bytes)?,
                 offset: bytes.read_u16_le()?,
-                value: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 24 } else { 12 })?),
+                value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::PrepareWriteRsp => AttMsg::PrepareWriteRsp {
                 handle: AttHandle::from_bytes(bytes)?,
                 offset: bytes.read_u16_le()?,
-                value: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 24 } else { 12 })?),
+                value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::ExecuteWriteReq => AttMsg::ExecuteWriteReq {
                 flags: bytes.read_u8()?,
@@ -347,20 +335,18 @@ impl<'a> AttMsg<'a> {
             Opcode::ExecuteWriteRsp => AttMsg::ExecuteWriteRsp {},
             Opcode::HandleValueNotification => AttMsg::HandleValueNotification {
                 handle: AttHandle::from_bytes(bytes)?,
-                value: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
+                value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::HandleValueIndication => AttMsg::HandleValueIndication {
                 handle: AttHandle::from_bytes(bytes)?,
-                value: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
+                value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::HandleValueConfirmation => AttMsg::HandleValueConfirmation {},
             Opcode::Unknown(_) => AttMsg::Unknown {
                 opcode,
-                params: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 12 } else { 0 })?),
+                params: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-        };
-
-        Ok(msg)
+        })
     }
 
     fn to_writer(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
