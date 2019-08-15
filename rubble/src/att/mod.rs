@@ -723,6 +723,9 @@ pub trait AttributeProvider {
     /// Calls a closure `f` with every attribute stored in `self`.
     ///
     /// All attributes will have ascending, consecutive handle values starting at `0x0001`.
+    ///
+    /// If `f` returns an error, this function will stop calling `f` and propagate the error
+    /// upwards. If `f` returns `Ok(())`, iteration will continue.
     fn for_each_attr(
         &mut self,
         f: &mut dyn FnMut(&mut Attribute<'_>) -> Result<(), Error>,
@@ -942,12 +945,11 @@ impl<A: AttributeProvider> AttributeServer<A> {
             AttMsg::ReadReq { handle } => {
                 self.attrs
                     .for_each_attr(&mut |att: &mut Attribute<'_>| {
-                        // Handles are unique so this can only occur once
+                        // Handles are unique so this can only occur once (no bail-out required)
                         if att.handle == handle {
                             responder
                                 .respond(OutgoingPdu(AttMsg::ReadRsp { value: att.value }))
                                 .unwrap();
-                            return Ok(());
                         }
 
                         Ok(())
