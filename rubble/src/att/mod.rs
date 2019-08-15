@@ -33,6 +33,7 @@ use {
         utils::HexSlice,
         Error,
     },
+    core::convert::TryInto,
 };
 
 pub use self::handle::AttHandle;
@@ -207,7 +208,7 @@ enum AttMsg<'a> {
     SignedWriteCommand {
         handle: AttHandle,
         value: HexSlice<&'a [u8]>,
-        signature: HexSlice<&'a [u8]>, //HexSlice<[u8; 12]>,
+        signature: HexSlice<&'a [u8; 12]>,
     },
     PrepareWriteReq {
         handle: AttHandle,
@@ -328,7 +329,7 @@ impl<'a> AttMsg<'a> {
             Opcode::SignedWriteCommand => AttMsg::SignedWriteCommand {
                 handle: AttHandle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left() - if auth { 24 } else { 12 })?),
-                signature: HexSlice(bytes.read_slice(12)?),
+                signature: HexSlice(bytes.read_slice(12)?.try_into().unwrap()),
             },
             Opcode::PrepareWriteReq => AttMsg::PrepareWriteReq {
                 handle: AttHandle::from_bytes(bytes)?,
@@ -457,7 +458,7 @@ impl<'a> AttMsg<'a> {
             } => {
                 handle.to_bytes(writer)?;
                 writer.write_slice(value.as_ref())?;
-                writer.write_slice(signature.as_ref())?;
+                writer.write_slice(*signature.as_ref())?;
             }
             AttMsg::PrepareWriteReq {
                 handle,
