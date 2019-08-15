@@ -3,7 +3,7 @@
 use {
     super::{
         pdus::{AttPdu, ByGroupAttData, ByTypeAttData, ErrorCode, ReadByGroupRsp, ReadByTypeRsp},
-        AttError, AttHandle, Attribute, AttributeProvider,
+        AttError, Attribute, AttributeProvider, Handle,
     },
     crate::{
         bytes::{ByteReader, FromBytes},
@@ -140,7 +140,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                                     if att.att_type == *group_type && range.contains(att.handle) {
                                         cb(ByGroupAttData::new(
                                             att.handle,
-                                            AttHandle::from_raw(0x003), // TODO: Ask GATT where the group ends
+                                            Handle::from_raw(0x003), // TODO: Ask GATT where the group ends
                                             att.value.as_ref(),
                                         ))?;
                                     }
@@ -194,7 +194,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
             | AttPdu::ExecuteWriteRsp { .. }
             | AttPdu::HandleValueNotification { .. }
             | AttPdu::HandleValueIndication { .. } => {
-                Err(AttError::new(ErrorCode::InvalidPdu, AttHandle::NULL))
+                Err(AttError::new(ErrorCode::InvalidPdu, Handle::NULL))
             }
 
             // Unknown (undecoded) or unimplemented requests and commands
@@ -214,10 +214,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     Ok(())
                 } else {
                     // Unknown requests are rejected with a `RequestNotSupported` error
-                    Err(AttError::new(
-                        ErrorCode::RequestNotSupported,
-                        AttHandle::NULL,
-                    ))
+                    Err(AttError::new(ErrorCode::RequestNotSupported, Handle::NULL))
                 }
             }
         }

@@ -13,12 +13,12 @@ use {
 ///
 /// The `0x0000` handle (`NULL`) is invalid and must not be used.
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub struct AttHandle(u16);
+pub struct Handle(u16);
 
-impl AttHandle {
+impl Handle {
     /// The `0x0000` handle is not used for actual attributes, but as a special placeholder when no
     /// attribute handle is valid (eg. in error responses).
-    pub const NULL: Self = AttHandle(0x0000);
+    pub const NULL: Self = Handle(0x0000);
 
     /// Returns the raw 16-bit integer representing this handle.
     pub fn as_u16(&self) -> u16 {
@@ -27,23 +27,23 @@ impl AttHandle {
 
     /// Create an attribute handle from a raw u16
     pub fn from_raw(raw: u16) -> Self {
-        AttHandle(raw)
+        Handle(raw)
     }
 }
 
-impl fmt::Debug for AttHandle {
+impl fmt::Debug for Handle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:#06X}", self.0)
     }
 }
 
-impl FromBytes<'_> for AttHandle {
+impl FromBytes<'_> for Handle {
     fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
-        Ok(AttHandle(bytes.read_u16_le()?))
+        Ok(Handle(bytes.read_u16_le()?))
     }
 }
 
-impl ToBytes for AttHandle {
+impl ToBytes for Handle {
     fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.as_u16())?;
         Ok(())
@@ -53,8 +53,8 @@ impl ToBytes for AttHandle {
 /// A (de)serializable handle range that isn't checked for validity.
 #[derive(Debug, Copy, Clone)]
 pub struct RawHandleRange {
-    start: AttHandle,
-    end: AttHandle,
+    start: Handle,
+    end: Handle,
 }
 
 impl RawHandleRange {
@@ -73,8 +73,8 @@ impl RawHandleRange {
 impl FromBytes<'_> for RawHandleRange {
     fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         Ok(Self {
-            start: AttHandle::from_bytes(bytes)?,
-            end: AttHandle::from_bytes(bytes)?,
+            start: Handle::from_bytes(bytes)?,
+            end: Handle::from_bytes(bytes)?,
         })
     }
 }
@@ -89,15 +89,15 @@ impl ToBytes for RawHandleRange {
 
 /// A (de)serializable handle range that has been checked for validity.
 #[derive(Debug)]
-pub struct HandleRange(RangeInclusive<AttHandle>);
+pub struct HandleRange(RangeInclusive<Handle>);
 
 impl HandleRange {
-    /// Checks if an AttHandle is in a HandleRange
-    pub fn contains(&self, handle: AttHandle) -> bool {
+    /// Checks if an Handle is in a HandleRange
+    pub fn contains(&self, handle: Handle) -> bool {
         self.0.start().0 <= handle.as_u16() && self.0.end().0 >= handle.as_u16()
     }
 
-    pub fn start(&self) -> AttHandle {
+    pub fn start(&self) -> Handle {
         *self.0.start()
     }
 }

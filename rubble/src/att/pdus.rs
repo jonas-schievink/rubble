@@ -1,7 +1,7 @@
 //! Packets and types used in the ATT protocol.
 
 use {
-    super::{AttHandle, AttUuid, RawHandleRange},
+    super::{AttUuid, Handle, RawHandleRange},
     crate::{bytes::*, utils::HexSlice, Error},
     core::convert::TryInto,
 };
@@ -12,7 +12,7 @@ enum_with_unknown! {
     /// Used as the payload of `ErrorRsp` PDUs.
     #[derive(Copy, Clone, Debug)]
     pub enum ErrorCode(u8) {
-        /// Attempted to use an `AttHandle` that isn't valid on this server.
+        /// Attempted to use an `Handle` that isn't valid on this server.
         InvalidHandle = 0x01,
         /// Attribute isn't readable.
         ReadNotPermitted = 0x02,
@@ -53,16 +53,16 @@ enum_with_unknown! {
 #[derive(Debug)]
 pub struct AttError {
     code: ErrorCode,
-    handle: AttHandle,
+    handle: Handle,
 }
 
 impl AttError {
-    pub fn new(code: ErrorCode, handle: AttHandle) -> Self {
+    pub fn new(code: ErrorCode, handle: Handle) -> Self {
         Self { code, handle }
     }
 
     pub fn attribute_not_found() -> Self {
-        Self::new(ErrorCode::AttributeNotFound, AttHandle::NULL)
+        Self::new(ErrorCode::AttributeNotFound, Handle::NULL)
     }
 
     /// The error code describing this error.
@@ -75,7 +75,7 @@ impl AttError {
     /// The handle of the attribute causing the error.
     ///
     /// This can be the `NULL` handle if there's no attribute to blame.
-    pub fn handle(&self) -> AttHandle {
+    pub fn handle(&self) -> Handle {
         self.handle
     }
 }
@@ -83,12 +83,12 @@ impl AttError {
 /// Attribute Data returned in *Read By Type* response.
 #[derive(Debug)]
 pub struct ByTypeAttData<'a> {
-    handle: AttHandle,
+    handle: Handle,
     value: HexSlice<&'a [u8]>,
 }
 
 impl<'a> ByTypeAttData<'a> {
-    pub fn new(handle: AttHandle, value: &'a [u8]) -> Self {
+    pub fn new(handle: Handle, value: &'a [u8]) -> Self {
         Self {
             handle,
             value: HexSlice(value),
@@ -99,7 +99,7 @@ impl<'a> ByTypeAttData<'a> {
 impl<'a> FromBytes<'a> for ByTypeAttData<'a> {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         Ok(ByTypeAttData {
-            handle: AttHandle::from_bytes(bytes)?,
+            handle: Handle::from_bytes(bytes)?,
             value: HexSlice(bytes.read_rest()),
         })
     }
@@ -118,13 +118,13 @@ impl<'a> ToBytes for ByTypeAttData<'a> {
 #[derive(Debug, Copy, Clone)]
 pub struct ByGroupAttData<'a> {
     /// The handle of this attribute.
-    handle: AttHandle,
-    group_end_handle: AttHandle,
+    handle: Handle,
+    group_end_handle: Handle,
     value: HexSlice<&'a [u8]>,
 }
 
 impl<'a> ByGroupAttData<'a> {
-    pub fn new(handle: AttHandle, group_end_handle: AttHandle, value: &'a [u8]) -> Self {
+    pub fn new(handle: Handle, group_end_handle: Handle, value: &'a [u8]) -> Self {
         Self {
             handle,
             group_end_handle,
@@ -136,8 +136,8 @@ impl<'a> ByGroupAttData<'a> {
 impl<'a> FromBytes<'a> for ByGroupAttData<'a> {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         Ok(ByGroupAttData {
-            handle: AttHandle::from_bytes(bytes)?,
-            group_end_handle: AttHandle::from_bytes(bytes)?,
+            handle: Handle::from_bytes(bytes)?,
+            group_end_handle: Handle::from_bytes(bytes)?,
             value: HexSlice(bytes.read_rest()),
         })
     }
@@ -246,7 +246,7 @@ pub enum AttPdu<'a> {
         /// The opcode that caused the error.
         opcode: Opcode,
         /// The attribute handle on which the operation failed.
-        handle: AttHandle,
+        handle: Handle,
         /// An error code describing the kind of error that occurred.
         error_code: ErrorCode,
     },
@@ -289,13 +289,13 @@ pub enum AttPdu<'a> {
         data_list: HexSlice<&'a [u8]>,
     },
     ReadReq {
-        handle: AttHandle,
+        handle: Handle,
     },
     ReadRsp {
         value: HexSlice<&'a [u8]>,
     },
     ReadBlobReq {
-        handle: AttHandle,
+        handle: Handle,
         offset: u16,
     },
     ReadBlobRsp {
@@ -317,26 +317,26 @@ pub enum AttPdu<'a> {
         data_list: HexSlice<&'a [u8]>,
     },
     WriteReq {
-        handle: AttHandle,
+        handle: Handle,
         value: HexSlice<&'a [u8]>,
     },
     WriteRsp,
     WriteCommand {
-        handle: AttHandle,
+        handle: Handle,
         value: HexSlice<&'a [u8]>,
     },
     SignedWriteCommand {
-        handle: AttHandle,
+        handle: Handle,
         value: HexSlice<&'a [u8]>,
         signature: HexSlice<&'a [u8; 12]>,
     },
     PrepareWriteReq {
-        handle: AttHandle,
+        handle: Handle,
         offset: u16,
         value: HexSlice<&'a [u8]>,
     },
     PrepareWriteRsp {
-        handle: AttHandle,
+        handle: Handle,
         offset: u16,
         value: HexSlice<&'a [u8]>,
     },
@@ -351,13 +351,13 @@ pub enum AttPdu<'a> {
     ///
     /// Not acknowledged by client.
     HandleValueNotification {
-        handle: AttHandle,
+        handle: Handle,
         value: HexSlice<&'a [u8]>,
     },
 
     /// Attribute value change indication sent by server, acknowledged by client.
     HandleValueIndication {
-        handle: AttHandle,
+        handle: Handle,
         value: HexSlice<&'a [u8]>,
     },
 
@@ -375,7 +375,7 @@ impl<'a> FromBytes<'a> for AttPdu<'a> {
         Ok(match opcode {
             Opcode::ErrorRsp => AttPdu::ErrorRsp {
                 opcode: Opcode::from(bytes.read_u8()?),
-                handle: AttHandle::from_bytes(bytes)?,
+                handle: Handle::from_bytes(bytes)?,
                 error_code: ErrorCode::from(bytes.read_u8()?),
             },
             Opcode::ExchangeMtuReq => AttPdu::ExchangeMtuReq {
@@ -408,13 +408,13 @@ impl<'a> FromBytes<'a> for AttPdu<'a> {
                 data_list: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::ReadReq => AttPdu::ReadReq {
-                handle: AttHandle::from_bytes(bytes)?,
+                handle: Handle::from_bytes(bytes)?,
             },
             Opcode::ReadRsp => AttPdu::ReadRsp {
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::ReadBlobReq => AttPdu::ReadBlobReq {
-                handle: AttHandle::from_bytes(bytes)?,
+                handle: Handle::from_bytes(bytes)?,
                 offset: bytes.read_u16_le()?,
             },
             Opcode::ReadBlobRsp => AttPdu::ReadBlobRsp {
@@ -435,26 +435,26 @@ impl<'a> FromBytes<'a> for AttPdu<'a> {
                 data_list: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::WriteReq => AttPdu::WriteReq {
-                handle: AttHandle::from_bytes(bytes)?,
+                handle: Handle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::WriteRsp => AttPdu::WriteRsp {},
             Opcode::WriteCommand => AttPdu::WriteCommand {
-                handle: AttHandle::from_bytes(bytes)?,
+                handle: Handle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::SignedWriteCommand => AttPdu::SignedWriteCommand {
-                handle: AttHandle::from_bytes(bytes)?,
+                handle: Handle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left() - 12)?),
                 signature: HexSlice(bytes.read_slice(12)?.try_into().unwrap()),
             },
             Opcode::PrepareWriteReq => AttPdu::PrepareWriteReq {
-                handle: AttHandle::from_bytes(bytes)?,
+                handle: Handle::from_bytes(bytes)?,
                 offset: bytes.read_u16_le()?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::PrepareWriteRsp => AttPdu::PrepareWriteRsp {
-                handle: AttHandle::from_bytes(bytes)?,
+                handle: Handle::from_bytes(bytes)?,
                 offset: bytes.read_u16_le()?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
@@ -463,11 +463,11 @@ impl<'a> FromBytes<'a> for AttPdu<'a> {
             },
             Opcode::ExecuteWriteRsp => AttPdu::ExecuteWriteRsp {},
             Opcode::HandleValueNotification => AttPdu::HandleValueNotification {
-                handle: AttHandle::from_bytes(bytes)?,
+                handle: Handle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::HandleValueIndication => AttPdu::HandleValueIndication {
-                handle: AttHandle::from_bytes(bytes)?,
+                handle: Handle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
             Opcode::HandleValueConfirmation => AttPdu::HandleValueConfirmation {},
