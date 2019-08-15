@@ -240,7 +240,7 @@ impl Opcode {
 ///
 /// Note that many responses will need their own type that wraps an iterator.
 #[derive(Debug)]
-pub enum AttMsg<'a> {
+pub enum AttPdu<'a> {
     /// Request could not be completed due to an error.
     ErrorRsp {
         /// The opcode that caused the error.
@@ -369,109 +369,109 @@ pub enum AttMsg<'a> {
     },
 }
 
-impl<'a> FromBytes<'a> for AttMsg<'a> {
+impl<'a> FromBytes<'a> for AttPdu<'a> {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let opcode = Opcode::from(bytes.read_u8()?);
         Ok(match opcode {
-            Opcode::ErrorRsp => AttMsg::ErrorRsp {
+            Opcode::ErrorRsp => AttPdu::ErrorRsp {
                 opcode: Opcode::from(bytes.read_u8()?),
                 handle: AttHandle::from_bytes(bytes)?,
                 error_code: ErrorCode::from(bytes.read_u8()?),
             },
-            Opcode::ExchangeMtuReq => AttMsg::ExchangeMtuReq {
+            Opcode::ExchangeMtuReq => AttPdu::ExchangeMtuReq {
                 mtu: bytes.read_u16_le()?,
             },
-            Opcode::ExchangeMtuRsp => AttMsg::ExchangeMtuRsp {
+            Opcode::ExchangeMtuRsp => AttPdu::ExchangeMtuRsp {
                 mtu: bytes.read_u16_le()?,
             },
-            Opcode::FindInformationReq => AttMsg::FindInformationReq {
+            Opcode::FindInformationReq => AttPdu::FindInformationReq {
                 handle_range: RawHandleRange::from_bytes(bytes)?,
             },
-            Opcode::FindInformationRsp => AttMsg::FindInformationRsp {
+            Opcode::FindInformationRsp => AttPdu::FindInformationRsp {
                 format: bytes.read_u8()?,
                 data: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::FindByTypeValueReq => AttMsg::FindByTypeValueReq {
+            Opcode::FindByTypeValueReq => AttPdu::FindByTypeValueReq {
                 handle_range: RawHandleRange::from_bytes(bytes)?,
                 attribute_type: bytes.read_u16_le()?,
                 attribute_value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::FindByTypeValueRsp => AttMsg::FindByTypeValueRsp {
+            Opcode::FindByTypeValueRsp => AttPdu::FindByTypeValueRsp {
                 handles_information_list: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::ReadByTypeReq => AttMsg::ReadByTypeReq {
+            Opcode::ReadByTypeReq => AttPdu::ReadByTypeReq {
                 handle_range: RawHandleRange::from_bytes(bytes)?,
                 attribute_type: AttUuid::from_bytes(bytes)?,
             },
-            Opcode::ReadByTypeRsp => AttMsg::ReadByTypeRsp {
+            Opcode::ReadByTypeRsp => AttPdu::ReadByTypeRsp {
                 length: bytes.read_u8()?,
                 data_list: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::ReadReq => AttMsg::ReadReq {
+            Opcode::ReadReq => AttPdu::ReadReq {
                 handle: AttHandle::from_bytes(bytes)?,
             },
-            Opcode::ReadRsp => AttMsg::ReadRsp {
+            Opcode::ReadRsp => AttPdu::ReadRsp {
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::ReadBlobReq => AttMsg::ReadBlobReq {
+            Opcode::ReadBlobReq => AttPdu::ReadBlobReq {
                 handle: AttHandle::from_bytes(bytes)?,
                 offset: bytes.read_u16_le()?,
             },
-            Opcode::ReadBlobRsp => AttMsg::ReadBlobRsp {
+            Opcode::ReadBlobRsp => AttPdu::ReadBlobRsp {
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::ReadMultipleReq => AttMsg::ReadMultipleReq {
+            Opcode::ReadMultipleReq => AttPdu::ReadMultipleReq {
                 handles: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::ReadMultipleRsp => AttMsg::ReadMultipleRsp {
+            Opcode::ReadMultipleRsp => AttPdu::ReadMultipleRsp {
                 values: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::ReadByGroupReq => AttMsg::ReadByGroupReq {
+            Opcode::ReadByGroupReq => AttPdu::ReadByGroupReq {
                 handle_range: RawHandleRange::from_bytes(bytes)?,
                 group_type: AttUuid::from_bytes(bytes)?,
             },
-            Opcode::ReadByGroupRsp => AttMsg::ReadByGroupRsp {
+            Opcode::ReadByGroupRsp => AttPdu::ReadByGroupRsp {
                 length: bytes.read_u8()?,
                 data_list: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::WriteReq => AttMsg::WriteReq {
+            Opcode::WriteReq => AttPdu::WriteReq {
                 handle: AttHandle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::WriteRsp => AttMsg::WriteRsp {},
-            Opcode::WriteCommand => AttMsg::WriteCommand {
+            Opcode::WriteRsp => AttPdu::WriteRsp {},
+            Opcode::WriteCommand => AttPdu::WriteCommand {
                 handle: AttHandle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::SignedWriteCommand => AttMsg::SignedWriteCommand {
+            Opcode::SignedWriteCommand => AttPdu::SignedWriteCommand {
                 handle: AttHandle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left() - 12)?),
                 signature: HexSlice(bytes.read_slice(12)?.try_into().unwrap()),
             },
-            Opcode::PrepareWriteReq => AttMsg::PrepareWriteReq {
+            Opcode::PrepareWriteReq => AttPdu::PrepareWriteReq {
                 handle: AttHandle::from_bytes(bytes)?,
                 offset: bytes.read_u16_le()?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::PrepareWriteRsp => AttMsg::PrepareWriteRsp {
+            Opcode::PrepareWriteRsp => AttPdu::PrepareWriteRsp {
                 handle: AttHandle::from_bytes(bytes)?,
                 offset: bytes.read_u16_le()?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::ExecuteWriteReq => AttMsg::ExecuteWriteReq {
+            Opcode::ExecuteWriteReq => AttPdu::ExecuteWriteReq {
                 flags: bytes.read_u8()?,
             },
-            Opcode::ExecuteWriteRsp => AttMsg::ExecuteWriteRsp {},
-            Opcode::HandleValueNotification => AttMsg::HandleValueNotification {
+            Opcode::ExecuteWriteRsp => AttPdu::ExecuteWriteRsp {},
+            Opcode::HandleValueNotification => AttPdu::HandleValueNotification {
                 handle: AttHandle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::HandleValueIndication => AttMsg::HandleValueIndication {
+            Opcode::HandleValueIndication => AttPdu::HandleValueIndication {
                 handle: AttHandle::from_bytes(bytes)?,
                 value: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
-            Opcode::HandleValueConfirmation => AttMsg::HandleValueConfirmation {},
-            Opcode::Unknown(_) => AttMsg::Unknown {
+            Opcode::HandleValueConfirmation => AttPdu::HandleValueConfirmation {},
+            Opcode::Unknown(_) => AttPdu::Unknown {
                 opcode,
                 params: HexSlice(bytes.read_slice(bytes.bytes_left())?),
             },
@@ -479,12 +479,12 @@ impl<'a> FromBytes<'a> for AttMsg<'a> {
     }
 }
 
-impl<'a> ToBytes for AttMsg<'a> {
+impl<'a> ToBytes for AttPdu<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u8(self.opcode().into())?;
 
         match *self {
-            AttMsg::ErrorRsp {
+            AttPdu::ErrorRsp {
                 opcode,
                 handle,
                 error_code,
@@ -493,20 +493,20 @@ impl<'a> ToBytes for AttMsg<'a> {
                 writer.write_u16_le(handle.as_u16())?;
                 writer.write_u8(error_code.into())?;
             }
-            AttMsg::ExchangeMtuReq { mtu } => {
+            AttPdu::ExchangeMtuReq { mtu } => {
                 writer.write_u16_le(mtu)?;
             }
-            AttMsg::ExchangeMtuRsp { mtu } => {
+            AttPdu::ExchangeMtuRsp { mtu } => {
                 writer.write_u16_le(mtu)?;
             }
-            AttMsg::FindInformationReq { handle_range } => {
+            AttPdu::FindInformationReq { handle_range } => {
                 handle_range.to_bytes(writer)?;
             }
-            AttMsg::FindInformationRsp { format, data } => {
+            AttPdu::FindInformationRsp { format, data } => {
                 writer.write_u8(format)?;
                 writer.write_slice(data.as_ref())?;
             }
-            AttMsg::FindByTypeValueReq {
+            AttPdu::FindByTypeValueReq {
                 handle_range,
                 attribute_type,
                 attribute_value,
@@ -515,62 +515,62 @@ impl<'a> ToBytes for AttMsg<'a> {
                 writer.write_u16_le(attribute_type)?;
                 writer.write_slice(attribute_value.as_ref())?;
             }
-            AttMsg::FindByTypeValueRsp {
+            AttPdu::FindByTypeValueRsp {
                 handles_information_list,
             } => {
                 writer.write_slice(handles_information_list.as_ref())?;
             }
-            AttMsg::ReadByTypeReq {
+            AttPdu::ReadByTypeReq {
                 handle_range,
                 attribute_type,
             } => {
                 handle_range.to_bytes(writer)?;
                 attribute_type.to_bytes(writer)?;
             }
-            AttMsg::ReadByTypeRsp { length, data_list } => {
+            AttPdu::ReadByTypeRsp { length, data_list } => {
                 writer.write_u8(length)?;
                 writer.write_slice(data_list.as_ref())?;
             }
-            AttMsg::ReadReq { handle } => {
+            AttPdu::ReadReq { handle } => {
                 handle.to_bytes(writer)?;
             }
-            AttMsg::ReadRsp { value } => {
+            AttPdu::ReadRsp { value } => {
                 writer.write_slice(value.as_ref())?;
             }
-            AttMsg::ReadBlobReq { handle, offset } => {
+            AttPdu::ReadBlobReq { handle, offset } => {
                 handle.to_bytes(writer)?;
                 writer.write_u16_le(offset)?;
             }
-            AttMsg::ReadBlobRsp { value } => {
+            AttPdu::ReadBlobRsp { value } => {
                 writer.write_slice(value.as_ref())?;
             }
-            AttMsg::ReadMultipleReq { handles } => {
+            AttPdu::ReadMultipleReq { handles } => {
                 writer.write_slice(handles.as_ref())?;
             }
-            AttMsg::ReadMultipleRsp { values } => {
+            AttPdu::ReadMultipleRsp { values } => {
                 writer.write_slice(values.as_ref())?;
             }
-            AttMsg::ReadByGroupReq {
+            AttPdu::ReadByGroupReq {
                 handle_range,
                 group_type,
             } => {
                 handle_range.to_bytes(writer)?;
                 group_type.to_bytes(writer)?;
             }
-            AttMsg::ReadByGroupRsp { length, data_list } => {
+            AttPdu::ReadByGroupRsp { length, data_list } => {
                 writer.write_u8(length)?;
                 writer.write_slice(data_list.as_ref())?;
             }
-            AttMsg::WriteReq { handle, value } => {
+            AttPdu::WriteReq { handle, value } => {
                 handle.to_bytes(writer)?;
                 writer.write_slice(value.as_ref())?;
             }
-            AttMsg::WriteRsp => {}
-            AttMsg::WriteCommand { handle, value } => {
+            AttPdu::WriteRsp => {}
+            AttPdu::WriteCommand { handle, value } => {
                 handle.to_bytes(writer)?;
                 writer.write_slice(value.as_ref())?;
             }
-            AttMsg::SignedWriteCommand {
+            AttPdu::SignedWriteCommand {
                 handle,
                 value,
                 signature,
@@ -579,7 +579,7 @@ impl<'a> ToBytes for AttMsg<'a> {
                 writer.write_slice(value.as_ref())?;
                 writer.write_slice(*signature.as_ref())?;
             }
-            AttMsg::PrepareWriteReq {
+            AttPdu::PrepareWriteReq {
                 handle,
                 offset,
                 value,
@@ -588,7 +588,7 @@ impl<'a> ToBytes for AttMsg<'a> {
                 writer.write_u16_le(offset)?;
                 writer.write_slice(value.as_ref())?;
             }
-            AttMsg::PrepareWriteRsp {
+            AttPdu::PrepareWriteRsp {
                 handle,
                 offset,
                 value,
@@ -597,20 +597,20 @@ impl<'a> ToBytes for AttMsg<'a> {
                 writer.write_u16_le(offset)?;
                 writer.write_slice(value.as_ref())?;
             }
-            AttMsg::ExecuteWriteReq { flags } => {
+            AttPdu::ExecuteWriteReq { flags } => {
                 writer.write_u8(flags)?;
             }
-            AttMsg::ExecuteWriteRsp => {}
-            AttMsg::HandleValueNotification { handle, value } => {
+            AttPdu::ExecuteWriteRsp => {}
+            AttPdu::HandleValueNotification { handle, value } => {
                 handle.to_bytes(writer)?;
                 writer.write_slice(value.as_ref())?;
             }
-            AttMsg::HandleValueIndication { handle, value } => {
+            AttPdu::HandleValueIndication { handle, value } => {
                 handle.to_bytes(writer)?;
                 writer.write_slice(value.as_ref())?;
             }
-            AttMsg::HandleValueConfirmation => {}
-            AttMsg::Unknown { opcode: _, params } => {
+            AttPdu::HandleValueConfirmation => {}
+            AttPdu::Unknown { opcode: _, params } => {
                 writer.write_slice(params.as_ref())?;
             }
         }
@@ -619,38 +619,38 @@ impl<'a> ToBytes for AttMsg<'a> {
     }
 }
 
-impl AttMsg<'_> {
+impl AttPdu<'_> {
     pub fn opcode(&self) -> Opcode {
         match self {
-            AttMsg::ErrorRsp { .. } => Opcode::ErrorRsp,
-            AttMsg::ExchangeMtuReq { .. } => Opcode::ExchangeMtuReq,
-            AttMsg::ExchangeMtuRsp { .. } => Opcode::ExchangeMtuRsp,
-            AttMsg::ReadByTypeReq { .. } => Opcode::ReadByTypeReq,
-            AttMsg::ReadByTypeRsp { .. } => Opcode::ReadByTypeRsp,
-            AttMsg::FindInformationReq { .. } => Opcode::FindInformationReq,
-            AttMsg::FindInformationRsp { .. } => Opcode::FindInformationRsp,
-            AttMsg::FindByTypeValueReq { .. } => Opcode::FindByTypeValueReq,
-            AttMsg::FindByTypeValueRsp { .. } => Opcode::FindByTypeValueRsp,
-            AttMsg::ReadReq { .. } => Opcode::ReadReq,
-            AttMsg::ReadRsp { .. } => Opcode::ReadRsp,
-            AttMsg::ReadBlobReq { .. } => Opcode::ReadBlobReq,
-            AttMsg::ReadBlobRsp { .. } => Opcode::ReadBlobRsp,
-            AttMsg::ReadMultipleReq { .. } => Opcode::ReadMultipleReq,
-            AttMsg::ReadMultipleRsp { .. } => Opcode::ReadMultipleRsp,
-            AttMsg::ReadByGroupReq { .. } => Opcode::ReadByGroupReq,
-            AttMsg::ReadByGroupRsp { .. } => Opcode::ReadBlobRsp,
-            AttMsg::WriteReq { .. } => Opcode::WriteReq,
-            AttMsg::WriteRsp { .. } => Opcode::WriteRsp,
-            AttMsg::WriteCommand { .. } => Opcode::WriteCommand,
-            AttMsg::SignedWriteCommand { .. } => Opcode::SignedWriteCommand,
-            AttMsg::PrepareWriteReq { .. } => Opcode::PrepareWriteReq,
-            AttMsg::PrepareWriteRsp { .. } => Opcode::PrepareWriteRsp,
-            AttMsg::ExecuteWriteReq { .. } => Opcode::ExecuteWriteReq,
-            AttMsg::ExecuteWriteRsp { .. } => Opcode::ExecuteWriteRsp,
-            AttMsg::HandleValueNotification { .. } => Opcode::HandleValueNotification,
-            AttMsg::HandleValueIndication { .. } => Opcode::HandleValueIndication,
-            AttMsg::HandleValueConfirmation { .. } => Opcode::HandleValueConfirmation,
-            AttMsg::Unknown { opcode, .. } => *opcode,
+            AttPdu::ErrorRsp { .. } => Opcode::ErrorRsp,
+            AttPdu::ExchangeMtuReq { .. } => Opcode::ExchangeMtuReq,
+            AttPdu::ExchangeMtuRsp { .. } => Opcode::ExchangeMtuRsp,
+            AttPdu::ReadByTypeReq { .. } => Opcode::ReadByTypeReq,
+            AttPdu::ReadByTypeRsp { .. } => Opcode::ReadByTypeRsp,
+            AttPdu::FindInformationReq { .. } => Opcode::FindInformationReq,
+            AttPdu::FindInformationRsp { .. } => Opcode::FindInformationRsp,
+            AttPdu::FindByTypeValueReq { .. } => Opcode::FindByTypeValueReq,
+            AttPdu::FindByTypeValueRsp { .. } => Opcode::FindByTypeValueRsp,
+            AttPdu::ReadReq { .. } => Opcode::ReadReq,
+            AttPdu::ReadRsp { .. } => Opcode::ReadRsp,
+            AttPdu::ReadBlobReq { .. } => Opcode::ReadBlobReq,
+            AttPdu::ReadBlobRsp { .. } => Opcode::ReadBlobRsp,
+            AttPdu::ReadMultipleReq { .. } => Opcode::ReadMultipleReq,
+            AttPdu::ReadMultipleRsp { .. } => Opcode::ReadMultipleRsp,
+            AttPdu::ReadByGroupReq { .. } => Opcode::ReadByGroupReq,
+            AttPdu::ReadByGroupRsp { .. } => Opcode::ReadBlobRsp,
+            AttPdu::WriteReq { .. } => Opcode::WriteReq,
+            AttPdu::WriteRsp { .. } => Opcode::WriteRsp,
+            AttPdu::WriteCommand { .. } => Opcode::WriteCommand,
+            AttPdu::SignedWriteCommand { .. } => Opcode::SignedWriteCommand,
+            AttPdu::PrepareWriteReq { .. } => Opcode::PrepareWriteReq,
+            AttPdu::PrepareWriteRsp { .. } => Opcode::PrepareWriteRsp,
+            AttPdu::ExecuteWriteReq { .. } => Opcode::ExecuteWriteReq,
+            AttPdu::ExecuteWriteRsp { .. } => Opcode::ExecuteWriteRsp,
+            AttPdu::HandleValueNotification { .. } => Opcode::HandleValueNotification,
+            AttPdu::HandleValueIndication { .. } => Opcode::HandleValueIndication,
+            AttPdu::HandleValueConfirmation { .. } => Opcode::HandleValueConfirmation,
+            AttPdu::Unknown { opcode, .. } => *opcode,
         }
     }
 }

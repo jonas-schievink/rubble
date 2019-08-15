@@ -2,7 +2,7 @@
 
 use {
     super::{
-        pdus::{AttMsg, ByGroupAttData, ByTypeAttData, ErrorCode, ReadByGroupRsp, ReadByTypeRsp},
+        pdus::{AttPdu, ByGroupAttData, ByTypeAttData, ErrorCode, ReadByGroupRsp, ReadByTypeRsp},
         AttError, AttHandle, Attribute, AttributeProvider,
     },
     crate::{
@@ -31,7 +31,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
     /// case, this method will send the response (if any).
     fn process_request<'a>(
         &mut self,
-        msg: &AttMsg<'_>,
+        msg: &AttPdu<'_>,
         responder: &mut L2CAPResponder<'_>,
     ) -> Result<(), AttError> {
         /// Error returned when an ATT error should be sent back.
@@ -53,16 +53,16 @@ impl<A: AttributeProvider> AttributeServer<A> {
         }
 
         match msg {
-            AttMsg::ExchangeMtuReq { mtu: _mtu } => {
+            AttPdu::ExchangeMtuReq { mtu: _mtu } => {
                 responder
-                    .respond(AttMsg::ExchangeMtuRsp {
+                    .respond(AttPdu::ExchangeMtuRsp {
                         mtu: u16::from(Self::RSP_PDU_SIZE),
                     })
                     .unwrap();
                 Ok(())
             }
 
-            AttMsg::ReadByTypeReq {
+            AttPdu::ReadByTypeReq {
                 handle_range,
                 attribute_type,
             } => {
@@ -106,7 +106,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                 }
             }
 
-            AttMsg::ReadByGroupReq {
+            AttPdu::ReadByGroupReq {
                 handle_range,
                 group_type,
             } => {
@@ -162,13 +162,13 @@ impl<A: AttributeProvider> AttributeServer<A> {
                 }
             }
 
-            AttMsg::ReadReq { handle } => {
+            AttPdu::ReadReq { handle } => {
                 self.attrs
                     .for_each_attr(&mut |att: &mut Attribute<'_>| {
                         // Handles are unique so this can only occur once (no bail-out required)
                         if att.handle == *handle {
                             responder
-                                .respond(AttMsg::ReadRsp { value: att.value })
+                                .respond(AttPdu::ReadRsp { value: att.value })
                                 .unwrap();
                         }
 
@@ -180,35 +180,35 @@ impl<A: AttributeProvider> AttributeServer<A> {
             }
 
             // Responses are always invalid here
-            AttMsg::ErrorRsp { .. }
-            | AttMsg::ExchangeMtuRsp { .. }
-            | AttMsg::FindInformationRsp { .. }
-            | AttMsg::FindByTypeValueRsp { .. }
-            | AttMsg::ReadByTypeRsp { .. }
-            | AttMsg::ReadRsp { .. }
-            | AttMsg::ReadBlobRsp { .. }
-            | AttMsg::ReadMultipleRsp { .. }
-            | AttMsg::ReadByGroupRsp { .. }
-            | AttMsg::WriteRsp { .. }
-            | AttMsg::PrepareWriteRsp { .. }
-            | AttMsg::ExecuteWriteRsp { .. }
-            | AttMsg::HandleValueNotification { .. }
-            | AttMsg::HandleValueIndication { .. } => {
+            AttPdu::ErrorRsp { .. }
+            | AttPdu::ExchangeMtuRsp { .. }
+            | AttPdu::FindInformationRsp { .. }
+            | AttPdu::FindByTypeValueRsp { .. }
+            | AttPdu::ReadByTypeRsp { .. }
+            | AttPdu::ReadRsp { .. }
+            | AttPdu::ReadBlobRsp { .. }
+            | AttPdu::ReadMultipleRsp { .. }
+            | AttPdu::ReadByGroupRsp { .. }
+            | AttPdu::WriteRsp { .. }
+            | AttPdu::PrepareWriteRsp { .. }
+            | AttPdu::ExecuteWriteRsp { .. }
+            | AttPdu::HandleValueNotification { .. }
+            | AttPdu::HandleValueIndication { .. } => {
                 Err(AttError::new(ErrorCode::InvalidPdu, AttHandle::NULL))
             }
 
             // Unknown (undecoded) or unimplemented requests and commands
-            AttMsg::Unknown { .. }
-            | AttMsg::FindInformationReq { .. }
-            | AttMsg::FindByTypeValueReq { .. }
-            | AttMsg::ReadBlobReq { .. }
-            | AttMsg::ReadMultipleReq { .. }
-            | AttMsg::WriteReq { .. }
-            | AttMsg::WriteCommand { .. }
-            | AttMsg::SignedWriteCommand { .. }
-            | AttMsg::PrepareWriteReq { .. }
-            | AttMsg::ExecuteWriteReq { .. }
-            | AttMsg::HandleValueConfirmation { .. } => {
+            AttPdu::Unknown { .. }
+            | AttPdu::FindInformationReq { .. }
+            | AttPdu::FindByTypeValueReq { .. }
+            | AttPdu::ReadBlobReq { .. }
+            | AttPdu::ReadMultipleReq { .. }
+            | AttPdu::WriteReq { .. }
+            | AttPdu::WriteCommand { .. }
+            | AttPdu::SignedWriteCommand { .. }
+            | AttPdu::PrepareWriteReq { .. }
+            | AttPdu::ExecuteWriteReq { .. }
+            | AttPdu::HandleValueConfirmation { .. } => {
                 if msg.opcode().is_command() {
                     // According to the spec, unknown Command PDUs should be ignored
                     Ok(())
@@ -230,7 +230,7 @@ impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
         message: &[u8],
         mut responder: L2CAPResponder<'_>,
     ) -> Result<(), Error> {
-        let pdu = &AttMsg::from_bytes(&mut ByteReader::new(message))?;
+        let pdu = &AttPdu::from_bytes(&mut ByteReader::new(message))?;
         let opcode = pdu.opcode();
         debug!("ATT msg received: {:?}", pdu);
 
@@ -239,7 +239,7 @@ impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
             Err(att_error) => {
                 debug!("ATT error: {:?}", att_error);
 
-                responder.respond(AttMsg::ErrorRsp {
+                responder.respond(AttPdu::ErrorRsp {
                     opcode: opcode,
                     handle: att_error.handle(),
                     error_code: att_error.error_code(),
