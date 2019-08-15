@@ -179,8 +179,37 @@ impl<A: AttributeProvider> AttributeServer<A> {
                 Err(AttError::attribute_not_found())
             }
 
-            AttMsg::Unknown { opcode, .. } => {
-                if opcode.is_command() {
+            // Responses are always invalid here
+            AttMsg::ErrorRsp { .. }
+            | AttMsg::ExchangeMtuRsp { .. }
+            | AttMsg::FindInformationRsp { .. }
+            | AttMsg::FindByTypeValueRsp { .. }
+            | AttMsg::ReadByTypeRsp { .. }
+            | AttMsg::ReadRsp { .. }
+            | AttMsg::ReadBlobRsp { .. }
+            | AttMsg::ReadMultipleRsp { .. }
+            | AttMsg::ReadByGroupRsp { .. }
+            | AttMsg::WriteRsp { .. }
+            | AttMsg::PrepareWriteRsp { .. }
+            | AttMsg::ExecuteWriteRsp { .. }
+            | AttMsg::HandleValueNotification { .. }
+            | AttMsg::HandleValueIndication { .. } => {
+                Err(AttError::new(ErrorCode::InvalidPdu, AttHandle::NULL))
+            }
+
+            // Unknown (undecoded) or unimplemented requests and commands
+            AttMsg::Unknown { .. }
+            | AttMsg::FindInformationReq { .. }
+            | AttMsg::FindByTypeValueReq { .. }
+            | AttMsg::ReadBlobReq { .. }
+            | AttMsg::ReadMultipleReq { .. }
+            | AttMsg::WriteReq { .. }
+            | AttMsg::WriteCommand { .. }
+            | AttMsg::SignedWriteCommand { .. }
+            | AttMsg::PrepareWriteReq { .. }
+            | AttMsg::ExecuteWriteReq { .. }
+            | AttMsg::HandleValueConfirmation { .. } => {
+                if msg.opcode().is_command() {
                     // According to the spec, unknown Command PDUs should be ignored
                     Ok(())
                 } else {
@@ -191,13 +220,6 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     ))
                 }
             }
-
-            // Responses are always invalid here
-            AttMsg::ErrorRsp { .. } | AttMsg::ExchangeMtuRsp { .. } => {
-                Err(AttError::new(ErrorCode::InvalidPdu, AttHandle::NULL))
-            }
-
-            _ => unimplemented!("unknown ATT message: {:?}", msg),
         }
     }
 }
