@@ -29,52 +29,12 @@ mod uuid;
 
 use {
     self::{handle::*, pdus::*},
-    crate::{bytes::*, utils::HexSlice, Error},
+    crate::{utils::HexSlice, Error},
 };
 
 pub use self::handle::AttHandle;
 pub use self::server::AttributeServer;
 pub use self::uuid::AttUuid;
-
-/// A PDU sent from server to client (over L2CAP).
-#[derive(Debug)]
-struct OutgoingPdu<'a>(AttMsg<'a>);
-
-impl<'a> From<AttMsg<'a>> for OutgoingPdu<'a> {
-    fn from(msg: AttMsg<'a>) -> Self {
-        OutgoingPdu(msg)
-    }
-}
-
-impl<'a> FromBytes<'a> for OutgoingPdu<'a> {
-    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
-        let opcode = Opcode::from(bytes.read_u8()?);
-        let auth = opcode.is_authenticated();
-
-        let msg = AttMsg::from_reader(bytes, opcode)?;
-
-        if auth {
-            // Ignore signature
-            bytes.skip(12)?;
-        }
-        Ok(OutgoingPdu(msg))
-    }
-}
-
-impl ToBytes for OutgoingPdu<'_> {
-    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
-        writer.write_u8(self.0.opcode().into())?;
-
-        self.0.to_writer(writer)?;
-
-        if self.0.opcode().is_authenticated() {
-            // Write a dummy signature. This should never really be reached since the server never
-            // sends authenticated messages.
-            writer.write_slice(&[0; 12])?;
-        }
-        Ok(())
-    }
-}
 
 /// An ATT server attribute
 pub struct Attribute<'a> {
