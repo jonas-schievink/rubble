@@ -10,7 +10,7 @@
 //!
 //! The ATT server hosts a list of *Attributes*, which consist of the following:
 //!
-//! * A 16-bit *Attribute Handle* ([`AttHandle`]) uniquely identifying the attribute.
+//! * A 16-bit *Attribute Handle* ([`Handle`]) uniquely identifying the attribute.
 //! * A 16- or 128-bit UUID identifying the attribute type. This provides information about how to
 //!   interpret the attribute's value (eg. as a little-endian 32-bit integer).
 //! * The attribute's *value*, consisting of a dynamically-sized byte array of up to 512 Bytes.
@@ -20,7 +20,7 @@
 //!
 //! TODO: Figure out how the hell this works and write it down in human-readable form.
 //!
-//! [`AttHandle`]: struct.AttHandle.html
+//! [`Handle`]: struct.Handle.html
 
 mod handle;
 mod pdus;
@@ -32,7 +32,7 @@ use {
     crate::{utils::HexSlice, Error},
 };
 
-pub use self::handle::AttHandle;
+pub use self::handle::Handle;
 pub use self::server::AttributeServer;
 pub use self::uuid::AttUuid;
 
@@ -41,7 +41,7 @@ pub struct Attribute<'a> {
     /// The type of the attribute as a UUID16, EG "Primary Service" or "Anaerobic Heart Rate Lower Limit"
     pub att_type: AttUuid,
     /// Unique server-side identifer for attribute
-    pub handle: AttHandle,
+    pub handle: Handle,
     /// Attribute values can be any fixed length or variable length octet array, which if too large
     /// can be sent across multiple PDUs
     pub value: HexSlice<&'a [u8]>,
@@ -84,7 +84,7 @@ pub trait AttributeProvider {
     /// If `handle` does not refer to a grouping attribute, returns `None`.
     ///
     /// TODO: Human-readable docs that explain what grouping is
-    fn group_end(&self, handle: AttHandle) -> Option<&Attribute<'_>>;
+    fn group_end(&self, handle: Handle) -> Option<&Attribute<'_>>;
 }
 
 /// An empty attribute set.
@@ -104,7 +104,7 @@ impl AttributeProvider for NoAttributes {
         false
     }
 
-    fn group_end(&self, _handle: AttHandle) -> Option<&Attribute<'_>> {
+    fn group_end(&self, _handle: Handle) -> Option<&Attribute<'_>> {
         None
     }
 }
