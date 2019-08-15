@@ -18,7 +18,14 @@
 //!
 //! ## Attribute Grouping
 //!
-//! TODO: Figure out how the hell this works and write it down in human-readable form.
+//! The higher-level protocol layer using ATT (ie. GATT) may define a set of attribute types as
+//! *Grouping Attributes*. These attribute types are allowed for use in *Read By Group Type*
+//! requests, and can also influence the behavior of other requests (such as *Find By Type Value*).
+//!
+//! All *Grouping Attributes* can be seen as the start of a group of attributes. Groups are formed
+//! by indicating the *Group End Handle* to the client, which is the handle of the last attribute in
+//! the group. The *Group End Handle* isn't known by the ATT server and must be provided by the
+//! higher-level protocol (GATT).
 //!
 //! [`Handle`]: struct.Handle.html
 
