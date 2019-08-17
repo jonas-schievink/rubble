@@ -9,7 +9,7 @@ use {
         link::data::{self, Llid},
         Error,
     },
-    bbqueue::{self, BBQueue},
+    bbqueue::{self, BBQueue, GrantW},
     byteorder::{ByteOrder, LittleEndian},
 };
 
@@ -41,32 +41,14 @@ impl Producer {
         }
     }
 
-    /// Enqueue a new data channel PDU by passing a `ByteWriter` to a closure.
-    ///
-    /// The closure has to write the PDU payload into the `ByteWriter` and must return the `Llid` to
-    /// set in the header. The payload size is determined and written to the header automatically.
-    pub fn produce_with<E>(
+    fn produce_with_common<E>(
         &mut self,
+        mut grant: GrantW,
         f: impl FnOnce(&mut ByteWriter<'_>) -> Result<Llid, E>,
     ) -> Result<(), E>
     where
         E: From<Error>,
     {
-        // Problem: We don't know the PDU size before encoding it, but it needs to go into the
-        // header.
-
-        // Get the largest contiguous buffer segment and write the PDU there, skipping the header
-        // FIXME: This is probably an inefficient use of bbqueue...
-        let mut grant = match self.inner.grant_max(usize::max_value()) {
-            Ok(grant) => grant,
-            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
-            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof.into()),
-        };
-
-        if grant.len() < 2 {
-            return Err(Error::Eof.into());
-        }
-
         let mut writer = ByteWriter::new(&mut grant[2..]);
         let free = writer.space_left();
         let result = f(&mut writer);
@@ -87,6 +69,55 @@ impl Producer {
 
         self.inner.commit(used + 2, grant);
         Ok(())
+    }
+
+    /// Enqueue a new data channel PDU with a known maximum size.
+    pub fn produce_sized_with<E>(
+        &mut self,
+        size: usize,
+        f: impl FnOnce(&mut ByteWriter<'_>) -> Result<Llid, E>,
+    ) -> Result<(), E>
+    where
+        E: From<Error>,
+    {
+        // 2 additional bytes for the header
+        let grant = match self.inner.grant(size + 2) {
+            Ok(grant) => grant,
+            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
+            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof.into()),
+        };
+
+        self.produce_with_common(grant, f)
+    }
+
+    /// Enqueue a new data channel PDU by passing a `ByteWriter` to a closure.
+    ///
+    /// The closure has to write the PDU payload into the `ByteWriter` and must return the `Llid` to
+    /// set in the header. The payload size is determined and written to the header automatically,
+    /// based on the remaining space in the `ByteWriter`.
+    pub fn produce_with<E>(
+        &mut self,
+        f: impl FnOnce(&mut ByteWriter<'_>) -> Result<Llid, E>,
+    ) -> Result<(), E>
+    where
+        E: From<Error>,
+    {
+        // Problem: We don't know the PDU size before encoding it, but it needs to go into the
+        // header.
+
+        // Get the largest contiguous buffer segment and write the PDU there, skipping the header
+        // FIXME: This is probably an inefficient use of bbqueue...
+        let grant = match self.inner.grant_max(usize::max_value()) {
+            Ok(grant) => grant,
+            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
+            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof.into()),
+        };
+
+        if grant.len() < 2 {
+            return Err(Error::Eof.into());
+        }
+
+        self.produce_with_common(grant, f)
     }
 
     /// Enqueues a data channel PDU.
