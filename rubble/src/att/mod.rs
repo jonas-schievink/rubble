@@ -39,7 +39,7 @@ use {
     crate::{utils::HexSlice, Error},
 };
 
-pub use self::handle::Handle;
+pub use self::handle::{Handle, HandleRange};
 pub use self::server::AttributeServer;
 pub use self::uuid::AttUuid;
 
@@ -56,33 +56,22 @@ pub struct Attribute<'a> {
 
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
 pub trait AttributeProvider {
-    /// Calls a closure `f` with every attribute stored in `self`.
-    ///
-    /// All attributes will have ascending, consecutive handle values starting at `0x0001`.
+    /// Calls a closure `f` with every attribute whose handle is inside `range`, ascending.
     ///
     /// If `f` returns an error, this function will stop calling `f` and propagate the error
     /// upwards. If `f` returns `Ok(())`, iteration will continue.
-    fn for_each_attr(
+    ///
+    /// This function would ideally return an iterator instead of invoking a callback, but it's not
+    /// currently possible to express the iterator type generically (it would need lifetime-generic
+    /// associated types), and all workarounds seem to be severely limiting.
+    fn for_attrs_in_range(
         &mut self,
-        f: &mut dyn FnMut(&mut Attribute<'_>) -> Result<(), Error>,
+        range: HandleRange,
+        f: impl FnMut(&Self, Attribute<'_>) -> Result<(), Error>,
     ) -> Result<(), Error>;
 
-    /// Returns whether the `filter` closure matches any attribute in `self`.
-    fn any(&mut self, filter: &mut dyn FnMut(&mut Attribute<'_>) -> bool) -> bool {
-        match self.for_each_attr(&mut |att| {
-            if filter(att) {
-                Err(Error::Eof)
-            } else {
-                Ok(())
-            }
-        }) {
-            Err(Error::Eof) => true,
-            _ => false,
-        }
-    }
-
-    /// Returns whether `uuid` is a valid grouping attribute that can be used in *Read By Group
-    /// Type* requests.
+    /// Returns whether `uuid` is a valid grouping attribute type that can be used in *Read By
+    /// Group Type* requests.
     fn is_grouping_attr(&self, uuid: AttUuid) -> bool;
 
     /// Queries the last attribute that is part of the attribute group denoted by the grouping
@@ -100,9 +89,10 @@ pub trait AttributeProvider {
 pub struct NoAttributes;
 
 impl AttributeProvider for NoAttributes {
-    fn for_each_attr(
+    fn for_attrs_in_range(
         &mut self,
-        _: &mut dyn FnMut(&mut Attribute<'_>) -> Result<(), Error>,
+        _range: HandleRange,
+        _f: impl FnMut(&Self, Attribute<'_>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         Ok(())
     }

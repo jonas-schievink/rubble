@@ -2,11 +2,11 @@
 
 use {
     super::{
-        pdus::{AttPdu, ByGroupAttData, ByTypeAttData, ErrorCode, ReadByGroupRsp, ReadByTypeRsp},
-        AttError, Attribute, AttributeProvider, Handle,
+        pdus::{AttPdu, ByGroupAttData, ByTypeAttData, ErrorCode, Opcode},
+        AttError, AttributeProvider, Handle, HandleRange,
     },
     crate::{
-        bytes::{ByteReader, FromBytes},
+        bytes::{ByteReader, FromBytes, ToBytes},
         l2cap::{L2CAPResponder, Protocol, ProtocolObj},
         Error,
     },
@@ -22,6 +22,12 @@ impl<A: AttributeProvider> AttributeServer<A> {
     pub fn new(attrs: A) -> Self {
         Self { attrs }
     }
+
+    /// Returns the `ATT_MTU` value, the maximum size of an ATT PDU that can be processed and sent
+    /// out by the server.
+    fn att_mtu(&self) -> u8 {
+        Self::RSP_PDU_SIZE
+    }
 }
 
 impl<A: AttributeProvider> AttributeServer<A> {
@@ -29,7 +35,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
     ///
     /// This may return an `AttError`, which the caller will then send as a response. In the success
     /// case, this method will send the response (if any).
-    fn process_request<'a>(
+    fn process_request(
         &mut self,
         msg: &AttPdu<'_>,
         responder: &mut L2CAPResponder<'_>,
@@ -68,32 +74,34 @@ impl<A: AttributeProvider> AttributeServer<A> {
             } => {
                 let range = handle_range.check()?;
 
-                let mut filter = |att: &mut Attribute<'_>| {
-                    att.att_type == *attribute_type && range.contains(att.handle)
-                };
-
                 let result = responder.respond_with(|writer| {
                     // If no attributes match request, return `AttributeNotFound` error, else send
                     // `ReadByTypeResponse` with at least one entry
-                    if self.attrs.any(&mut filter) {
-                        ReadByTypeRsp {
-                            item_fn: |cb: &mut dyn FnMut(
-                                ByTypeAttData<'_>,
-                            )
-                                -> Result<(), Error>| {
-                                // Build the `ByTypeAttData`s for all matching attributes and call
-                                // `cb` with them.
-                                self.attrs.for_each_attr(&mut |att: &mut Attribute<'_>| {
-                                    if att.att_type == *attribute_type && range.contains(att.handle)
-                                    {
-                                        cb(ByTypeAttData::new(att.handle, att.value.as_ref()))?;
-                                    }
 
-                                    Ok(())
-                                })
-                            },
-                        }
-                        .encode(writer)?;
+                    writer.write_u8(Opcode::ReadByTypeRsp.into())?;
+                    let length = writer.split_next_mut().ok_or(Error::Eof)?;
+
+                    let mut size = None;
+                    let att_mtu = self.att_mtu();
+                    self.attrs
+                        .for_attrs_in_range(range, |_provider, attr| {
+                            if attr.att_type == *attribute_type {
+                                let data =
+                                    ByTypeAttData::new(att_mtu, attr.handle, attr.value.as_ref());
+                                if size == Some(data.encoded_size()) || size.is_none() {
+                                    // Can try to encode `data`. If we run out of space, end the list.
+                                    data.to_bytes(writer)?;
+                                    size = Some(data.encoded_size());
+                                }
+                            }
+
+                            Ok(())
+                        })
+                        .ok();
+
+                    if let Some(size) = size {
+                        // At least one attr
+                        *length = size;
                         Ok(())
                     } else {
                         Err(AttError::attribute_not_found().into())
@@ -120,36 +128,43 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     ));
                 }
 
-                let mut filter = |att: &mut Attribute<'_>| {
-                    att.att_type == *group_type && range.contains(att.handle)
-                };
-
                 let result = responder.respond_with(|writer| {
                     // If no attributes match request, return `AttributeNotFound` error, else send
-                    // `ReadByGroupResponse` with at least one entry
-                    if self.attrs.any(&mut filter) {
-                        ReadByGroupRsp {
-                            // FIXME very poor formatting on rustfmt's part here :/
-                            item_fn: |cb: &mut dyn FnMut(
-                                ByGroupAttData<'_>,
-                            )
-                                -> Result<(), Error>| {
-                                // Build the `ByGroupAttData`s for all matching attributes and call
-                                // `cb` with them.
-                                self.attrs.for_each_attr(&mut |att: &mut Attribute<'_>| {
-                                    if att.att_type == *group_type && range.contains(att.handle) {
-                                        cb(ByGroupAttData::new(
-                                            att.handle,
-                                            Handle::from_raw(0x003), // TODO: Ask GATT where the group ends
-                                            att.value.as_ref(),
-                                        ))?;
-                                    }
+                    // response with at least one entry.
 
-                                    Ok(())
-                                })
-                            },
-                        }
-                        .encode(writer)?;
+                    writer.write_u8(Opcode::ReadByGroupRsp.into())?;
+                    let length = writer.split_next_mut().ok_or(Error::Eof)?;
+
+                    let mut size = None;
+                    let att_mtu = self.att_mtu();
+                    self.attrs
+                        .for_attrs_in_range(range, |provider, attr| {
+                            if attr.att_type == *group_type {
+                                let data = ByGroupAttData::new(
+                                    att_mtu,
+                                    attr.handle,
+                                    provider.group_end(attr.handle).unwrap().handle,
+                                    attr.value.as_ref(),
+                                );
+                                if size == Some(data.encoded_size()) || size.is_none() {
+                                    // Can try to encode `data`. If we run out of space, end the list.
+                                    data.to_bytes(writer)?;
+                                    size = Some(data.encoded_size());
+                                }
+                            }
+
+                            Ok(())
+                        })
+                        .ok();
+
+                    if let Some(size) = size {
+                        // At least one attr
+                        *length = size;
+                        debug!(
+                            "ATT->ReadByGroupRsp (size={}, left={})",
+                            size,
+                            writer.space_left()
+                        );
                         Ok(())
                     } else {
                         Err(AttError::attribute_not_found().into())
@@ -163,20 +178,27 @@ impl<A: AttributeProvider> AttributeServer<A> {
             }
 
             AttPdu::ReadReq { handle } => {
-                self.attrs
-                    .for_each_attr(&mut |att: &mut Attribute<'_>| {
-                        // Handles are unique so this can only occur once (no bail-out required)
-                        if att.handle == *handle {
-                            responder
-                                .respond(AttPdu::ReadRsp { value: att.value })
-                                .unwrap();
-                        }
+                responder
+                    .respond_with(|writer| -> Result<(), Error> {
+                        writer.write_u8(Opcode::ReadRsp.into())?;
+
+                        self.attrs.for_attrs_in_range(
+                            HandleRange::new(*handle, *handle),
+                            |_provider, attr| {
+                                let value = if writer.space_left() < attr.value.as_ref().len() {
+                                    &attr.value.as_ref()[..writer.space_left()]
+                                } else {
+                                    attr.value.as_ref()
+                                };
+                                writer.write_slice(value)
+                            },
+                        )?;
 
                         Ok(())
                     })
                     .unwrap();
 
-                Err(AttError::attribute_not_found())
+                Ok(())
             }
 
             // Responses are always invalid here
@@ -229,12 +251,12 @@ impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
     ) -> Result<(), Error> {
         let pdu = &AttPdu::from_bytes(&mut ByteReader::new(message))?;
         let opcode = pdu.opcode();
-        debug!("ATT msg received: {:?}", pdu);
+        debug!("ATT<- {:?}", pdu);
 
         match self.process_request(pdu, &mut responder) {
             Ok(()) => Ok(()),
             Err(att_error) => {
-                debug!("ATT error: {:?}", att_error);
+                debug!("ATT-> {:?}", att_error);
 
                 responder.respond(AttPdu::ErrorRsp {
                     opcode: opcode,

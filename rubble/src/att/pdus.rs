@@ -88,11 +88,24 @@ pub struct ByTypeAttData<'a> {
 }
 
 impl<'a> ByTypeAttData<'a> {
-    pub fn new(handle: Handle, value: &'a [u8]) -> Self {
+    /// Creates a *Read By Type Response* attribute data structure from the attribute's handle and
+    /// value.
+    pub fn new(att_mtu: u8, handle: Handle, mut value: &'a [u8]) -> Self {
+        let max_val_len = usize::from(att_mtu - 2);
+        if value.len() > max_val_len {
+            value = &value[..max_val_len];
+        }
+
         Self {
             handle,
             value: HexSlice(value),
         }
+    }
+
+    /// Returns the encoded size of this `ByTypeAttData` structure.
+    pub fn encoded_size(&self) -> u8 {
+        // 2 for the handle, whatever's left for the value
+        2 + self.value.as_ref().len() as u8
     }
 }
 
@@ -108,8 +121,17 @@ impl<'a> FromBytes<'a> for ByTypeAttData<'a> {
 impl<'a> ToBytes for ByTypeAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.handle.as_u16())?;
-        writer.write_slice(self.value.as_ref())?;
-        // FIXME: The value should be truncated if it doesn't fit.
+
+        // If the writer doesn't have enough space, truncate the value
+        let left = writer.space_left();
+        let value = if self.value.as_ref().len() > left {
+            &self.value.as_ref()[..left]
+        } else {
+            self.value.as_ref()
+        };
+
+        writer.write_slice(value)?;
+
         Ok(())
     }
 }
@@ -124,12 +146,23 @@ pub struct ByGroupAttData<'a> {
 }
 
 impl<'a> ByGroupAttData<'a> {
-    pub fn new(handle: Handle, group_end_handle: Handle, value: &'a [u8]) -> Self {
+    pub fn new(att_mtu: u8, handle: Handle, group_end_handle: Handle, mut value: &'a [u8]) -> Self {
+        // 2 Bytes for `handle`, 2 Bytes for `group_end_handle`
+        let max_val_len = usize::from(att_mtu - 2 - 2);
+        if value.len() > max_val_len {
+            value = &value[..max_val_len];
+        }
+
         Self {
             handle,
             group_end_handle,
             value: HexSlice(value),
         }
+    }
+
+    pub fn encoded_size(&self) -> u8 {
+        // 2 Bytes for `handle`, 2 Bytes for `group_end_handle`
+        2 + 2 + self.value.as_ref().len() as u8
     }
 }
 
@@ -148,13 +181,16 @@ impl<'a> ToBytes for ByGroupAttData<'a> {
     fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
         writer.write_u16_le(self.handle.as_u16())?;
         writer.write_u16_le(self.group_end_handle.as_u16())?;
-        if writer.space_left() >= self.value.as_ref().len() {
-            writer.write_slice(self.value.as_ref())?;
+
+        // If the writer doesn't have enough space, truncate the value
+        let left = writer.space_left();
+        let value = if self.value.as_ref().len() > left {
+            &self.value.as_ref()[..left]
         } else {
-            writer
-                .write_slice(&self.value.as_ref()[..writer.space_left()])
-                .unwrap();
-        }
+            self.value.as_ref()
+        };
+
+        writer.write_slice(value)?;
         Ok(())
     }
 }
@@ -652,105 +688,5 @@ impl AttPdu<'_> {
             AttPdu::HandleValueConfirmation { .. } => Opcode::HandleValueConfirmation,
             AttPdu::Unknown { opcode, .. } => *opcode,
         }
-    }
-}
-
-/// *Read By Group Type* response PDU holding an iterator.
-pub struct ReadByGroupRsp<
-    F: FnMut(&mut dyn FnMut(ByGroupAttData<'_>) -> Result<(), Error>) -> Result<(), Error>,
-> {
-    pub item_fn: F,
-}
-
-impl<
-        'a,
-        F: FnMut(&mut dyn FnMut(ByGroupAttData<'_>) -> Result<(), Error>) -> Result<(), Error>,
-    > ReadByGroupRsp<F>
-{
-    pub fn encode(mut self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
-        // This is pretty complicated to encode: The length depends on the attributes we fetch from
-        // the iterator, and has to be written last, but is located at the start.
-        // All the attributes we encode must have the same length. If they don't, we simply stop
-        // when reaching the first one with a different size.
-
-        writer.write_u8(Opcode::ReadByGroupRsp.into())?;
-        let mut length = writer.split_off(1)?;
-
-        let mut size = None;
-        let left = writer.space_left();
-
-        // Encode attribute data until we run out of space or the encoded size differs from the
-        // first entry. This might write partial data, but we set the preceding length correctly, so
-        // it shouldn't matter.
-        (self.item_fn)(&mut |att: ByGroupAttData<'_>| {
-            trace!("read by group rsp: {:?}", att);
-            att.to_bytes(writer)?;
-
-            let used = left - writer.space_left();
-            if let Some(expected_size) = size {
-                if used != expected_size {
-                    return Err(Error::InvalidLength);
-                }
-            } else {
-                size = Some(used);
-            }
-
-            Ok(())
-        })
-        .ok();
-
-        let size = size.expect("empty response");
-        assert!(size <= usize::from(u8::max_value()));
-        length.write_u8(size as u8).unwrap();
-        Ok(())
-    }
-}
-
-/// *Read By Type* response PDU holding an iterator.
-pub struct ReadByTypeRsp<
-    F: FnMut(&mut dyn FnMut(ByTypeAttData<'_>) -> Result<(), Error>) -> Result<(), Error>,
-> {
-    pub item_fn: F,
-}
-
-impl<'a, F: FnMut(&mut dyn FnMut(ByTypeAttData<'_>) -> Result<(), Error>) -> Result<(), Error>>
-    ReadByTypeRsp<F>
-{
-    pub fn encode(mut self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
-        // This is pretty complicated to encode: The length depends on the attributes we fetch from
-        // the iterator, and has to be written last, but is located at the start.
-        // All the attributes we encode must have the same length. If they don't, we simply stop
-        // when reaching the first one with a different size.
-
-        writer.write_u8(Opcode::ReadByTypeRsp.into())?;
-        let mut length = writer.split_off(1)?;
-
-        let mut size = None;
-        let left = writer.space_left();
-
-        // Encode attribute data until we run out of space or the encoded size differs from the
-        // first entry. This might write partial data, but we set the preceding length correctly, so
-        // it shouldn't matter.
-        (self.item_fn)(&mut |att: ByTypeAttData<'_>| {
-            trace!("read by type rsp: {:?}", att);
-            att.to_bytes(writer)?;
-
-            let used = left - writer.space_left();
-            if let Some(expected_size) = size {
-                if used != expected_size {
-                    return Err(Error::InvalidLength);
-                }
-            } else {
-                size = Some(used);
-            }
-
-            Ok(())
-        })
-        .ok();
-
-        let size = size.expect("empty response");
-        assert!(size <= usize::from(u8::max_value()));
-        length.write_u8(size as u8).unwrap();
-        Ok(())
     }
 }
