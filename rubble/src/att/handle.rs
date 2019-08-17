@@ -92,12 +92,22 @@ impl ToBytes for RawHandleRange {
 pub struct HandleRange(RangeInclusive<Handle>);
 
 impl HandleRange {
+    pub fn new(from: Handle, to: Handle) -> Self {
+        HandleRange(from..=to)
+    }
+
     /// Checks if an Handle is in a HandleRange
     pub fn contains(&self, handle: Handle) -> bool {
         self.0.start().0 <= handle.as_u16() && self.0.end().0 >= handle.as_u16()
     }
 
+    /// Returns the lowest attribute handle value included in the range.
     pub fn start(&self) -> Handle {
         *self.0.start()
+    }
+
+    /// Returns the last (highest) attribute handle value included in the range.
+    pub fn end(&self) -> Handle {
+        *self.0.end()
     }
 }
