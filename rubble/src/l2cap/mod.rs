@@ -339,9 +339,11 @@ impl<M: ChannelMapper> L2CAPState<M> {
             }
 
             let resp_channel = chdata.response_channel();
+            let pdu = chdata.response_pdu_size();
             Consume::always(chdata.protocol().process_message(
                 payload,
                 L2CAPResponder {
+                    pdu,
                     tx,
                     channel: resp_channel,
                 },
@@ -378,6 +380,8 @@ impl<M: ChannelMapper> L2CAPState<M> {
 }
 
 pub struct L2CAPResponder<'a> {
+    pdu: u8,
+
     /// Data PDU channel.
     tx: &'a mut Producer,
 
@@ -401,7 +405,7 @@ impl<'a> L2CAPResponder<'a> {
     /// L2CAP header and data channel PDU header will be added automatically. The closure `f` only
     /// has to write the protocol PDU to transmit over L2CAP.
     ///
-    /// The L2CAP implementation will ensure that there are at least `Protocol::RSP_PDU_SIZE` Bytes
+    /// The L2CAP implementation will ensure that there are exactly `Protocol::RSP_PDU_SIZE` Bytes
     /// available in the `ByteWriter` passed to the closure.
     pub fn respond_with<T, E>(
         &mut self,
@@ -414,25 +418,32 @@ impl<'a> L2CAPResponder<'a> {
 
         // The payload length goes into the header, so we have to skip that part and write it later
         let channel = self.channel;
+        let pdu = self.pdu;
         let mut r = None;
-        self.tx.produce_with(|writer| -> Result<_, E> {
-            let mut header_writer = writer.split_off(usize::from(Header::SIZE))?;
+        self.tx
+            .produce_sized_with(usize::from(pdu + Header::SIZE), |writer| -> Result<_, E> {
+                let mut header_writer = writer.split_off(usize::from(Header::SIZE))?;
 
-            let left = writer.space_left();
-            r = Some(f(writer)?);
-            let used = left - writer.space_left();
+                // The PDU size is determined based on how much space is left in `writer`, so we can't
+                // just `split_off` the protocol's PDU size.
+                assert!(writer.space_left() >= pdu.into());
+                let mut payload_writer = ByteWriter::new(&mut writer.rest()[..pdu.into()]);
+                let left = payload_writer.space_left();
+                r = Some(f(&mut payload_writer)?);
+                let used = left - payload_writer.space_left();
+                writer.skip(used).unwrap();
 
-            assert!(used < 0xFFFF);
-            Header {
-                length: used as u16,
-                channel: channel,
-            }
-            .to_bytes(&mut header_writer)?;
+                assert!(used < 0xFFFF);
+                Header {
+                    length: used as u16,
+                    channel,
+                }
+                .to_bytes(&mut header_writer)?;
 
-            assert_eq!(header_writer.space_left(), 0);
+                assert_eq!(header_writer.space_left(), 0);
 
-            Ok(Llid::DataStart)
-        })?;
+                Ok(Llid::DataStart)
+            })?;
         Ok(r.unwrap())
     }
 }
