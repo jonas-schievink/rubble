@@ -31,7 +31,8 @@ impl Producer {
 
     /// Returns the size of the largest contiguous free space in the queue (in Bytes).
     pub fn free_space(&mut self) -> usize {
-        match self.inner.grant_max(usize::max_value()) {
+        let cap = self.inner.capacity();
+        match self.inner.grant_max(cap) {
             Ok(grant) => {
                 let space = grant.len();
                 self.inner.commit(0, grant);
@@ -107,7 +108,8 @@ impl Producer {
 
         // Get the largest contiguous buffer segment and write the PDU there, skipping the header
         // FIXME: This is probably an inefficient use of bbqueue...
-        let grant = match self.inner.grant_max(usize::max_value()) {
+        let cap = self.inner.capacity();
+        let grant = match self.inner.grant_max(cap) {
             Ok(grant) => grant,
             Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
             Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof.into()),

@@ -58,9 +58,10 @@ impl fmt::Write for BbqLogger {
             let mut grant = match self.p.grant_max(bytes.len()) {
                 Ok(grant) => grant,
                 Err(_) => {
+                    let cap = self.p.capacity();
                     let max_len = self
                         .p
-                        .grant_max(usize::max_value())
+                        .grant_max(cap)
                         .map(|mut g| g.buf().len())
                         .unwrap_or(0);
                     panic!(

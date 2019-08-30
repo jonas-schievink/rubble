@@ -13,7 +13,10 @@ publish = false
 [dependencies]
 rubble = { path = "../../rubble", default-features = false }
 cortex-m = "0.6.0"
-bbqueue = "0.3.2"
+
+[dependencies.bbqueue]
+git = "https://github.com/jonas-schievink/bbqueue.git"
+branch = "rubble"
 
 [dependencies.log]
 version = "0.4.6"
