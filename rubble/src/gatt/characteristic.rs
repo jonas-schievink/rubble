@@ -65,7 +65,7 @@ pub enum Appearance {
     GenericWatch = 192,
     SportsWatch = 193,
     GenericClock = 256,
-    GenericDisplay = 320,   // yeah good luck with that
+    GenericDisplay = 320, // yeah good luck with that
     GenericRemoteControl = 384,
     GenericEyeGlasses = 448,
     GenericTag = 512,
@@ -115,11 +115,11 @@ pub enum Appearance {
     MobilityScooter = 3266,
     GenericContinuousGlucoseMonitor = 3328,
 
-    GenericInsulinPump = 3392,  // no
-    DurableInsulinPump = 3393,  // no
-    PatchInsulingPump = 3396,   // no
-    InsulinPen = 3400,  // no
-    GenericMedicationDelivery = 3456,   // don't even think about it
+    GenericInsulinPump = 3392,        // no
+    DurableInsulinPump = 3393,        // no
+    PatchInsulingPump = 3396,         // no
+    InsulinPen = 3400,                // no
+    GenericMedicationDelivery = 3456, // don't even think about it
 
     GenericOutdoorSportsActivity = 5184,
     LocationDisplayService = 5185,
