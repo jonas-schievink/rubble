@@ -98,7 +98,7 @@
 use {
     crate::{
         bytes::*,
-        l2cap::{L2CAPResponder, Protocol, ProtocolObj},
+        l2cap::{Sender, Protocol, ProtocolObj},
         utils::HexSlice,
         Error,
     },
@@ -148,7 +148,7 @@ impl<S: SecurityLevel> ProtocolObj for SecurityManager<S> {
     fn process_message(
         &mut self,
         message: &[u8],
-        _responder: L2CAPResponder<'_>,
+        _responder: Sender<'_>,
     ) -> Result<(), Error> {
         let cmd = Command::from_bytes(&mut ByteReader::new(message))?;
         trace!("SMP cmd {:?}, {:?}", cmd, HexSlice(message));

@@ -242,7 +242,7 @@ pub trait ProtocolObj {
     fn process_message(
         &mut self,
         message: &[u8],
-        responder: L2CAPResponder<'_>,
+        responder: Sender<'_>,
     ) -> Result<(), Error>;
 }
 
@@ -342,7 +342,7 @@ impl<M: ChannelMapper> L2CAPState<M> {
             let pdu = chdata.response_pdu_size();
             Consume::always(chdata.protocol().process_message(
                 payload,
-                L2CAPResponder {
+                Sender {
                     pdu,
                     tx,
                     channel: resp_channel,
@@ -379,7 +379,11 @@ impl<M: ChannelMapper> L2CAPState<M> {
     }
 }
 
-pub struct L2CAPResponder<'a> {
+/// Provides a way to send a L2CAP message with preallocated storage.
+///
+/// This can be done either in response to an incoming packet (via `ProtocolObj::process_msg`), or
+/// as a device-initiated packet (eg. an attribute notification).
+pub struct Sender<'a> {
     pdu: u8,
 
     /// Data PDU channel.
@@ -389,25 +393,25 @@ pub struct L2CAPResponder<'a> {
     channel: Channel,
 }
 
-impl<'a> L2CAPResponder<'a> {
+impl<'a> Sender<'a> {
     /// Enqueues an L2CAP message to be sent over the data connection.
     ///
     /// L2CAP header (including the destination endpoint's channel) and the data channel PDU header
     /// will be added automatically.
     ///
     /// This will fail if there's not enough space left in the TX queue.
-    pub fn respond<P: ToBytes>(&mut self, payload: P) -> Result<(), Error> {
-        self.respond_with(|writer| payload.to_bytes(writer))
+    pub fn send<P: ToBytes>(&mut self, payload: P) -> Result<(), Error> {
+        self.send_with(|writer| payload.to_bytes(writer))
     }
 
-    /// Respond with an L2CAP message encoded by a closure.
+    /// Enqueues an L2CAP message encoded by a closure.
     ///
     /// L2CAP header and data channel PDU header will be added automatically. The closure `f` only
     /// has to write the protocol PDU to transmit over L2CAP.
     ///
     /// The L2CAP implementation will ensure that there are exactly `Protocol::RSP_PDU_SIZE` Bytes
     /// available in the `ByteWriter` passed to the closure.
-    pub fn respond_with<T, E>(
+    pub fn send_with<T, E>(
         &mut self,
         f: impl FnOnce(&mut ByteWriter<'_>) -> Result<T, E>,
     ) -> Result<T, E>

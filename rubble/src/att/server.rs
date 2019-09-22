@@ -7,7 +7,7 @@ use {
     },
     crate::{
         bytes::{ByteReader, FromBytes, ToBytes},
-        l2cap::{L2CAPResponder, Protocol, ProtocolObj},
+        l2cap::{Sender, Protocol, ProtocolObj},
         Error,
     },
 };
@@ -38,11 +38,11 @@ impl<A: AttributeProvider> AttributeServer<A> {
     fn process_request(
         &mut self,
         msg: &AttPdu<'_>,
-        responder: &mut L2CAPResponder<'_>,
+        responder: &mut Sender<'_>,
     ) -> Result<(), AttError> {
         /// Error returned when an ATT error should be sent back.
         ///
-        /// Returning this from inside `responder.respond_with` will not send the response and
+        /// Returning this from inside `responder.send_with` will not send the response and
         /// instead bail out of the closure.
         struct RspError(AttError);
 
@@ -61,7 +61,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
         match msg {
             AttPdu::ExchangeMtuReq { mtu: _mtu } => {
                 responder
-                    .respond(AttPdu::ExchangeMtuRsp {
+                    .send(AttPdu::ExchangeMtuRsp {
                         mtu: u16::from(Self::RSP_PDU_SIZE),
                     })
                     .unwrap();
@@ -74,7 +74,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
             } => {
                 let range = handle_range.check()?;
 
-                let result = responder.respond_with(|writer| {
+                let result = responder.send_with(|writer| {
                     // If no attributes match request, return `AttributeNotFound` error, else send
                     // `ReadByTypeResponse` with at least one entry
 
@@ -128,7 +128,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     ));
                 }
 
-                let result = responder.respond_with(|writer| {
+                let result = responder.send_with(|writer| {
                     // If no attributes match request, return `AttributeNotFound` error, else send
                     // response with at least one entry.
 
@@ -179,7 +179,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
 
             AttPdu::ReadReq { handle } => {
                 responder
-                    .respond_with(|writer| -> Result<(), Error> {
+                    .send_with(|writer| -> Result<(), Error> {
                         writer.write_u8(Opcode::ReadRsp.into())?;
 
                         self.attrs.for_attrs_in_range(
@@ -247,7 +247,7 @@ impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
     fn process_message(
         &mut self,
         message: &[u8],
-        mut responder: L2CAPResponder<'_>,
+        mut responder: Sender<'_>,
     ) -> Result<(), Error> {
         let pdu = &AttPdu::from_bytes(&mut ByteReader::new(message))?;
         let opcode = pdu.opcode();
@@ -258,7 +258,7 @@ impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
             Err(att_error) => {
                 debug!("ATT-> {:?}", att_error);
 
-                responder.respond(AttPdu::ErrorRsp {
+                responder.send(AttPdu::ErrorRsp {
                     opcode: opcode,
                     handle: att_error.handle(),
                     error_code: att_error.error_code(),
