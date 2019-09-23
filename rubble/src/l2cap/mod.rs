@@ -239,11 +239,7 @@ pub trait ProtocolObj {
     /// recovered from and that can not be reported back to the connected device using the protocol.
     /// This means that only things like unrecoverable protocol parsing errors should return an
     /// error here.
-    fn process_message(
-        &mut self,
-        message: &[u8],
-        responder: Sender<'_>,
-    ) -> Result<(), Error>;
+    fn process_message(&mut self, message: &[u8], responder: Sender<'_>) -> Result<(), Error>;
 }
 
 /// Trait for protocols that sit on top of L2CAP (non-object-safe part).

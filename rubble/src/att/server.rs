@@ -7,7 +7,7 @@ use {
     },
     crate::{
         bytes::{ByteReader, FromBytes, ToBytes},
-        l2cap::{Sender, Protocol, ProtocolObj},
+        l2cap::{Protocol, ProtocolObj, Sender},
         Error,
     },
 };
@@ -244,11 +244,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
 }
 
 impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
-    fn process_message(
-        &mut self,
-        message: &[u8],
-        mut responder: Sender<'_>,
-    ) -> Result<(), Error> {
+    fn process_message(&mut self, message: &[u8], mut responder: Sender<'_>) -> Result<(), Error> {
         let pdu = &AttPdu::from_bytes(&mut ByteReader::new(message))?;
         let opcode = pdu.opcode();
         debug!("ATT<- {:?}", pdu);
