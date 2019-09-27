@@ -40,7 +40,7 @@ use {
 };
 
 pub use self::handle::{Handle, HandleRange};
-pub use self::server::AttributeServer;
+pub use self::server::{AttributeServer, AttributeServerTx};
 pub use self::uuid::AttUuid;
 
 /// An ATT server attribute

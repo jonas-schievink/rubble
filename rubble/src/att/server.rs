@@ -18,9 +18,17 @@ pub struct AttributeServer<A: AttributeProvider> {
 }
 
 impl<A: AttributeProvider> AttributeServer<A> {
-    /// Creates an AttributeServer with Attributes
+    /// Creates an `AttributeServer` hosting attributes from an `AttributeProvider`.
     pub fn new(attrs: A) -> Self {
         Self { attrs }
+    }
+
+    /// Prepares for performing a server-initiated action (eg. sending a notification/indication).
+    pub fn with_sender<'a>(&'a mut self, sender: Sender<'a>) -> AttributeServerTx<'a, A> {
+        AttributeServerTx {
+            server: self,
+            sender,
+        }
     }
 
     /// Returns the `ATT_MTU` value, the maximum size of an ATT PDU that can be processed and sent
@@ -28,9 +36,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
     fn att_mtu(&self) -> u8 {
         Self::RSP_PDU_SIZE
     }
-}
 
-impl<A: AttributeProvider> AttributeServer<A> {
     /// Process an incoming request (or command) PDU and return a response.
     ///
     /// This may return an `AttError`, which the caller will then send as a response. In the success
@@ -267,4 +273,14 @@ impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
 impl<A: AttributeProvider> Protocol for AttributeServer<A> {
     // FIXME: Would it be useful to have this as a runtime parameter instead?
     const RSP_PDU_SIZE: u8 = 23;
+}
+
+/// An ATT server handle that can send packets and initiate actions.
+///
+/// This type is needed for any server-initiated procedure, where the server sends out a packet on
+/// its own instead of reacting to a client packet.
+#[allow(unused)] // TODO: Implement notifications/indications with this
+pub struct AttributeServerTx<'a, A: AttributeProvider> {
+    server: &'a mut AttributeServer<A>,
+    sender: Sender<'a>,
 }

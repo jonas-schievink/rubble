@@ -1,5 +1,5 @@
 use crate::{
-    l2cap::{ChannelMapper, L2CAPState},
+    l2cap::{ChannelMapper, L2CAPState, L2CAPStateTx},
     link::{
         data::{ControlPdu, Pdu},
         queue::{Consume, Consumer, Producer},
@@ -24,6 +24,7 @@ pub struct Responder<M: ChannelMapper> {
 }
 
 impl<M: ChannelMapper> Responder<M> {
+    /// Creates a new packet processor hooked up to data channel packet queues.
     pub fn new(tx: Producer, rx: Consumer, l2cap: L2CAPState<M>) -> Self {
         Self {
             tx,
@@ -68,14 +69,19 @@ impl<M: ChannelMapper> Responder<M> {
                 }
                 Pdu::DataStart { message } => {
                     info!("L2start: {:?}", HexSlice(message));
-                    this.l2cap.process_start(message, &mut this.tx)
+                    this.l2cap().process_start(message)
                 }
                 Pdu::DataCont { message } => {
                     info!("L2cont {:?}", HexSlice(message));
-                    this.l2cap.process_cont(message, &mut this.tx)
+                    this.l2cap().process_cont(message)
                 }
             })
         })
+    }
+
+    /// Obtains access to the L2CAP instance.
+    pub fn l2cap(&mut self) -> L2CAPStateTx<'_, M> {
+        self.l2cap.tx(&mut self.tx)
     }
 
     /// A helper method that splits `self` into the `rx` and the remaining `Self`.

@@ -23,7 +23,7 @@
 
 use {
     crate::{
-        att::{AttributeProvider, AttributeServer, NoAttributes},
+        att::{self, AttributeProvider, AttributeServer, NoAttributes},
         bytes::*,
         link::{
             data::Llid,
@@ -34,7 +34,10 @@ use {
         utils::HexSlice,
         Error,
     },
-    core::fmt,
+    core::{
+        fmt,
+        ops::{Deref, DerefMut},
+    },
 };
 
 /// An L2CAP channel identifier (CID).
@@ -120,12 +123,18 @@ impl ToBytes for Channel {
 
 /// Trait for L2CAP channel mappers that provide access to the protocol or service behind a CID.
 pub trait ChannelMapper {
+    /// The attribute provider used by the ATT server.
+    type AttributeProvider: AttributeProvider;
+
     /// Look up what's connected to `channel` (eg. the `Protocol` to which to forward).
-    fn lookup(&mut self, channel: Channel) -> Option<ChannelData<'_>>;
+    fn lookup(&mut self, channel: Channel) -> Option<ChannelData<'_, dyn ProtocolObj + '_>>;
+
+    /// Returns information about the Attribute Protocol on channel `0x0004`.
+    fn att(&mut self) -> ChannelData<'_, AttributeServer<Self::AttributeProvider>>;
 }
 
 /// Data associated with a connected L2CAP channel.
-pub struct ChannelData<'a> {
+pub struct ChannelData<'a, P: ?Sized> {
     /// Channel to which responses should be addressed.
     ///
     /// For fixed, predefined channels, this is always the same value for both devices, but
@@ -133,13 +142,34 @@ pub struct ChannelData<'a> {
     response_channel: Channel,
 
     /// The protocol listening on this channel.
-    protocol: &'a mut dyn ProtocolObj,
+    protocol: &'a mut P,
 
-    rsp_pdu: u8,
+    /// Outgoing PDU size of the protocol.
+    ///
+    /// This is the number of bytes that must be available to the protocol in the TX buffer to
+    /// guarantee that all of the protocol's PDUs will fit.
+    pdu: u8,
 }
 
-impl<'a> ChannelData<'a> {
-    fn new<P: Protocol>(response_channel: Channel, protocol: &'a mut P) -> Self {
+impl<'a> ChannelData<'a, dyn ProtocolObj + 'a> {
+    /// Creates a `ChannelData` carrying a dynamically-dispatched `dyn ProtocolObj` from a concrete
+    /// `Protocol` implementor `T`.
+    fn new_dyn<T: Protocol + 'a>(response_channel: Channel, protocol: &'a mut T) -> Self {
+        assert!(
+            usize::from(T::RSP_PDU_SIZE + Header::SIZE) <= MIN_PAYLOAD_BUF,
+            "protocol min PDU is smaller than data channel PDU (L2CAP reassembly NYI)"
+        );
+
+        ChannelData {
+            response_channel,
+            pdu: T::RSP_PDU_SIZE,
+            protocol,
+        }
+    }
+}
+
+impl<'a, P: Protocol> ChannelData<'a, P> {
+    fn new(response_channel: Channel, protocol: &'a mut P) -> Self {
         assert!(
             usize::from(P::RSP_PDU_SIZE + Header::SIZE) <= MIN_PAYLOAD_BUF,
             "protocol min PDU is smaller than data channel PDU (L2CAP reassembly NYI)"
@@ -147,30 +177,40 @@ impl<'a> ChannelData<'a> {
 
         ChannelData {
             response_channel,
-            rsp_pdu: P::RSP_PDU_SIZE,
+            pdu: P::RSP_PDU_SIZE,
             protocol,
         }
     }
+}
 
+impl<'a, P: ?Sized> ChannelData<'a, P> {
     /// Returns the `Channel` to which the response should be sent.
     pub fn response_channel(&self) -> Channel {
         self.response_channel
     }
 
-    /// Returns the protocol response size in Bytes.
+    /// Returns the PDU size required by the protocol.
     ///
-    /// This is the minimal size in Bytes the protocol needs to have provided for its responses.
-    /// `Protocol` implementations may make use of additional space as well, but this is the very
-    /// minimum.
+    /// This is the minimum size in Bytes the protocol needs to have provided for any of its
+    /// outgoing PDUs. `Protocol` implementations may make use of additional space as well, but this
+    /// is the very minimum.
     ///
-    /// The L2CAP implementation will not forward PDUs to the protocol unless this amount of space
-    /// is available in the TX buffer.
-    pub fn response_pdu_size(&self) -> u8 {
-        self.rsp_pdu
+    /// The L2CAP implementation will not forward incoming PDUs to the protocol unless this amount
+    /// of space is available in the TX buffer. This guarantees that the response will always fit.
+    pub fn pdu_size(&self) -> u8 {
+        self.pdu
     }
 
     /// Returns the protocol connected to the channel.
-    pub fn protocol(&mut self) -> &mut dyn ProtocolObj {
+    pub fn protocol(&mut self) -> &mut P {
+        self.protocol
+    }
+
+    /// Consumes `self` and returns the protocol connected to the channel, with lifetime `'a`.
+    ///
+    /// This can be useful when the lifetime of the reference must not be tied to `self`, as would
+    /// be the case with `protocol()`.
+    pub fn into_protocol(self) -> &'a mut P {
         self.protocol
     }
 }
@@ -212,15 +252,22 @@ impl<A: AttributeProvider> BleChannelMap<A, NoSecurity> {
 }
 
 impl<A: AttributeProvider, S: SecurityLevel> ChannelMapper for BleChannelMap<A, S> {
-    fn lookup(&mut self, channel: Channel) -> Option<ChannelData<'_>> {
+    type AttributeProvider = A;
+
+    fn lookup(&mut self, channel: Channel) -> Option<ChannelData<'_, dyn ProtocolObj + '_>> {
         match channel {
-            Channel::ATT => Some(ChannelData::new(Channel::ATT, &mut self.att)),
-            Channel::LE_SECURITY_MANAGER => {
-                Some(ChannelData::new(Channel::LE_SECURITY_MANAGER, &mut self.sm))
-            }
+            Channel::ATT => Some(ChannelData::new_dyn(Channel::ATT, &mut self.att)),
+            Channel::LE_SECURITY_MANAGER => Some(ChannelData::new_dyn(
+                Channel::LE_SECURITY_MANAGER,
+                &mut self.sm,
+            )),
             // FIXME implement the LE Signaling Channel
             _ => None,
         }
+    }
+
+    fn att(&mut self) -> ChannelData<'_, AttributeServer<Self::AttributeProvider>> {
+        ChannelData::new(Channel::ATT, &mut self.att)
     }
 }
 
@@ -319,59 +366,14 @@ pub struct L2CAPState<M: ChannelMapper> {
 }
 
 impl<M: ChannelMapper> L2CAPState<M> {
+    /// Creates a new L2CAP state using the given channel configuration.
     pub fn new(mapper: M) -> Self {
         Self { mapper }
     }
 
-    /// Dispatches a fully reassembled L2CAP message to the protocol listening on the addressed
-    /// channel.
-    fn dispatch(&mut self, channel: Channel, payload: &[u8], tx: &mut Producer) -> Consume<()> {
-        if let Some(mut chdata) = self.mapper.lookup(channel) {
-            let free = tx.free_space();
-            let needed = usize::from(chdata.response_pdu_size() + Header::SIZE);
-            if free < needed {
-                debug!("{} free bytes, need {}; waiting", free, needed);
-                return Consume::never(Ok(()));
-            }
-
-            let resp_channel = chdata.response_channel();
-            let pdu = chdata.response_pdu_size();
-            Consume::always(chdata.protocol().process_message(
-                payload,
-                Sender {
-                    pdu,
-                    tx,
-                    channel: resp_channel,
-                },
-            ))
-        } else {
-            warn!(
-                "ignoring message sent to unconnected channel {:?}: {:?}",
-                channel,
-                HexSlice(payload)
-            );
-            Consume::always(Ok(()))
-        }
-    }
-
-    /// Process the start of a new L2CAP message (or a complete, unfragmented message).
-    pub fn process_start(&mut self, message: &[u8], tx: &mut Producer) -> Consume<()> {
-        let msg = match Message::<&[u8]>::from_bytes(&mut ByteReader::new(message)) {
-            Ok(msg) => msg,
-            Err(e) => return Consume::always(Err(e)),
-        };
-
-        if usize::from(msg.header.length) != msg.payload.len() {
-            // Lengths mismatch => Reassembly needed
-            unimplemented!("L2CAP reassembly");
-        }
-
-        self.dispatch(msg.header.channel, msg.payload, tx)
-    }
-
-    /// Process continuation of an L2CAP message.
-    pub fn process_cont(&mut self, _data: &[u8], _tx: &mut Producer) -> Consume<()> {
-        unimplemented!("reassembly")
+    /// Gives this instance the ability to transmit packets.
+    pub fn tx<'a>(&'a mut self, tx: &'a mut Producer) -> L2CAPStateTx<'a, M> {
+        L2CAPStateTx { l2cap: self, tx }
     }
 }
 
@@ -380,6 +382,7 @@ impl<M: ChannelMapper> L2CAPState<M> {
 /// This can be done either in response to an incoming packet (via `ProtocolObj::process_msg`), or
 /// as a device-initiated packet (eg. an attribute notification).
 pub struct Sender<'a> {
+    /// The protocol's max. outgoing PDU size.
     pdu: u8,
 
     /// Data PDU channel.
@@ -390,6 +393,23 @@ pub struct Sender<'a> {
 }
 
 impl<'a> Sender<'a> {
+    fn new<T: ?Sized>(chdata: &ChannelData<'_, T>, tx: &'a mut Producer) -> Option<Self> {
+        let free = tx.free_space();
+        let needed = usize::from(chdata.pdu_size() + Header::SIZE);
+        if free < needed {
+            debug!("{} free bytes, need {}", free, needed);
+            return None;
+        }
+
+        let resp_channel = chdata.response_channel();
+        let pdu = chdata.pdu_size();
+        Some(Sender {
+            pdu,
+            tx,
+            channel: resp_channel,
+        })
+    }
+
     /// Enqueues an L2CAP message to be sent over the data connection.
     ///
     /// L2CAP header (including the destination endpoint's channel) and the data channel PDU header
@@ -445,5 +465,85 @@ impl<'a> Sender<'a> {
                 Ok(Llid::DataStart)
             })?;
         Ok(r.unwrap())
+    }
+}
+
+/// An `L2CAPState` with the ability to transmit packets.
+///
+/// Derefs to the underlying `L2CAPState`.
+pub struct L2CAPStateTx<'a, M: ChannelMapper> {
+    l2cap: &'a mut L2CAPState<M>,
+    tx: &'a mut Producer,
+}
+
+impl<'a, M: ChannelMapper> L2CAPStateTx<'a, M> {
+    /// Process the start of a new L2CAP message (or a complete, unfragmented message).
+    ///
+    /// If the incoming message is unfragmented, it will be forwarded to the protocol listening on
+    /// the addressed channel, and a response may be sent.
+    pub fn process_start(&mut self, message: &[u8]) -> Consume<()> {
+        let msg = match Message::<&[u8]>::from_bytes(&mut ByteReader::new(message)) {
+            Ok(msg) => msg,
+            Err(e) => return Consume::always(Err(e)),
+        };
+
+        if usize::from(msg.header.length) != msg.payload.len() {
+            // Lengths mismatch => Reassembly needed
+            unimplemented!("L2CAP reassembly");
+        }
+
+        self.dispatch(msg.header.channel, msg.payload)
+    }
+
+    /// Process continuation of an L2CAP message.
+    ///
+    /// This is not yet implemented and will always panic.
+    pub fn process_cont(&mut self, _data: &[u8]) -> Consume<()> {
+        unimplemented!("reassembly")
+    }
+
+    /// Dispatches a fully reassembled L2CAP message to the protocol listening on the addressed
+    /// channel.
+    fn dispatch(&mut self, channel: Channel, payload: &[u8]) -> Consume<()> {
+        if let Some(mut chdata) = self.l2cap.mapper.lookup(channel) {
+            let sender = if let Some(sender) = Sender::new(&chdata, self.tx) {
+                sender
+            } else {
+                return Consume::never(Ok(()));
+            };
+
+            Consume::always(chdata.protocol().process_message(payload, sender))
+        } else {
+            warn!(
+                "ignoring message sent to unconnected channel {:?}: {:?}",
+                channel,
+                HexSlice(payload)
+            );
+            Consume::always(Ok(()))
+        }
+    }
+
+    /// Prepares for sending data using the Attribute Protocol.
+    ///
+    /// This will reserve sufficient space in the outgoing PDU buffer to send any ATT PDU, and then
+    /// return an `AttributeServerTx` instance that can be used to initiate an ATT-specific
+    /// procedure.
+    pub fn att<'p>(&'p mut self) -> Option<att::AttributeServerTx<'_, M::AttributeProvider>> {
+        let att = self.l2cap.mapper.att();
+        Sender::new(&att, self.tx).map(move |sender| att.into_protocol().with_sender(sender))
+    }
+}
+
+impl<'a, M: ChannelMapper> Deref for L2CAPStateTx<'a, M> {
+    type Target = L2CAPState<M>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.l2cap
+    }
+}
+
+impl<'a, M: ChannelMapper> DerefMut for L2CAPStateTx<'a, M> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.l2cap
     }
 }
