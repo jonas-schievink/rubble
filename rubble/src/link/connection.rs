@@ -90,7 +90,7 @@ impl<HW: HardwareInterface> Connection<HW> {
 
         let mut this = Self {
             access_address: lldata.access_address(),
-            crc_init: lldata.crc_init().into(),
+            crc_init: lldata.crc_init(),
             channel_map: *lldata.channel_map(),
             hop: lldata.hop(),
             conn_interval: lldata.interval(),
@@ -167,48 +167,45 @@ impl<HW: HardwareInterface> Connection<HW> {
                 // LLCP message, try to process it immediately. Certain LLCPDUs might be put in the
                 // channel instead and answered by the non-real-time part.
 
-                match ControlPdu::from_bytes(&mut ByteReader::new(payload)) {
-                    Ok(pdu) => {
-                        // Some LLCPDUs don't need a response, those can always be processed and
-                        // ACKed. For those that do, the other device must have ACKed the last
-                        // packet we sent, because we'll directly use the radio's TX buffer to send
-                        // back the LLCP response.
+                if let Ok(pdu) = ControlPdu::from_bytes(&mut ByteReader::new(payload)) {
+                    // Some LLCPDUs don't need a response, those can always be processed and
+                    // ACKed. For those that do, the other device must have ACKed the last
+                    // packet we sent, because we'll directly use the radio's TX buffer to send
+                    // back the LLCP response.
 
-                        match self.process_control_pdu(pdu, acknowledged) {
-                            Ok(Some(response)) => {
-                                self.next_expected_seq_num += SeqNum::ONE;
+                    match self.process_control_pdu(pdu, acknowledged) {
+                        Ok(Some(response)) => {
+                            self.next_expected_seq_num += SeqNum::ONE;
 
-                                let rsp = Pdu::from(&response);
-                                let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
-                                let left = payload_writer.space_left();
-                                rsp.to_bytes(&mut payload_writer).unwrap();
+                            let rsp = Pdu::from(&response);
+                            let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
+                            let left = payload_writer.space_left();
+                            rsp.to_bytes(&mut payload_writer).unwrap();
 
-                                let mut header = Header::new(Llid::Control);
-                                let pl_len = (left - payload_writer.space_left()) as u8;
-                                header.set_payload_length(pl_len);
-                                self.send(header, tx);
-                                responded = true;
+                            let mut header = Header::new(Llid::Control);
+                            let pl_len = (left - payload_writer.space_left()) as u8;
+                            header.set_payload_length(pl_len);
+                            self.send(header, tx);
+                            responded = true;
 
-                                info!("LLCP<- {:?}", pdu);
-                                info!("LLCP-> {:?}", response);
-                            }
-                            Ok(None) => {
-                                self.next_expected_seq_num += SeqNum::ONE;
+                            info!("LLCP<- {:?}", pdu);
+                            info!("LLCP-> {:?}", response);
+                        }
+                        Ok(None) => {
+                            self.next_expected_seq_num += SeqNum::ONE;
 
-                                info!("LLCP<- {:?}", pdu);
-                                info!("LLCP-> (no response)");
-                            }
-                            Err(LlcpError::ConnectionLost) => {
-                                return Err(());
-                            }
-                            Err(LlcpError::NoSpace) => {
-                                // Do not acknowledge the PDU
-                            }
+                            info!("LLCP<- {:?}", pdu);
+                            info!("LLCP-> (no response)");
+                        }
+                        Err(LlcpError::ConnectionLost) => {
+                            return Err(());
+                        }
+                        Err(LlcpError::NoSpace) => {
+                            // Do not acknowledge the PDU
                         }
                     }
-                    _ => {
-                        // NACK
-                    }
+                } else {
+                    // Couldn't parse control PDU. CRC might be invalid. NACK
                 }
             } else {
                 // Try to buffer the packet. If it fails, we don't acknowledge it, so it will be

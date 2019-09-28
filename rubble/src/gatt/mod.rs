@@ -87,7 +87,7 @@ impl AttributeProvider for BatteryServiceAttrs {
         match handle.as_u16() {
             0x0001 => Some(&self.attributes[2]),
             0x0002 => Some(&self.attributes[2]),
-            _ => return None,
+            _ => None,
         }
     }
 }

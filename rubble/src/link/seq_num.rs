@@ -33,6 +33,7 @@ impl fmt::Debug for SeqNum {
 impl Add for SeqNum {
     type Output = Self;
 
+    #[allow(clippy::suspicious_arithmetic_impl)] // Use of `^` is correct
     fn add(self, rhs: Self) -> Self {
         SeqNum(self.0 ^ rhs.0)
     }

@@ -261,7 +261,7 @@ impl<A: AttributeProvider> ProtocolObj for AttributeServer<A> {
                 debug!("ATT-> {:?}", att_error);
 
                 responder.send(AttPdu::ErrorRsp {
-                    opcode: opcode,
+                    opcode,
                     handle: att_error.handle(),
                     error_code: att_error.error_code(),
                 })

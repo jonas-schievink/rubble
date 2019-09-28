@@ -528,7 +528,7 @@ impl<'a, M: ChannelMapper> L2CAPStateTx<'a, M> {
     /// This will reserve sufficient space in the outgoing PDU buffer to send any ATT PDU, and then
     /// return an `AttributeServerTx` instance that can be used to initiate an ATT-specific
     /// procedure.
-    pub fn att<'p>(&'p mut self) -> Option<att::AttributeServerTx<'_, M::AttributeProvider>> {
+    pub fn att(&mut self) -> Option<att::AttributeServerTx<'_, M::AttributeProvider>> {
         let att = self.l2cap.mapper.att();
         Sender::new(&att, self.tx).map(move |sender| att.into_protocol().with_sender(sender))
     }

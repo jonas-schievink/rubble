@@ -771,7 +771,7 @@ impl Header {
         assert!(6 <= length && length <= 37);
 
         let header = self.0 & !0b00111111_00000000;
-        self.0 = header | ((length as u16) << 8);
+        self.0 = header | (u16::from(length) << 8);
     }
 }
 
