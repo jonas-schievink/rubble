@@ -57,9 +57,9 @@ use {
     },
     pac::{radio::state::STATER, RADIO},
     rubble::{
+        config::Config,
         link::{
-            advertising, data, HardwareInterface, LinkLayer, NextUpdate, RadioCmd, Transmitter,
-            CRC_POLY, MIN_PDU_BUF,
+            advertising, data, LinkLayer, NextUpdate, RadioCmd, Transmitter, CRC_POLY, MIN_PDU_BUF,
         },
         phy::{AdvertisingChannel, DataChannel},
         time::{Duration, Instant},
@@ -257,10 +257,10 @@ impl BleRadio {
     /// Automatically reconfigures the radio according to the `RadioCmd` returned by the BLE stack.
     ///
     /// Returns when the `update` method should be called the next time.
-    pub fn recv_interrupt<HW: HardwareInterface<Tx = Self>>(
+    pub fn recv_interrupt<C: Config<Transmitter = Self>>(
         &mut self,
         timestamp: Instant,
-        ll: &mut LinkLayer<HW>,
+        ll: &mut LinkLayer<C>,
     ) -> NextUpdate {
         if self.radio.events_disabled.read().bits() == 0 {
             return NextUpdate::Keep;

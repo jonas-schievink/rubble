@@ -145,6 +145,7 @@ use {
     },
     crate::{
         bytes::ByteReader,
+        config::Config,
         crc::ble_crc24,
         phy::{AdvertisingChannel, DataChannel, Radio},
         time::{Duration, Instant, Timer},
@@ -196,17 +197,8 @@ pub const MIN_PACKET_BUF: usize =
     MIN_PDU_BUF +
     3 /* crc */;
 
-/// Defines types that provide platform-dependent functionality.
-pub trait HardwareInterface {
-    /// A timesource with microsecond accuracy.
-    type Timer: Timer;
-
-    /// The BLE packet transmitter.
-    type Tx: Transmitter;
-}
-
 /// Link-Layer state machine, according to the Bluetooth spec.
-enum State<HW: HardwareInterface> {
+enum State<C: Config> {
     /// Radio silence: Not listening, not transmitting anything.
     Standby,
 
@@ -228,20 +220,20 @@ enum State<HW: HardwareInterface> {
     },
 
     /// Connected with another device.
-    Connection(Connection<HW>),
+    Connection(Connection<C>),
 }
 
 /// Implementation of the real-time BLE Link-Layer logic.
 ///
 /// Users of this struct must provide an interface to the platform's hardware by implementing
 /// `HardwareInterface`.
-pub struct LinkLayer<HW: HardwareInterface> {
+pub struct LinkLayer<C: Config> {
     dev_addr: DeviceAddress,
-    state: State<HW>,
-    timer: HW::Timer,
+    state: State<C>,
+    timer: C::Timer,
 }
 
-impl<HW: HardwareInterface> LinkLayer<HW> {
+impl<C: Config> LinkLayer<C> {
     /// Creates a new Link-Layer.
     ///
     /// # Parameters
@@ -250,7 +242,7 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
     /// * **`timer`**: A `Timer` implementation.
     /// * **`tx`**: Input queue of packets to transmit when connected.
     /// * **`rx`**: Output queue of received packets when connected.
-    pub fn new(dev_addr: DeviceAddress, timer: HW::Timer) -> Self {
+    pub fn new(dev_addr: DeviceAddress, timer: C::Timer) -> Self {
         trace!("new LinkLayer, dev={:?}", dev_addr);
         Self {
             dev_addr,
@@ -260,7 +252,7 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
     }
 
     /// Returns a reference to the timer instance used by the Link-Layer.
-    pub fn timer(&mut self) -> &mut HW::Timer {
+    pub fn timer(&mut self) -> &mut C::Timer {
         &mut self.timer
     }
 
@@ -269,7 +261,7 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
         &mut self,
         interval: Duration,
         data: &[AdStructure<'_>],
-        transmitter: &mut HW::Tx,
+        transmitter: &mut C::Transmitter,
         tx: Consumer,
         rx: Producer,
     ) -> Result<NextUpdate, Error> {
@@ -302,7 +294,7 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
     pub fn process_adv_packet(
         &mut self,
         rx_end: Instant,
-        tx: &mut HW::Tx,
+        tx: &mut C::Transmitter,
         header: advertising::Header,
         payload: &[u8],
         crc_ok: bool,
@@ -366,7 +358,7 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
     pub fn process_data_packet(
         &mut self,
         rx_end: Instant,
-        tx: &mut HW::Tx,
+        tx: &mut C::Transmitter,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
@@ -397,7 +389,7 @@ impl<HW: HardwareInterface> LinkLayer<HW> {
     ///
     /// * `tx`: A `Transmitter` for sending packets.
     /// * `elapsed`: Time since the last `update` call or creation of this `LinkLayer`.
-    pub fn update(&mut self, tx: &mut HW::Tx) -> Cmd {
+    pub fn update(&mut self, tx: &mut C::Transmitter) -> Cmd {
         match &mut self.state {
             State::Advertising {
                 next_adv,

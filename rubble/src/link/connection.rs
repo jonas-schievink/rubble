@@ -3,13 +3,13 @@
 use {
     crate::{
         bytes::*,
+        config::Config,
         link::{
             advertising::ConnectRequestData,
             channel_map::ChannelMap,
             data::{self, ConnectionUpdateData, ControlPdu, Header, Llid, Pdu},
             queue::{Consume, Consumer, Producer},
-            Cmd, CompanyId, FeatureSet, HardwareInterface, NextUpdate, RadioCmd, SeqNum,
-            Transmitter,
+            Cmd, CompanyId, FeatureSet, NextUpdate, RadioCmd, SeqNum, Transmitter,
         },
         phy::DataChannel,
         time::{Duration, Instant, Timer},
@@ -20,7 +20,7 @@ use {
 };
 
 /// Connection state.
-pub struct Connection<HW: HardwareInterface> {
+pub struct Connection<C: Config> {
     access_address: u32,
     crc_init: u32,
     channel_map: ChannelMap,
@@ -61,10 +61,10 @@ pub struct Connection<HW: HardwareInterface> {
     /// Contains the *instant* at which it should be applied to the Link Layer state.
     update_data: Option<LlcpUpdate>,
 
-    _p: PhantomData<HW>,
+    _p: PhantomData<C>,
 }
 
-impl<HW: HardwareInterface> Connection<HW> {
+impl<C: Config> Connection<C> {
     /// Initializes a connection state according to the `LLData` contained in the `CONNECT_REQ`
     /// advertising PDU.
     ///
@@ -134,8 +134,8 @@ impl<HW: HardwareInterface> Connection<HW> {
     pub fn process_data_packet(
         &mut self,
         rx_end: Instant,
-        tx: &mut HW::Tx,
-        timer: &mut HW::Timer,
+        tx: &mut C::Transmitter,
+        timer: &mut C::Timer,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
@@ -312,7 +312,7 @@ impl<HW: HardwareInterface> Connection<HW> {
     ///
     /// Returns `Err(())` when the connection is closed or lost. In that case, the Link-Layer will
     /// return to standby state.
-    pub fn timer_update(&mut self, timer: &mut HW::Timer) -> Result<Cmd, ()> {
+    pub fn timer_update(&mut self, timer: &mut C::Timer) -> Result<Cmd, ()> {
         if self.received_packet {
             // No packet from master, skip this connection event and listen on the next channel
 
@@ -377,7 +377,7 @@ impl<HW: HardwareInterface> Connection<HW> {
     }
 
     /// Sends a new PDU to the connected device (ie. a non-retransmitted PDU).
-    fn send(&mut self, mut header: Header, tx: &mut HW::Tx) {
+    fn send(&mut self, mut header: Header, tx: &mut C::Transmitter) {
         header.set_md(self.has_more_data());
         header.set_nesn(self.next_expected_seq_num);
         header.set_sn(self.transmit_seq_num);

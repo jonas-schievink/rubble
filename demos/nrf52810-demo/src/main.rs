@@ -22,11 +22,12 @@ use {
     rtfm::app,
     rubble::{
         beacon::Beacon,
+        config::Config,
         gatt::BatteryServiceAttrs,
         l2cap::{BleChannelMap, L2CAPState},
         link::{
-            ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
-            LinkLayer, Responder, MIN_PDU_BUF,
+            ad_structure::AdStructure, queue, AddressKind, DeviceAddress, LinkLayer, Responder,
+            MIN_PDU_BUF,
         },
         security::NoSecurity,
         time::{Duration, Timer},
@@ -37,12 +38,11 @@ use {
     },
 };
 
-/// Hardware interface for the BLE stack (nRF52810 implementation).
-pub struct HwNRf52810 {}
+pub enum AppConfig {}
 
-impl HardwareInterface for HwNRf52810 {
+impl Config for AppConfig {
     type Timer = BleTimer<pac::TIMER0>;
-    type Tx = BleRadio;
+    type Transmitter = BleRadio;
 }
 
 /// Whether to broadcast a beacon or to establish a proper connection.
@@ -55,7 +55,7 @@ const TEST_BEACON: bool = false;
 const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
     static mut BLE_RX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
-    static mut BLE_LL: LinkLayer<HwNRf52810> = ();
+    static mut BLE_LL: LinkLayer<AppConfig> = ();
     static mut BLE_R: Responder<BleChannelMap<BatteryServiceAttrs, NoSecurity>> = ();
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
@@ -152,7 +152,7 @@ const APP: () = {
         let (rx_prod, rx) = queue::create(bbq![MIN_PDU_BUF * 2].unwrap());
 
         // Create the actual BLE stack objects
-        let mut ll = LinkLayer::<HwNRf52810>::new(device_address, ble_timer);
+        let mut ll = LinkLayer::<AppConfig>::new(device_address, ble_timer);
 
         let resp = Responder::new(
             tx,
