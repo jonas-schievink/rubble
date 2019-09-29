@@ -16,10 +16,6 @@ bitflags = "1.0.4"
 uuid = { version = "0.7.4", default-features = false }
 heapless = "0.5.1"
 
-[dependencies.bbqueue]
-git = "https://github.com/jonas-schievink/bbqueue.git"
-branch = "rubble"
-
 # If the `log` feature is enabled, the `log` crate's macros will be called at various points to dump
 # packets, state, and events. By default, it is disabled.
 [dependencies.log]

@@ -15,7 +15,6 @@ use {
         },
         Error,
     },
-    bbqueue::{self, BBQueue},
     byteorder::{ByteOrder, LittleEndian},
     heapless::{
         consts::U1,
@@ -161,113 +160,6 @@ impl<T> Consume<T> {
             consume: result.is_ok(),
             result,
         }
-    }
-}
-
-/// `PacketQueue` is only implemented for `&'static` references to a `BBQueue` to avoid soundness
-/// bugs in `bbqueue`.
-impl PacketQueue<'static> for &'static BBQueue {
-    type Producer = BbqProducer;
-    type Consumer = BbqConsumer;
-
-    fn split(&mut self) -> (Self::Producer, Self::Consumer) {
-        let (p, c) = BBQueue::split(self);
-        (BbqProducer { inner: p }, BbqConsumer { inner: c })
-    }
-}
-
-pub struct BbqProducer {
-    inner: bbqueue::Producer,
-}
-
-impl Producer for BbqProducer {
-    fn free_space(&mut self) -> u8 {
-        let cap = self.inner.capacity();
-        match self.inner.grant_max(cap) {
-            Ok(grant) => {
-                let space = grant.len();
-                self.inner.commit(0, grant);
-                space as u8
-            }
-            Err(_) => 0,
-        }
-    }
-
-    fn produce_dyn(
-        &mut self,
-        payload_bytes: u8,
-        f: &mut dyn FnMut(&mut ByteWriter<'_>) -> Result<Llid, Error>,
-    ) -> Result<(), Error> {
-        // 2 additional bytes for the header
-        let mut grant = match self.inner.grant(usize::from(payload_bytes + 2)) {
-            Ok(grant) => grant,
-            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
-            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof.into()),
-        };
-
-        let mut writer = ByteWriter::new(&mut grant[2..]);
-        let free = writer.space_left();
-        let result = f(&mut writer);
-        let used = free - writer.space_left();
-        assert!(used <= 255);
-
-        let llid = match result {
-            Ok(llid) => llid,
-            Err(e) => {
-                self.inner.commit(0, grant);
-                return Err(e);
-            }
-        };
-
-        let mut header = data::Header::new(llid);
-        header.set_payload_length(used as u8);
-        LittleEndian::write_u16(&mut grant, header.to_u16());
-
-        self.inner.commit(used + 2, grant);
-        Ok(())
-    }
-}
-
-pub struct BbqConsumer {
-    inner: bbqueue::Consumer,
-}
-
-impl Consumer for BbqConsumer {
-    fn has_data(&mut self) -> bool {
-        // We only commit whole packets at a time, so if we can read *any* data, we can read an
-        // entire packet
-        if let Ok(grant) = self.inner.read() {
-            self.inner.release(0, grant);
-            true
-        } else {
-            false
-        }
-    }
-
-    fn consume_raw_with<R>(
-        &mut self,
-        f: impl FnOnce(data::Header, &[u8]) -> Consume<R>,
-    ) -> Result<R, Error> {
-        // We only ever commit whole PDUs at a time, so reading can also read one PDU at a time
-        let grant = match self.inner.read() {
-            Ok(grant) => grant,
-            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
-            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof),
-        };
-
-        let mut bytes = ByteReader::new(&grant);
-        let raw_header: [u8; 2] = bytes.read_array().unwrap();
-        let header = data::Header::parse(&raw_header);
-        let pl_len = usize::from(header.payload_length());
-        let raw_payload = bytes.read_slice(pl_len)?;
-
-        let res = f(header, raw_payload);
-        if res.consume {
-            self.inner.release(pl_len + 2, grant);
-        } else {
-            self.inner.release(0, grant);
-        }
-        res.result
     }
 }
 
