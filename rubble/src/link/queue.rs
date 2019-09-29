@@ -9,17 +9,24 @@
 use {
     crate::{
         bytes::*,
-        link::data::{self, Llid},
+        link::{
+            data::{self, Llid},
+            MIN_PAYLOAD_BUF, MIN_PDU_BUF,
+        },
         Error,
     },
     bbqueue::{self, BBQueue},
     byteorder::{ByteOrder, LittleEndian},
+    heapless::{
+        consts::U1,
+        spsc::{self, MultiCore},
+    },
 };
 
 /// A splittable SPSC queue for Link-Layer PDUs.
 ///
 /// Must fit at least one packet with `MIN_PDU_BUF` bytes.
-pub trait PacketQueue {
+pub trait PacketQueue<'a> {
     /// Producing half of the queue.
     type Producer: Producer;
 
@@ -27,7 +34,7 @@ pub trait PacketQueue {
     type Consumer: Consumer;
 
     /// Splits the queue into its producing and consuming ends.
-    fn split(self) -> (Self::Producer, Self::Consumer);
+    fn split(&'a mut self) -> (Self::Producer, Self::Consumer);
 }
 
 /// The producing (writing) half of a packet queue.
@@ -159,11 +166,11 @@ impl<T> Consume<T> {
 
 /// `PacketQueue` is only implemented for `&'static` references to a `BBQueue` to avoid soundness
 /// bugs in `bbqueue`.
-impl PacketQueue for &'static BBQueue {
+impl PacketQueue<'static> for &'static BBQueue {
     type Producer = BbqProducer;
     type Consumer = BbqConsumer;
 
-    fn split(self) -> (Self::Producer, Self::Consumer) {
+    fn split(&mut self) -> (Self::Producer, Self::Consumer) {
         let (p, c) = BBQueue::split(self);
         (BbqProducer { inner: p }, BbqConsumer { inner: c })
     }
@@ -261,5 +268,103 @@ impl Consumer for BbqConsumer {
             self.inner.release(0, grant);
         }
         res.result
+    }
+}
+
+/// A simple packet queue that can hold a single packet.
+///
+/// This type is compatible with thumbv6 cores, which lack atomic operations that might be needed
+/// for some queue implementations.
+pub struct SimpleQueue {
+    inner: spsc::Queue<[u8; MIN_PDU_BUF], U1, u8, MultiCore>,
+}
+
+impl SimpleQueue {
+    /// Creates a new, empty queue.
+    pub const fn new() -> Self {
+        Self {
+            inner: spsc::Queue(heapless::i::Queue::u8()),
+        }
+    }
+}
+
+impl<'a> PacketQueue<'a> for SimpleQueue {
+    type Producer = SimpleProducer<'a>;
+
+    type Consumer = SimpleConsumer<'a>;
+
+    fn split(&'a mut self) -> (Self::Producer, Self::Consumer) {
+        let (p, c) = self.inner.split();
+        (SimpleProducer { inner: p }, SimpleConsumer { inner: c })
+    }
+}
+
+pub struct SimpleProducer<'a> {
+    inner: spsc::Producer<'a, [u8; MIN_PDU_BUF], U1, u8, MultiCore>,
+}
+
+impl<'a> Producer for SimpleProducer<'a> {
+    fn free_space(&mut self) -> u8 {
+        if self.inner.ready() {
+            MIN_PAYLOAD_BUF as u8
+        } else {
+            0
+        }
+    }
+
+    fn produce_dyn(
+        &mut self,
+        payload_bytes: u8,
+        f: &mut dyn FnMut(&mut ByteWriter<'_>) -> Result<Llid, Error>,
+    ) -> Result<(), Error> {
+        assert!(usize::from(payload_bytes) < MIN_PAYLOAD_BUF);
+
+        if !self.inner.ready() {
+            return Err(Error::Eof);
+        }
+
+        let mut buf = [0; MIN_PDU_BUF];
+        let mut writer = ByteWriter::new(&mut buf[2..]);
+        let free = writer.space_left();
+        let llid = f(&mut writer)?;
+        let used = free - writer.space_left();
+
+        let mut header = data::Header::new(llid);
+        header.set_payload_length(used as u8);
+        LittleEndian::write_u16(&mut buf, header.to_u16());
+
+        self.inner.enqueue(buf).map_err(|_| ()).unwrap();
+        Ok(())
+    }
+}
+
+pub struct SimpleConsumer<'a> {
+    inner: spsc::Consumer<'a, [u8; MIN_PDU_BUF], U1, u8, MultiCore>,
+}
+
+impl<'a> Consumer for SimpleConsumer<'a> {
+    fn has_data(&mut self) -> bool {
+        self.inner.ready()
+    }
+
+    fn consume_raw_with<R>(
+        &mut self,
+        f: impl FnOnce(data::Header, &[u8]) -> Consume<R>,
+    ) -> Result<R, Error> {
+        if let Some(packet) = self.inner.peek() {
+            let mut bytes = ByteReader::new(packet);
+            let raw_header: [u8; 2] = bytes.read_array().unwrap();
+            let header = data::Header::parse(&raw_header);
+            let pl_len = usize::from(header.payload_length());
+            let raw_payload = bytes.read_slice(pl_len)?;
+
+            let res = f(header, raw_payload);
+            if res.consume {
+                self.inner.dequeue().unwrap(); // can't fail
+            }
+            res.result
+        } else {
+            Err(Error::Eof)
+        }
     }
 }
