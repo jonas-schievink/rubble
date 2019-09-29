@@ -26,8 +26,9 @@ use {
         gatt::BatteryServiceAttrs,
         l2cap::{BleChannelMap, L2CAPState},
         link::{
-            ad_structure::AdStructure, queue, AddressKind, DeviceAddress, LinkLayer, Responder,
-            MIN_PDU_BUF,
+            ad_structure::AdStructure,
+            queue::{BbqConsumer, BbqProducer, PacketQueue},
+            AddressKind, DeviceAddress, LinkLayer, Responder, MIN_PDU_BUF,
         },
         security::NoSecurity,
         time::{Duration, Timer},
@@ -44,6 +45,10 @@ impl Config for AppConfig {
     type Timer = BleTimer<pac::TIMER0>;
     type Transmitter = BleRadio;
     type ChannelMapper = BleChannelMap<BatteryServiceAttrs, NoSecurity>;
+
+    type PacketQueue = &'static BBQueue;
+    type PacketProducer = BbqProducer;
+    type PacketConsumer = BbqConsumer;
 }
 
 /// Whether to broadcast a beacon or to establish a proper connection.
@@ -149,8 +154,10 @@ const APP: () = {
         // Create TX/RX queues
         // FIXME: Because of how bbqueue works, these have to be 2x the max. PDU size. We don't need
         // contiguous segments though, so we could use a "normal" queue instead.
-        let (tx, tx_cons) = queue::create(bbq![MIN_PDU_BUF * 2].unwrap());
-        let (rx_prod, rx) = queue::create(bbq![MIN_PDU_BUF * 2].unwrap());
+        let tx_queue = bbq![MIN_PDU_BUF * 2].unwrap();
+        let rx_queue = bbq![MIN_PDU_BUF * 2].unwrap();
+        let (tx, tx_cons) = PacketQueue::split(&*tx_queue);
+        let (rx_prod, rx) = PacketQueue::split(&*rx_queue);
 
         // Create the actual BLE stack objects
         let mut ll = LinkLayer::<AppConfig>::new(device_address, ble_timer);

@@ -1,6 +1,13 @@
 //! Stack configuration trait.
 
-use crate::{l2cap::ChannelMapper, link::Transmitter, time::Timer};
+use crate::{
+    l2cap::ChannelMapper,
+    link::{
+        queue::{self, PacketQueue},
+        Transmitter,
+    },
+    time::Timer,
+};
 
 // TODO: Use associated type defaults in the trait once stable
 
@@ -21,4 +28,11 @@ pub trait Config {
     ///
     /// This type also provides access to the attributes hosted by the ATT server.
     type ChannelMapper: ChannelMapper;
+
+    /// The packet queue to use for exchanging data between the real-time Link-Layer and
+    /// non-realtime parts of the stack.
+    type PacketQueue: PacketQueue<Producer = Self::PacketProducer, Consumer = Self::PacketConsumer>;
+
+    type PacketProducer: queue::Producer;
+    type PacketConsumer: queue::Consumer;
 }
