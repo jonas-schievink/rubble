@@ -1,12 +1,9 @@
 language: rust
 rust: stable
-env:
-  global:
-    - TARGET_BUILD=thumbv7em-none-eabi
-    - RUSTFLAGS="--deny warnings"
 
 install:
-  - rustup target add $TARGET_BUILD
+  - rustup target add thumbv7em-none-eabi
+  - rustup target add thumbv6m-none-eabi
   - rustup component add rustfmt
 
 stages:
