@@ -43,6 +43,7 @@ pub enum AppConfig {}
 impl Config for AppConfig {
     type Timer = BleTimer<pac::TIMER0>;
     type Transmitter = BleRadio;
+    type ChannelMapper = BleChannelMap<BatteryServiceAttrs, NoSecurity>;
 }
 
 /// Whether to broadcast a beacon or to establish a proper connection.
@@ -56,7 +57,7 @@ const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
     static mut BLE_RX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
     static mut BLE_LL: LinkLayer<AppConfig> = ();
-    static mut BLE_R: Responder<BleChannelMap<BatteryServiceAttrs, NoSecurity>> = ();
+    static mut BLE_R: Responder<AppConfig> = ();
     static mut RADIO: BleRadio = ();
     static mut BEACON: Beacon = ();
     static mut BEACON_TIMER: pac::TIMER1 = ();

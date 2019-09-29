@@ -1,5 +1,6 @@
 use crate::{
-    l2cap::{ChannelMapper, L2CAPState, L2CAPStateTx},
+    config::Config,
+    l2cap::{L2CAPState, L2CAPStateTx},
     link::{
         data::{ControlPdu, Pdu},
         queue::{Consume, Consumer, Producer},
@@ -17,15 +18,15 @@ use crate::{
 /// Some *LL Control PDUs* sent as part of the Link Layer Control Protocol (LLCP) are answered by
 /// the responder directly, and all L2CAP data is forwarded to an `L2CAPState<M>`. Note that most
 /// LLCPDUs are handled directly by the real-time code.
-pub struct Responder<M: ChannelMapper> {
+pub struct Responder<C: Config> {
     tx: Producer,
     rx: Option<Consumer>,
-    l2cap: L2CAPState<M>,
+    l2cap: L2CAPState<C::ChannelMapper>,
 }
 
-impl<M: ChannelMapper> Responder<M> {
+impl<C: Config> Responder<C> {
     /// Creates a new packet processor hooked up to data channel packet queues.
-    pub fn new(tx: Producer, rx: Consumer, l2cap: L2CAPState<M>) -> Self {
+    pub fn new(tx: Producer, rx: Consumer, l2cap: L2CAPState<C::ChannelMapper>) -> Self {
         Self {
             tx,
             rx: Some(rx),
@@ -80,7 +81,7 @@ impl<M: ChannelMapper> Responder<M> {
     }
 
     /// Obtains access to the L2CAP instance.
-    pub fn l2cap(&mut self) -> L2CAPStateTx<'_, M> {
+    pub fn l2cap(&mut self) -> L2CAPStateTx<'_, C::ChannelMapper> {
         self.l2cap.tx(&mut self.tx)
     }
 

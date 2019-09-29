@@ -1,6 +1,6 @@
 //! Stack configuration trait.
 
-use crate::{link::Transmitter, time::Timer};
+use crate::{l2cap::ChannelMapper, link::Transmitter, time::Timer};
 
 // TODO: Use associated type defaults in the trait once stable
 
@@ -14,6 +14,11 @@ pub trait Config {
     /// A timesource with microsecond resolution.
     type Timer: Timer;
 
-    /// The BLE packet transmitter.
+    /// The BLE packet transmitter (radio).
     type Transmitter: Transmitter;
+
+    /// The L2CAP channel mapper in use.
+    ///
+    /// This type also provides access to the attributes hosted by the ATT server.
+    type ChannelMapper: ChannelMapper;
 }
