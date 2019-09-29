@@ -28,7 +28,7 @@ use {
             ad_structure::AdStructure, queue, AddressKind, DeviceAddress, HardwareInterface,
             LinkLayer, Responder, MIN_PDU_BUF,
         },
-        security_manager::NoSecurity,
+        security::NoSecurity,
         time::{Duration, Timer},
     },
     rubble_nrf52::{

@@ -30,7 +30,7 @@ use {
             queue::{Consume, Producer},
             MIN_PAYLOAD_BUF,
         },
-        security_manager::{NoSecurity, SecurityLevel, SecurityManager},
+        security::{NoSecurity, SecurityLevel, SecurityManager},
         utils::HexSlice,
         Error,
     },

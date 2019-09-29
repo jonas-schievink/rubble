@@ -40,7 +40,7 @@ pub mod gatt;
 pub mod l2cap;
 pub mod link;
 pub mod phy;
-pub mod security_manager;
+pub mod security;
 pub mod time;
 pub mod uuid;
 
