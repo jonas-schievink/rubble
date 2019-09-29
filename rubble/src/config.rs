@@ -31,7 +31,11 @@ pub trait Config {
 
     /// The packet queue to use for exchanging data between the real-time Link-Layer and
     /// non-realtime parts of the stack.
-    type PacketQueue: PacketQueue<Producer = Self::PacketProducer, Consumer = Self::PacketConsumer>;
+    type PacketQueue: PacketQueue<
+        'static,
+        Producer = Self::PacketProducer,
+        Consumer = Self::PacketConsumer,
+    >;
 
     type PacketProducer: queue::Producer;
     type PacketConsumer: queue::Consumer;
