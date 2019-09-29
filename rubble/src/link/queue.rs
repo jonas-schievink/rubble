@@ -2,6 +2,9 @@
 //!
 //! Data channel PDUs are received and transmitted in time-critical code, so they're sent through
 //! this queue to be processed at a later time (perhaps in the application's idle loop).
+//!
+//! The queue contains Link-Layer data channel packets, which consist of a 2-Byte header and a
+//! dynamically-sized payload.
 
 use {
     crate::{
@@ -19,16 +22,6 @@ pub struct Producer {
 }
 
 impl Producer {
-    /// Queries whether there is a free contiguous chunk of memory of at least `space` bytes.
-    pub fn has_space(&mut self, space: usize) -> bool {
-        if let Ok(grant) = self.inner.grant(space) {
-            self.inner.commit(0, grant);
-            true
-        } else {
-            false
-        }
-    }
-
     /// Returns the size of the largest contiguous free space in the queue (in Bytes).
     pub fn free_space(&mut self) -> usize {
         let cap = self.inner.capacity();
@@ -89,69 +82,6 @@ impl Producer {
         };
 
         self.produce_with_common(grant, f)
-    }
-
-    /// Enqueue a new data channel PDU by passing a `ByteWriter` to a closure.
-    ///
-    /// The closure has to write the PDU payload into the `ByteWriter` and must return the `Llid` to
-    /// set in the header. The payload size is determined and written to the header automatically,
-    /// based on the remaining space in the `ByteWriter`.
-    pub fn produce_with<E>(
-        &mut self,
-        f: impl FnOnce(&mut ByteWriter<'_>) -> Result<Llid, E>,
-    ) -> Result<(), E>
-    where
-        E: From<Error>,
-    {
-        // Problem: We don't know the PDU size before encoding it, but it needs to go into the
-        // header.
-
-        // Get the largest contiguous buffer segment and write the PDU there, skipping the header
-        // FIXME: This is probably an inefficient use of bbqueue...
-        let cap = self.inner.capacity();
-        let grant = match self.inner.grant_max(cap) {
-            Ok(grant) => grant,
-            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
-            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof.into()),
-        };
-
-        if grant.len() < 2 {
-            return Err(Error::Eof.into());
-        }
-
-        self.produce_with_common(grant, f)
-    }
-
-    /// Enqueues a data channel PDU.
-    ///
-    /// Returns `Error::Eof` when the queue does not have enough free space for both header and
-    /// payload.
-    pub fn produce_pdu<L: ToBytes>(&mut self, payload: data::Pdu<'_, L>) -> Result<(), Error> {
-        self.produce_with(|w| {
-            payload.to_bytes(w)?;
-            Ok(payload.llid())
-        })
-    }
-
-    /// Enqueues a data channel PDU, where the payload is given as raw bytes.
-    ///
-    /// The payload will not be checked for validity.
-    pub fn produce_raw(&mut self, header: data::Header, payload: &[u8]) -> Result<(), Error> {
-        if usize::from(header.payload_length()) != payload.len() {
-            return Err(Error::InvalidLength);
-        }
-
-        let len = usize::from(header.payload_length()) + 2;
-        let mut grant = match self.inner.grant(len) {
-            Ok(grant) => grant,
-            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
-            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof),
-        };
-
-        LittleEndian::write_u16(&mut grant, header.to_u16());
-        grant[2..].copy_from_slice(payload);
-        self.inner.commit(len, grant);
-        Ok(())
     }
 }
 

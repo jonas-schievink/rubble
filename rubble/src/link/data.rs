@@ -9,7 +9,7 @@ use {
         Error,
     },
     byteorder::{ByteOrder, LittleEndian},
-    core::fmt,
+    core::{convert::TryInto, fmt},
 };
 
 /// 16-bit data channel header preceding the payload.
@@ -382,6 +382,47 @@ impl ControlPdu<'_> {
             ControlPdu::FeatureRsp { .. } => ControlOpcode::FeatureRsp,
             ControlPdu::VersionInd { .. } => ControlOpcode::VersionInd,
             ControlPdu::Unknown { opcode, .. } => *opcode,
+        }
+    }
+
+    /// Returns the encoded size of this LLCPDU, including the opcode byte.
+    pub fn encoded_size(&self) -> u8 {
+        use self::ControlOpcode::*;
+
+        1 + match self.opcode() {
+            ConnectionUpdateReq => 1 + 2 + 2 + 2 + 2 + 2,
+            ChannelMapReq => 5 + 2,
+            TerminateInd => 1,
+            EncReq => 8 + 2 + 8 + 4,
+            EncRsp => 8 + 4,
+            StartEncReq => 0,
+            StartEncRsp => 0,
+            UnknownRsp => 1,
+            FeatureReq => 8,
+            FeatureRsp => 8,
+            PauseEncReq => 0,
+            PauseEncRsp => 0,
+            VersionInd => 1 + 2 + 2,
+            RejectInd => 1,
+            SlaveFeatureReq => 8,
+            ConnectionParamReq | ConnectionParamRsp => {
+                2 + 2 + 2 + 2 + 1 + 2 + 2 + 2 + 2 + 2 + 2 + 2
+            }
+            RejectIndExt => 1 + 1,
+            PingReq => 0,
+            PingRsp => 0,
+            LengthReq | LengthRsp => 2 + 2 + 2 + 2,
+            Unknown(_) => {
+                if let ControlPdu::Unknown {
+                    ctr_data,
+                    opcode: _,
+                } = self
+                {
+                    ctr_data.len().try_into().unwrap()
+                } else {
+                    unreachable!()
+                }
+            }
         }
     }
 }

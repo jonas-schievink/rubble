@@ -1,8 +1,9 @@
 use crate::{
+    bytes::ToBytes,
     config::Config,
     l2cap::{L2CAPState, L2CAPStateTx},
     link::{
-        data::{ControlPdu, Pdu},
+        data::{ControlPdu, Llid, Pdu},
         queue::{Consume, Consumer, Producer},
     },
     utils::HexSlice,
@@ -66,7 +67,13 @@ impl<C: Config> Responder<C> {
                     info!("-> Response: {:?}", response);
 
                     // Consume the LL Control PDU iff we can fit the response in the TX buffer:
-                    Consume::on_success(this.tx.produce_pdu(Pdu::from(&response)))
+                    Consume::on_success(this.tx.produce_sized_with(
+                        response.encoded_size().into(),
+                        |writer| {
+                            response.to_bytes(writer)?;
+                            Ok(Llid::Control)
+                        },
+                    ))
                 }
                 Pdu::DataStart { message } => {
                     info!("L2start: {:?}", HexSlice(message));
