@@ -140,7 +140,6 @@ use {
         ad_structure::AdStructure,
         advertising::{Pdu, PduBuf},
         connection::Connection,
-        queue::{Consumer, Producer},
         seq_num::SeqNum,
     },
     crate::{
@@ -216,7 +215,7 @@ enum State<C: Config> {
         // FIXME: spec check; no idea what order or change delay
         channel: AdvertisingChannel,
 
-        data_queues: Option<(Consumer, Producer)>,
+        data_queues: Option<(C::PacketConsumer, C::PacketProducer)>,
     },
 
     /// Connected with another device.
@@ -262,8 +261,8 @@ impl<C: Config> LinkLayer<C> {
         interval: Duration,
         data: &[AdStructure<'_>],
         transmitter: &mut C::Transmitter,
-        tx: Consumer,
-        rx: Producer,
+        tx: C::PacketConsumer,
+        rx: C::PacketProducer,
     ) -> Result<NextUpdate, Error> {
         // TODO tear down existing connection?
 

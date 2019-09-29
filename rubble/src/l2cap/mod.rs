@@ -372,7 +372,7 @@ impl<M: ChannelMapper> L2CAPState<M> {
     }
 
     /// Gives this instance the ability to transmit packets.
-    pub fn tx<'a>(&'a mut self, tx: &'a mut Producer) -> L2CAPStateTx<'a, M> {
+    pub fn tx<'a, P: Producer>(&'a mut self, tx: &'a mut P) -> L2CAPStateTx<'a, M, P> {
         L2CAPStateTx { l2cap: self, tx }
     }
 }
@@ -386,16 +386,16 @@ pub struct Sender<'a> {
     pdu: u8,
 
     /// Data PDU channel.
-    tx: &'a mut Producer,
+    tx: &'a mut dyn Producer,
 
     /// Channel to which the response will be addressed.
     channel: Channel,
 }
 
 impl<'a> Sender<'a> {
-    fn new<T: ?Sized>(chdata: &ChannelData<'_, T>, tx: &'a mut Producer) -> Option<Self> {
+    fn new<T: ?Sized>(chdata: &ChannelData<'_, T>, tx: &'a mut dyn Producer) -> Option<Self> {
         let free = tx.free_space();
-        let needed = usize::from(chdata.pdu_size() + Header::SIZE);
+        let needed = chdata.pdu_size() + Header::SIZE;
         if free < needed {
             debug!("{} free bytes, need {}", free, needed);
             return None;
@@ -437,11 +437,13 @@ impl<'a> Sender<'a> {
         // FIXME automatic fragmentation is not implemented
 
         // The payload length goes into the header, so we have to skip that part and write it later
+        let mut f = Some(f);
         let channel = self.channel;
         let pdu = self.pdu;
         let mut r = None;
-        self.tx
-            .produce_sized_with(usize::from(pdu + Header::SIZE), |writer| -> Result<_, E> {
+        let r2 = self.tx.produce_dyn(
+            pdu + Header::SIZE,
+            &mut |writer: &mut ByteWriter<'_>| -> Result<_, Error> {
                 let mut header_writer = writer.split_off(usize::from(Header::SIZE))?;
 
                 // The PDU size is determined based on how much space is left in `writer`, so we can't
@@ -449,7 +451,9 @@ impl<'a> Sender<'a> {
                 assert!(writer.space_left() >= pdu.into());
                 let mut payload_writer = ByteWriter::new(&mut writer.rest()[..pdu.into()]);
                 let left = payload_writer.space_left();
-                r = Some(f(&mut payload_writer)?);
+                let result = f.take().unwrap()(&mut payload_writer);
+                let is_ok = result.is_ok();
+                r = Some(result);
                 let used = left - payload_writer.space_left();
                 writer.skip(used).unwrap();
 
@@ -462,21 +466,36 @@ impl<'a> Sender<'a> {
 
                 assert_eq!(header_writer.space_left(), 0);
 
-                Ok(Llid::DataStart)
-            })?;
-        Ok(r.unwrap())
+                if is_ok {
+                    Ok(Llid::DataStart)
+                } else {
+                    // The error returned doesn't matter much. It just has to be an `Err` so the PDU
+                    // isn't actually sent.
+                    Err(Error::InvalidValue)
+                }
+            },
+        );
+
+        if let Err(e) = r2 {
+            if e != Error::InvalidValue {
+                // Legitimate error
+                return Err(e.into());
+            }
+        }
+
+        r.unwrap()
     }
 }
 
 /// An `L2CAPState` with the ability to transmit packets.
 ///
 /// Derefs to the underlying `L2CAPState`.
-pub struct L2CAPStateTx<'a, M: ChannelMapper> {
+pub struct L2CAPStateTx<'a, M: ChannelMapper, P: Producer> {
     l2cap: &'a mut L2CAPState<M>,
-    tx: &'a mut Producer,
+    tx: &'a mut P,
 }
 
-impl<'a, M: ChannelMapper> L2CAPStateTx<'a, M> {
+impl<'a, M: ChannelMapper, P: Producer> L2CAPStateTx<'a, M, P> {
     /// Process the start of a new L2CAP message (or a complete, unfragmented message).
     ///
     /// If the incoming message is unfragmented, it will be forwarded to the protocol listening on
@@ -534,7 +553,7 @@ impl<'a, M: ChannelMapper> L2CAPStateTx<'a, M> {
     }
 }
 
-impl<'a, M: ChannelMapper> Deref for L2CAPStateTx<'a, M> {
+impl<'a, M: ChannelMapper, P: Producer> Deref for L2CAPStateTx<'a, M, P> {
     type Target = L2CAPState<M>;
 
     fn deref(&self) -> &Self::Target {
@@ -542,7 +561,7 @@ impl<'a, M: ChannelMapper> Deref for L2CAPStateTx<'a, M> {
     }
 }
 
-impl<'a, M: ChannelMapper> DerefMut for L2CAPStateTx<'a, M> {
+impl<'a, M: ChannelMapper, P: Producer> DerefMut for L2CAPStateTx<'a, M, P> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.l2cap
     }

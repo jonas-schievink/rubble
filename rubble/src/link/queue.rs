@@ -12,102 +12,96 @@ use {
         link::data::{self, Llid},
         Error,
     },
-    bbqueue::{self, BBQueue, GrantW},
+    bbqueue::{self, BBQueue},
     byteorder::{ByteOrder, LittleEndian},
 };
 
-/// Writing end of a packet queue.
-pub struct Producer {
-    inner: bbqueue::Producer,
+/// A splittable SPSC queue for Link-Layer PDUs.
+///
+/// Must fit at least one packet with `MIN_PDU_BUF` bytes.
+pub trait PacketQueue {
+    /// Producing half of the queue.
+    type Producer: Producer;
+
+    /// Consuming half of the queue.
+    type Consumer: Consumer;
+
+    /// Splits the queue into its producing and consuming ends.
+    fn split(self) -> (Self::Producer, Self::Consumer);
 }
 
-impl Producer {
-    /// Returns the size of the largest contiguous free space in the queue (in Bytes).
-    pub fn free_space(&mut self) -> usize {
-        let cap = self.inner.capacity();
-        match self.inner.grant_max(cap) {
-            Ok(grant) => {
-                let space = grant.len();
-                self.inner.commit(0, grant);
-                space
-            }
-            Err(_) => 0,
-        }
-    }
-
-    fn produce_with_common<E>(
-        &mut self,
-        mut grant: GrantW,
-        f: impl FnOnce(&mut ByteWriter<'_>) -> Result<Llid, E>,
-    ) -> Result<(), E>
-    where
-        E: From<Error>,
-    {
-        let mut writer = ByteWriter::new(&mut grant[2..]);
-        let free = writer.space_left();
-        let result = f(&mut writer);
-        let used = free - writer.space_left();
-        assert!(used <= 255);
-
-        let llid = match result {
-            Ok(llid) => llid,
-            Err(e) => {
-                self.inner.commit(0, grant);
-                return Err(e);
-            }
-        };
-
-        let mut header = data::Header::new(llid);
-        header.set_payload_length(used as u8);
-        LittleEndian::write_u16(&mut grant, header.to_u16());
-
-        self.inner.commit(used + 2, grant);
-        Ok(())
-    }
-
-    /// Enqueue a new data channel PDU with a known maximum size.
-    pub fn produce_sized_with<E>(
-        &mut self,
-        size: usize,
-        f: impl FnOnce(&mut ByteWriter<'_>) -> Result<Llid, E>,
-    ) -> Result<(), E>
-    where
-        E: From<Error>,
-    {
-        // 2 additional bytes for the header
-        let grant = match self.inner.grant(size + 2) {
-            Ok(grant) => grant,
-            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
-            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof.into()),
-        };
-
-        self.produce_with_common(grant, f)
-    }
-}
-
-/// Reading end of a packet queue.
-pub struct Consumer {
-    inner: bbqueue::Consumer,
-}
-
-impl Consumer {
-    /// Queries whether there is at least 1 packet that can be consumed.
-    pub fn has_data(&mut self) -> bool {
-        // We only commit whole packets at a time, so if we can read *any* data, we can read an
-        // entire packet
-        if let Ok(grant) = self.inner.read() {
-            self.inner.release(0, grant);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Tries to read a packet from the queue and passes it to `f`.
+/// The producing (writing) half of a packet queue.
+pub trait Producer {
+    /// Returns the largest payload size that can be successfully enqueued in the current state.
     ///
-    /// Returns `Error::Eof` if the queue is empty. Other errors can also be returned (eg. if
-    /// parsing the data fails).
-    pub fn consume_pdu_with<R>(
+    /// This is necessarily a conservative estimate, since the consumer half of the queue might
+    /// remove a packet from the queue immediately after this function returns, creating more free
+    /// space.
+    fn free_space(&mut self) -> u8; // FIXME &self
+
+    /// Enqueues a PDU with known size using a closure.
+    ///
+    /// This is an object-safe method complemented by its generic counterpart `produce_with`. Only
+    /// this method need to be implemented.
+    fn produce_dyn(
+        &mut self,
+        payload_bytes: u8,
+        f: &mut dyn FnMut(&mut ByteWriter<'_>) -> Result<Llid, Error>,
+    ) -> Result<(), Error>;
+
+    /// Enqueues a PDU with known size using a closure.
+    ///
+    /// This will check if `payload_bytes` are available in the queue, and bail with `Error::Eof` if
+    /// not. If sufficient space is available, a `ByteWriter` with access to that space is
+    /// constructed and `f` is called. If `f` returns a successful result, the data is committed to
+    /// the queue. If not, the queue is left unchanged.
+    fn produce_with<E>(
+        &mut self,
+        payload_bytes: u8,
+        f: impl FnOnce(&mut ByteWriter<'_>) -> Result<Llid, E>,
+    ) -> Result<(), E>
+    where
+        E: From<Error>,
+        Self: Sized,
+    {
+        let mut f = Some(f);
+        let mut r = None;
+        self.produce_dyn(payload_bytes, &mut |bytes| {
+            let f = f.take().unwrap();
+            let result = f(bytes);
+            if let Ok(llid) = result {
+                r = Some(Ok(()));
+                Ok(llid)
+            } else {
+                r = Some(result.map(|_| ()));
+                Err(Error::InvalidValue)
+            }
+        })
+        .ok();
+
+        r.unwrap()
+    }
+}
+
+/// The consuming (reading) half of a packet queue.
+pub trait Consumer {
+    /// Returns whether there is a packet to dequeue.
+    fn has_data(&mut self) -> bool; // FIXME &self
+
+    /// Passes the next raw packet in the queue to a closure.
+    ///
+    /// The closure returns a `Consume` value to indicate whether the packet should remain in the
+    /// queue or be removed.
+    fn consume_raw_with<R>(
+        &mut self,
+        f: impl FnOnce(data::Header, &[u8]) -> Consume<R>,
+    ) -> Result<R, Error>;
+
+    /// Passes the next packet in the queue to a closure.
+    ///
+    /// The closure returns a `Consume` value to indicate whether the packet should remain in the
+    /// queue or be removed.
+    fn consume_pdu_with<R>(
         &mut self,
         f: impl FnOnce(data::Header, data::Pdu<'_, &[u8]>) -> Consume<R>,
     ) -> Result<R, Error> {
@@ -119,32 +113,6 @@ impl Consumer {
 
             f(header, pdu)
         })
-    }
-
-    pub fn consume_raw_with<R>(
-        &mut self,
-        f: impl FnOnce(data::Header, &[u8]) -> Consume<R>,
-    ) -> Result<R, Error> {
-        // We only ever commit whole PDUs at a time, so reading can also read one PDU at a time
-        let grant = match self.inner.read() {
-            Ok(grant) => grant,
-            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
-            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof),
-        };
-
-        let mut bytes = ByteReader::new(&grant);
-        let raw_header: [u8; 2] = bytes.read_array().unwrap();
-        let header = data::Header::parse(&raw_header);
-        let pl_len = usize::from(header.payload_length());
-        let raw_payload = bytes.read_slice(pl_len)?;
-
-        let res = f(header, raw_payload);
-        if res.consume {
-            self.inner.release(pl_len + 2, grant);
-        } else {
-            self.inner.release(0, grant);
-        }
-        res.result
     }
 }
 
@@ -189,8 +157,109 @@ impl<T> Consume<T> {
     }
 }
 
-/// Converts a `BBQueue` to a pair of packet queue endpoints.
-pub fn create(bb: &'static mut BBQueue) -> (Producer, Consumer) {
-    let (p, c) = bb.split();
-    (Producer { inner: p }, Consumer { inner: c })
+/// `PacketQueue` is only implemented for `&'static` references to a `BBQueue` to avoid soundness
+/// bugs in `bbqueue`.
+impl PacketQueue for &'static BBQueue {
+    type Producer = BbqProducer;
+    type Consumer = BbqConsumer;
+
+    fn split(self) -> (Self::Producer, Self::Consumer) {
+        let (p, c) = BBQueue::split(self);
+        (BbqProducer { inner: p }, BbqConsumer { inner: c })
+    }
+}
+
+pub struct BbqProducer {
+    inner: bbqueue::Producer,
+}
+
+impl Producer for BbqProducer {
+    fn free_space(&mut self) -> u8 {
+        let cap = self.inner.capacity();
+        match self.inner.grant_max(cap) {
+            Ok(grant) => {
+                let space = grant.len();
+                self.inner.commit(0, grant);
+                space as u8
+            }
+            Err(_) => 0,
+        }
+    }
+
+    fn produce_dyn(
+        &mut self,
+        payload_bytes: u8,
+        f: &mut dyn FnMut(&mut ByteWriter<'_>) -> Result<Llid, Error>,
+    ) -> Result<(), Error> {
+        // 2 additional bytes for the header
+        let mut grant = match self.inner.grant(usize::from(payload_bytes + 2)) {
+            Ok(grant) => grant,
+            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
+            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof.into()),
+        };
+
+        let mut writer = ByteWriter::new(&mut grant[2..]);
+        let free = writer.space_left();
+        let result = f(&mut writer);
+        let used = free - writer.space_left();
+        assert!(used <= 255);
+
+        let llid = match result {
+            Ok(llid) => llid,
+            Err(e) => {
+                self.inner.commit(0, grant);
+                return Err(e);
+            }
+        };
+
+        let mut header = data::Header::new(llid);
+        header.set_payload_length(used as u8);
+        LittleEndian::write_u16(&mut grant, header.to_u16());
+
+        self.inner.commit(used + 2, grant);
+        Ok(())
+    }
+}
+
+pub struct BbqConsumer {
+    inner: bbqueue::Consumer,
+}
+
+impl Consumer for BbqConsumer {
+    fn has_data(&mut self) -> bool {
+        // We only commit whole packets at a time, so if we can read *any* data, we can read an
+        // entire packet
+        if let Ok(grant) = self.inner.read() {
+            self.inner.release(0, grant);
+            true
+        } else {
+            false
+        }
+    }
+
+    fn consume_raw_with<R>(
+        &mut self,
+        f: impl FnOnce(data::Header, &[u8]) -> Consume<R>,
+    ) -> Result<R, Error> {
+        // We only ever commit whole PDUs at a time, so reading can also read one PDU at a time
+        let grant = match self.inner.read() {
+            Ok(grant) => grant,
+            Err(bbqueue::Error::GrantInProgress) => unreachable!("grant in progress"),
+            Err(bbqueue::Error::InsufficientSize) => return Err(Error::Eof),
+        };
+
+        let mut bytes = ByteReader::new(&grant);
+        let raw_header: [u8; 2] = bytes.read_array().unwrap();
+        let header = data::Header::parse(&raw_header);
+        let pl_len = usize::from(header.payload_length());
+        let raw_payload = bytes.read_slice(pl_len)?;
+
+        let res = f(header, raw_payload);
+        if res.consume {
+            self.inner.release(pl_len + 2, grant);
+        } else {
+            self.inner.release(0, grant);
+        }
+        res.result
+    }
 }
