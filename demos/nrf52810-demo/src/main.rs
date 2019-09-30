@@ -46,7 +46,7 @@ impl Config for AppConfig {
     type Transmitter = BleRadio;
     type ChannelMapper = BleChannelMap<BatteryServiceAttrs, NoSecurity>;
 
-    type PacketQueue = SimpleQueue;
+    type PacketQueue = &'static mut SimpleQueue;
     type PacketProducer = SimpleProducer<'static>;
     type PacketConsumer = SimpleConsumer<'static>;
 }

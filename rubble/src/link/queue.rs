@@ -39,7 +39,7 @@ use {
 ///
 /// Implementations of this trait must fit at least one packet with a total size of `MIN_PDU_BUF`
 /// bytes (header and payload).
-pub trait PacketQueue<'a> {
+pub trait PacketQueue {
     /// Producing (writing) half of the queue.
     type Producer: Producer;
 
@@ -48,9 +48,14 @@ pub trait PacketQueue<'a> {
 
     /// Splits the queue into its producing and consuming ends.
     ///
-    /// The halves can borrow from the original queue by incorporating the lifetime `'a` in the
-    /// associated `Producer` and `Consumer` types.
-    fn split(&'a mut self) -> (Self::Producer, Self::Consumer);
+    /// Note that this takes `self` by value, while many queue implementations provide a `split`
+    /// method that takes `&'a mut self` and returns producer and consumer types with lifetimes in
+    /// them. These implementations still work with this interface, however: `PacketQueue` needs to
+    /// be implemented generically over a lifetime `'a`, for a self type `&'a mut OtherQueue`, then
+    /// the associated `Producer` and `Consumer` types can make use of the lifetime `'a`.
+    ///
+    /// For an example of that, see the provided impl for `&'a mut SimpleQueue` in this file.
+    fn split(self) -> (Self::Producer, Self::Consumer);
 }
 
 /// The producing (writing) half of a packet queue.
@@ -217,12 +222,12 @@ impl SimpleQueue {
     }
 }
 
-impl<'a> PacketQueue<'a> for SimpleQueue {
+impl<'a> PacketQueue for &'a mut SimpleQueue {
     type Producer = SimpleProducer<'a>;
 
     type Consumer = SimpleConsumer<'a>;
 
-    fn split(&'a mut self) -> (Self::Producer, Self::Consumer) {
+    fn split(self) -> (Self::Producer, Self::Consumer) {
         let (p, c) = self.inner.split();
         (SimpleProducer { inner: p }, SimpleConsumer { inner: c })
     }
