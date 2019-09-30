@@ -253,7 +253,7 @@ impl<'a> Producer for SimpleProducer<'a> {
         payload_bytes: u8,
         f: &mut dyn FnMut(&mut ByteWriter<'_>) -> Result<Llid, Error>,
     ) -> Result<(), Error> {
-        assert!(usize::from(payload_bytes) < MIN_PAYLOAD_BUF);
+        assert!(usize::from(payload_bytes) <= MIN_PAYLOAD_BUF);
 
         if !self.inner.ready() {
             return Err(Error::Eof);
