@@ -305,3 +305,90 @@ impl<'a> Consumer for SimpleConsumer<'a> {
         }
     }
 }
+
+/// Runs Rubble's packet queue testsuite against the given `PacketQueue`.
+///
+/// This can be used when implementing your own packet queue. Simply create a `#[test]` function as
+/// usual and call `run_tests` from there. The function will panic when any test fails.
+///
+/// The passed `queue` must be an empty queue with bounded space for at least one packet. "Bounded"
+/// here means that the queue must have a finite, practical size as the test suite may fill it up
+/// completely.
+///
+/// Simultaneously, this function ensures that `PacketQueue` implementors can be created and used by
+/// a generic function, something that sometimes doesn't work when invariant lifetimes are involved.
+pub fn run_tests(queue: impl PacketQueue) {
+    let (mut p, mut c) = queue.split();
+
+    assert!(!c.has_data(), "empty queue `has_data()` returned true");
+
+    let err = c
+        .consume_raw_with(|_, _| -> Consume<()> {
+            unreachable!("`consume_raw_with` on empty queue invoked the callback");
+        })
+        .unwrap_err();
+
+    assert_eq!(
+        err,
+        Error::Eof,
+        "empty queues `consume_raw_with` didn't return expected `Error::Eof"
+    );
+
+    let err = c
+        .consume_pdu_with(|_, _| -> Consume<()> {
+            unreachable!("`consume_pdu_with` on empty queue invoked the callback");
+        })
+        .unwrap_err();
+
+    assert_eq!(
+        err,
+        Error::Eof,
+        "empty queues `consume_pdu_with` didn't return expected `Error::Eof"
+    );
+
+    let free_space = p.free_space();
+    assert!(
+        free_space >= MIN_PAYLOAD_BUF as u8,
+        "empty queue has space for {} byte payload, need at least {}",
+        free_space,
+        MIN_PAYLOAD_BUF
+    );
+
+    // Enqueue the largest packet
+    p.produce_with(MIN_PAYLOAD_BUF as u8, |writer| -> Result<_, Error> {
+        assert_eq!(
+            writer.space_left(),
+            MIN_PAYLOAD_BUF,
+            "produce_with didn't pass ByteWriter with correct buffer"
+        );
+        writer.write_slice(&[0; MIN_PAYLOAD_BUF]).unwrap();
+        Ok(Llid::DataStart)
+    })
+    .expect("enqueuing packet failed");
+
+    assert!(
+        c.has_data(),
+        "consumer's `has_data()` still false after enqueuing packet"
+    );
+
+    c.consume_raw_with(|header, data| -> Consume<()> {
+        assert_eq!(usize::from(header.payload_length()), MIN_PAYLOAD_BUF);
+        assert_eq!(
+            data,
+            &[0; MIN_PAYLOAD_BUF][..],
+            "consume_raw_with didn't yield correct payload"
+        );
+        Consume::never(Ok(()))
+    })
+    .expect("consume_raw_with failed when data is available");
+
+    assert!(
+        c.has_data(),
+        "`has_data()` returned false after using `Consume::never`"
+    );
+}
+
+#[test]
+fn simple_queue() {
+    run_tests(&mut SimpleQueue::new());
+}
