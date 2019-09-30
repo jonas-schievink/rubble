@@ -1,10 +1,23 @@
 //! An SPSC queue for data channel PDUs.
 //!
 //! Data channel PDUs are received and transmitted in time-critical code, so they're sent through
-//! this queue to be processed at a later time (perhaps in the application's idle loop).
+//! a queue to be processed at a later time (eg. in the application's idle loop).
 //!
-//! The queue contains Link-Layer data channel packets, which consist of a 2-Byte header and a
-//! dynamically-sized payload.
+//! This module defines the following important items:
+//!
+//! * The [`PacketQueue`] trait, which is implemented by all types providing a packet queue. A type
+//!   implementing this trait is needed to use the Rubble stack.
+//! * The [`Producer`] and [`Consumer`] traits, which define the queue functionality used after
+//!   splitting a [`PacketQueue`].
+//! * The [`SimpleQueue`], [`SimpleProducer`] and [`SimpleConsumer`] types, a minimal implementation
+//!   of the queue interface defined by [`PacketQueue`], [`Producer`] and [`Consumer`].
+//!
+//! [`PacketQueue`]: trait.PacketQueue.html
+//! [`Producer`]: trait.Producer.html
+//! [`Consumer`]: trait.Consumer.html
+//! [`SimpleQueue`]: struct.SimpleQueue.html
+//! [`SimpleProducer`]: struct.SimpleProducer.html
+//! [`SimpleConsumer`]: struct.SimpleConsumer.html
 
 use {
     crate::{
@@ -22,14 +35,15 @@ use {
     },
 };
 
-/// A splittable SPSC queue for Link-Layer PDUs.
+/// A splittable SPSC queue for data channel PDUs.
 ///
-/// Must fit at least one packet with `MIN_PDU_BUF` bytes.
+/// Implementations of this trait must fit at least one packet with a total size of `MIN_PDU_BUF`
+/// bytes (header and payload).
 pub trait PacketQueue<'a> {
-    /// Producing half of the queue.
+    /// Producing (writing) half of the queue.
     type Producer: Producer;
 
-    /// Consuming half of the queue.
+    /// Consuming (reading) half of the queue.
     type Consumer: Consumer;
 
     /// Splits the queue into its producing and consuming ends.
@@ -46,12 +60,21 @@ pub trait Producer {
     /// This is necessarily a conservative estimate, since the consumer half of the queue might
     /// remove a packet from the queue immediately after this function returns, creating more free
     /// space.
+    ///
+    /// After a call to this method, the next call to any of the `produce_*` methods must not fail
+    /// when a `payload_bytes` value less than or equal to the returned free payload space is
+    /// passed.
     fn free_space(&self) -> u8;
 
     /// Enqueues a PDU with known size using a closure.
     ///
-    /// This is an object-safe method complemented by its generic counterpart `produce_with`. Only
-    /// this method need to be implemented.
+    /// *This is an object-safe method complemented by its generic counterpart `produce_with`. Only
+    /// this method need to be implemented.*
+    ///
+    /// This will check if `payload_bytes` are available in the queue, and bail with `Error::Eof` if
+    /// not. If sufficient space is available, a `ByteWriter` with access to that space is
+    /// constructed and `f` is called. If `f` returns a successful result, the data is committed to
+    /// the queue. If not, the queue is left unchanged.
     fn produce_dyn(
         &mut self,
         payload_bytes: u8,
@@ -73,6 +96,10 @@ pub trait Producer {
         E: From<Error>,
         Self: Sized,
     {
+        // This forwards to `produce_dyn`, but the call should be trivial to devirtualize (only
+        // simple constant propagation is needed). The `Option`s should then be trivial to optimize
+        // out as well.
+
         let mut f = Some(f);
         let mut r = None;
         self.produce_dyn(payload_bytes, &mut |bytes| {
@@ -101,6 +128,8 @@ pub trait Consumer {
     ///
     /// The closure returns a `Consume` value to indicate whether the packet should remain in the
     /// queue or be removed.
+    ///
+    /// If the queue is empty, `Error::Eof` is returned.
     fn consume_raw_with<R>(
         &mut self,
         f: impl FnOnce(data::Header, &[u8]) -> Consume<R>,
@@ -110,6 +139,8 @@ pub trait Consumer {
     ///
     /// The closure returns a `Consume` value to indicate whether the packet should remain in the
     /// queue or be removed.
+    ///
+    /// If the queue is empty, `Error::Eof` is returned.
     fn consume_pdu_with<R>(
         &mut self,
         f: impl FnOnce(data::Header, data::Pdu<'_, &[u8]>) -> Consume<R>,
@@ -169,7 +200,10 @@ impl<T> Consume<T> {
 /// A simple packet queue that can hold a single packet.
 ///
 /// This type is compatible with thumbv6 cores, which lack atomic operations that might be needed
-/// for some queue implementations.
+/// for other queue implementations.
+///
+/// This queue also minimizes RAM usage: In addition to the raw buffer space, only minimal space is
+/// needed for housekeeping.
 pub struct SimpleQueue {
     inner: spsc::Queue<[u8; MIN_PDU_BUF], U1, u8, MultiCore>,
 }
@@ -194,12 +228,14 @@ impl<'a> PacketQueue<'a> for SimpleQueue {
     }
 }
 
+/// Producer (writer) half returned by `SimpleQueue::split`.
 pub struct SimpleProducer<'a> {
     inner: spsc::Producer<'a, [u8; MIN_PDU_BUF], U1, u8, MultiCore>,
 }
 
 impl<'a> Producer for SimpleProducer<'a> {
     fn free_space(&self) -> u8 {
+        // We can only have space for either 0 or 1 packets with min. payload size
         if self.inner.ready() {
             MIN_PAYLOAD_BUF as u8
         } else {
@@ -233,6 +269,7 @@ impl<'a> Producer for SimpleProducer<'a> {
     }
 }
 
+/// Consumer (reader) half returned by `SimpleQueue::split`.
 pub struct SimpleConsumer<'a> {
     inner: spsc::Consumer<'a, [u8; MIN_PDU_BUF], U1, u8, MultiCore>,
 }
