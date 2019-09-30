@@ -33,6 +33,9 @@ pub trait PacketQueue<'a> {
     type Consumer: Consumer;
 
     /// Splits the queue into its producing and consuming ends.
+    ///
+    /// The halves can borrow from the original queue by incorporating the lifetime `'a` in the
+    /// associated `Producer` and `Consumer` types.
     fn split(&'a mut self) -> (Self::Producer, Self::Consumer);
 }
 
@@ -43,7 +46,7 @@ pub trait Producer {
     /// This is necessarily a conservative estimate, since the consumer half of the queue might
     /// remove a packet from the queue immediately after this function returns, creating more free
     /// space.
-    fn free_space(&mut self) -> u8; // FIXME &self
+    fn free_space(&self) -> u8;
 
     /// Enqueues a PDU with known size using a closure.
     ///
@@ -92,7 +95,7 @@ pub trait Producer {
 /// The consuming (reading) half of a packet queue.
 pub trait Consumer {
     /// Returns whether there is a packet to dequeue.
-    fn has_data(&mut self) -> bool; // FIXME &self
+    fn has_data(&self) -> bool;
 
     /// Passes the next raw packet in the queue to a closure.
     ///
@@ -196,7 +199,7 @@ pub struct SimpleProducer<'a> {
 }
 
 impl<'a> Producer for SimpleProducer<'a> {
-    fn free_space(&mut self) -> u8 {
+    fn free_space(&self) -> u8 {
         if self.inner.ready() {
             MIN_PAYLOAD_BUF as u8
         } else {
@@ -235,7 +238,7 @@ pub struct SimpleConsumer<'a> {
 }
 
 impl<'a> Consumer for SimpleConsumer<'a> {
-    fn has_data(&mut self) -> bool {
+    fn has_data(&self) -> bool {
         self.inner.ready()
     }
 
