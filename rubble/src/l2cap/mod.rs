@@ -28,7 +28,7 @@ use {
         link::{
             data::Llid,
             queue::{Consume, Producer},
-            MIN_PAYLOAD_BUF,
+            MIN_DATA_PAYLOAD_BUF,
         },
         security::{NoSecurity, SecurityLevel, SecurityManager},
         utils::HexSlice,
@@ -156,7 +156,7 @@ impl<'a> ChannelData<'a, dyn ProtocolObj + 'a> {
     /// `Protocol` implementor `T`.
     fn new_dyn<T: Protocol + 'a>(response_channel: Channel, protocol: &'a mut T) -> Self {
         assert!(
-            usize::from(T::RSP_PDU_SIZE + Header::SIZE) <= MIN_PAYLOAD_BUF,
+            usize::from(T::RSP_PDU_SIZE + Header::SIZE) <= MIN_DATA_PAYLOAD_BUF,
             "protocol min PDU is smaller than data channel PDU (L2CAP reassembly NYI)"
         );
 
@@ -171,7 +171,7 @@ impl<'a> ChannelData<'a, dyn ProtocolObj + 'a> {
 impl<'a, P: Protocol> ChannelData<'a, P> {
     fn new(response_channel: Channel, protocol: &'a mut P) -> Self {
         assert!(
-            usize::from(P::RSP_PDU_SIZE + Header::SIZE) <= MIN_PAYLOAD_BUF,
+            usize::from(P::RSP_PDU_SIZE + Header::SIZE) <= MIN_DATA_PAYLOAD_BUF,
             "protocol min PDU is smaller than data channel PDU (L2CAP reassembly NYI)"
         );
 

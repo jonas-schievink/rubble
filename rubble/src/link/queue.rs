@@ -24,7 +24,7 @@ use {
         bytes::*,
         link::{
             data::{self, Llid},
-            MIN_PAYLOAD_BUF, MIN_PDU_BUF,
+            MIN_DATA_PAYLOAD_BUF, MIN_DATA_PDU_BUF,
         },
         Error,
     },
@@ -37,8 +37,8 @@ use {
 
 /// A splittable SPSC queue for data channel PDUs.
 ///
-/// Implementations of this trait must fit at least one packet with a total size of `MIN_PDU_BUF`
-/// bytes (header and payload).
+/// Implementations of this trait must fit at least one data channel packet with a total size of
+/// `MIN_DATA_PDU_BUF` bytes (header and payload).
 pub trait PacketQueue {
     /// Producing (writing) half of the queue.
     type Producer: Producer;
@@ -210,7 +210,7 @@ impl<T> Consume<T> {
 /// This queue also minimizes RAM usage: In addition to the raw buffer space, only minimal space is
 /// needed for housekeeping.
 pub struct SimpleQueue {
-    inner: spsc::Queue<[u8; MIN_PDU_BUF], U1, u8, MultiCore>,
+    inner: spsc::Queue<[u8; MIN_DATA_PDU_BUF], U1, u8, MultiCore>,
 }
 
 impl SimpleQueue {
@@ -235,14 +235,14 @@ impl<'a> PacketQueue for &'a mut SimpleQueue {
 
 /// Producer (writer) half returned by `SimpleQueue::split`.
 pub struct SimpleProducer<'a> {
-    inner: spsc::Producer<'a, [u8; MIN_PDU_BUF], U1, u8, MultiCore>,
+    inner: spsc::Producer<'a, [u8; MIN_DATA_PDU_BUF], U1, u8, MultiCore>,
 }
 
 impl<'a> Producer for SimpleProducer<'a> {
     fn free_space(&self) -> u8 {
         // We can only have space for either 0 or 1 packets with min. payload size
         if self.inner.ready() {
-            MIN_PAYLOAD_BUF as u8
+            MIN_DATA_PAYLOAD_BUF as u8
         } else {
             0
         }
@@ -253,13 +253,13 @@ impl<'a> Producer for SimpleProducer<'a> {
         payload_bytes: u8,
         f: &mut dyn FnMut(&mut ByteWriter<'_>) -> Result<Llid, Error>,
     ) -> Result<(), Error> {
-        assert!(usize::from(payload_bytes) <= MIN_PAYLOAD_BUF);
+        assert!(usize::from(payload_bytes) <= MIN_DATA_PAYLOAD_BUF);
 
         if !self.inner.ready() {
             return Err(Error::Eof);
         }
 
-        let mut buf = [0; MIN_PDU_BUF];
+        let mut buf = [0; MIN_DATA_PDU_BUF];
         let mut writer = ByteWriter::new(&mut buf[2..]);
         let free = writer.space_left();
         let llid = f(&mut writer)?;
@@ -276,7 +276,7 @@ impl<'a> Producer for SimpleProducer<'a> {
 
 /// Consumer (reader) half returned by `SimpleQueue::split`.
 pub struct SimpleConsumer<'a> {
-    inner: spsc::Consumer<'a, [u8; MIN_PDU_BUF], U1, u8, MultiCore>,
+    inner: spsc::Consumer<'a, [u8; MIN_DATA_PDU_BUF], U1, u8, MultiCore>,
 }
 
 impl<'a> Consumer for SimpleConsumer<'a> {
@@ -348,20 +348,20 @@ pub fn run_tests(queue: impl PacketQueue) {
 
     let free_space = p.free_space();
     assert!(
-        free_space >= MIN_PAYLOAD_BUF as u8,
+        free_space >= MIN_DATA_PAYLOAD_BUF as u8,
         "empty queue has space for {} byte payload, need at least {}",
         free_space,
-        MIN_PAYLOAD_BUF
+        MIN_DATA_PAYLOAD_BUF
     );
 
     // Enqueue the largest packet
-    p.produce_with(MIN_PAYLOAD_BUF as u8, |writer| -> Result<_, Error> {
+    p.produce_with(MIN_DATA_PAYLOAD_BUF as u8, |writer| -> Result<_, Error> {
         assert_eq!(
             writer.space_left(),
-            MIN_PAYLOAD_BUF,
+            MIN_DATA_PAYLOAD_BUF,
             "produce_with didn't pass ByteWriter with correct buffer"
         );
-        writer.write_slice(&[0; MIN_PAYLOAD_BUF]).unwrap();
+        writer.write_slice(&[0; MIN_DATA_PAYLOAD_BUF]).unwrap();
         Ok(Llid::DataStart)
     })
     .expect("enqueuing packet failed");
@@ -372,10 +372,10 @@ pub fn run_tests(queue: impl PacketQueue) {
     );
 
     c.consume_raw_with(|header, data| -> Consume<()> {
-        assert_eq!(usize::from(header.payload_length()), MIN_PAYLOAD_BUF);
+        assert_eq!(usize::from(header.payload_length()), MIN_DATA_PAYLOAD_BUF);
         assert_eq!(
             data,
-            &[0; MIN_PAYLOAD_BUF][..],
+            &[0; MIN_DATA_PAYLOAD_BUF][..],
             "consume_raw_with didn't yield correct payload"
         );
         Consume::never(Ok(()))
