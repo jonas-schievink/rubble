@@ -169,6 +169,18 @@ use {
 /// `x^24 + x^10 + x^9 + x^6 + x^4 + x^3 + x + 1`
 pub const CRC_POLY: u32 = 0b00000001_00000000_00000110_01011011;
 
+/// Min. size a data PDU payload buffer must have (assuming only the bare minimum PDU size is
+/// supported).
+///
+/// Data channel PDUs are smaller than advertising channel PDUs, so this value is less than
+/// `MIN_PAYLOAD_BUF`.
+pub const MIN_DATA_PAYLOAD_BUF: usize = 27;
+
+/// Min. size a data PDU buffer must have.
+///
+/// This is `MIN_DATA_PAYLOAD_BUF` plus the size of the data PDU header (2 Bytes).
+pub const MIN_DATA_PDU_BUF: usize = MIN_DATA_PAYLOAD_BUF + 2;
+
 /// Min. size a PDU payload buffer must have (to cover both advertising and data channels).
 ///
 /// The Advertising PDU header has a length field that is limited to 37 octets, while data channel
