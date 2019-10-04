@@ -318,33 +318,36 @@ impl<'a> Consumer for SimpleConsumer<'a> {
 /// Simultaneously, this function ensures that `PacketQueue` implementors can be created and used by
 /// a generic function, something that sometimes doesn't work when invariant lifetimes are involved.
 pub fn run_tests(queue: impl PacketQueue) {
+    fn assert_empty(c: &mut impl Consumer) {
+        assert!(!c.has_data(), "empty queue `has_data()` returned true");
+
+        let err = c
+            .consume_raw_with(|_, _| -> Consume<()> {
+                unreachable!("`consume_raw_with` on empty queue invoked the callback");
+            })
+            .unwrap_err();
+
+        assert_eq!(
+            err,
+            Error::Eof,
+            "empty queues `consume_raw_with` didn't return expected `Error::Eof"
+        );
+
+        let err = c
+            .consume_pdu_with(|_, _| -> Consume<()> {
+                unreachable!("`consume_pdu_with` on empty queue invoked the callback");
+            })
+            .unwrap_err();
+
+        assert_eq!(
+            err,
+            Error::Eof,
+            "empty queues `consume_pdu_with` didn't return expected `Error::Eof"
+        );
+    }
+
     let (mut p, mut c) = queue.split();
-
-    assert!(!c.has_data(), "empty queue `has_data()` returned true");
-
-    let err = c
-        .consume_raw_with(|_, _| -> Consume<()> {
-            unreachable!("`consume_raw_with` on empty queue invoked the callback");
-        })
-        .unwrap_err();
-
-    assert_eq!(
-        err,
-        Error::Eof,
-        "empty queues `consume_raw_with` didn't return expected `Error::Eof"
-    );
-
-    let err = c
-        .consume_pdu_with(|_, _| -> Consume<()> {
-            unreachable!("`consume_pdu_with` on empty queue invoked the callback");
-        })
-        .unwrap_err();
-
-    assert_eq!(
-        err,
-        Error::Eof,
-        "empty queues `consume_pdu_with` didn't return expected `Error::Eof"
-    );
+    assert_empty(&mut c);
 
     let free_space = p.free_space();
     assert!(
@@ -371,6 +374,7 @@ pub fn run_tests(queue: impl PacketQueue) {
         "consumer's `has_data()` still false after enqueuing packet"
     );
 
+    // Peek at the packet
     c.consume_raw_with(|header, data| -> Consume<()> {
         assert_eq!(usize::from(header.payload_length()), MIN_DATA_PAYLOAD_BUF);
         assert_eq!(
@@ -386,6 +390,61 @@ pub fn run_tests(queue: impl PacketQueue) {
         c.has_data(),
         "`has_data()` returned false after using `Consume::never`"
     );
+
+    // Now consume it
+    c.consume_pdu_with(|header, _| -> Consume<()> {
+        assert_eq!(usize::from(header.payload_length()), MIN_DATA_PAYLOAD_BUF);
+        Consume::always(Ok(()))
+    })
+    .expect("consume_pdu_with failed when data is available");
+
+    // Queue should be emptied out
+    assert_empty(&mut c);
+
+    // Enqueue the smallest packet (0 payload bytes)
+    p.produce_with(0, |writer| -> Result<_, Error> {
+        assert_eq!(
+            writer.space_left(),
+            MIN_DATA_PAYLOAD_BUF,
+            "produce_with didn't pass ByteWriter with correct buffer"
+        );
+        Ok(Llid::DataStart)
+    })
+    .expect("enqueuing packet failed");
+
+    assert!(
+        c.has_data(),
+        "consumer's `has_data()` still false after enqueuing empty packet"
+    );
+
+    // Peek at the packet
+    c.consume_raw_with(|header, data| -> Consume<()> {
+        assert_eq!(usize::from(header.payload_length()), 0);
+        assert_eq!(
+            data,
+            &[][..],
+            "consume_raw_with didn't yield correct empty payload"
+        );
+        Consume::never(Ok(()))
+    })
+    .expect("consume_raw_with failed when empty packet is available");
+
+    assert!(
+        c.has_data(),
+        "`has_data()` returned false after using `Consume::never`"
+    );
+
+    // Now consume it
+    c.consume_pdu_with(|header, _| -> Consume<()> {
+        assert_eq!(usize::from(header.payload_length()), 0);
+        Consume::always(Ok(()))
+    })
+    .expect("consume_pdu_with failed when empty packet is available");
+
+    // Queue should be emptied out
+    assert_empty(&mut c);
+
+    // FIXME: This test could do a lot more
 }
 
 #[test]
