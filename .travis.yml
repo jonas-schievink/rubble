@@ -17,7 +17,7 @@ jobs:
       script: ci/test.sh
     - stage: deploy
       env:
-        TARGET: thumbv6m-none-eabi
+        TARGET: thumbv7em-none-eabi
       script:
         - cargo doc --no-deps --target=$TARGET
         - echo "<meta http-equiv=refresh content=0;url=rubble/index.html>" > target/$TARGET/doc/index.html
