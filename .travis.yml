@@ -16,11 +16,13 @@ jobs:
     - stage: test
       script: ci/test.sh
     - stage: deploy
+      env:
+        TARGET: thumbv6m-none-eabi
       script:
-        - cargo doc --no-deps --target=$TARGET_BUILD
-        - echo "<meta http-equiv=refresh content=0;url=rubble/index.html>" > target/$TARGET_BUILD/doc/index.html
+        - cargo doc --no-deps --target=$TARGET
+        - echo "<meta http-equiv=refresh content=0;url=rubble/index.html>" > target/$TARGET/doc/index.html
         - sudo pip install ghp-import
-        - ghp-import -n target/$TARGET_BUILD/doc
+        - ghp-import -n target/$TARGET/doc
         - git push -qf https://${GH_TOKEN}@github.com/jonas-schievink/rubble.git gh-pages
 
 notifications:
