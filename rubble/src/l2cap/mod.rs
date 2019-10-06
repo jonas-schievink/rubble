@@ -547,6 +547,10 @@ impl<'a, M: ChannelMapper, P: Producer> L2CAPStateTx<'a, M, P> {
     /// This will reserve sufficient space in the outgoing PDU buffer to send any ATT PDU, and then
     /// return an `AttributeServerTx` instance that can be used to initiate an ATT-specific
     /// procedure.
+    ///
+    /// Returns `None` if there's not enough space in the TX packet queue to send an ATT PDU. If
+    /// that happens, calling this method again at a later time (after the Link-Layer had time to
+    /// transmit more packets) might succeed.
     pub fn att(&mut self) -> Option<att::AttributeServerTx<'_, M::AttributeProvider>> {
         let att = self.l2cap.mapper.att();
         Sender::new(&att, self.tx).map(move |sender| att.into_protocol().with_sender(sender))
