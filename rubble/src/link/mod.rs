@@ -354,12 +354,13 @@ impl<C: Config> LinkLayer<C> {
 
         match self.state {
             State::Standby => unreachable!("standby, can't receive packets"),
-            State::Connection { .. } => unimplemented!(),
+            State::Connection { .. } => unreachable!("process_adv_packet called while connected"),
             State::Advertising { channel, .. } => {
                 Cmd {
                     radio: RadioCmd::ListenAdvertising { channel },
                     // no change
                     next_update: NextUpdate::Keep,
+                    queued_work: false,
                 }
             }
         }
@@ -383,6 +384,8 @@ impl<C: Config> LinkLayer<C> {
                     Cmd {
                         next_update: NextUpdate::Disable,
                         radio: RadioCmd::Off,
+                        // FIXME(#70) this might need to be changed to `true`
+                        queued_work: false,
                     }
                 }
             }
@@ -423,6 +426,7 @@ impl<C: Config> LinkLayer<C> {
                 Cmd {
                     radio: RadioCmd::ListenAdvertising { channel: *channel },
                     next_update: NextUpdate::At(*next_adv),
+                    queued_work: false,
                 }
             }
             State::Connection(conn) => match conn.timer_update(&mut self.timer) {
@@ -433,6 +437,8 @@ impl<C: Config> LinkLayer<C> {
                     Cmd {
                         next_update: NextUpdate::Disable,
                         radio: RadioCmd::Off,
+                        // FIXME(#70) this might need to be changed to `true`
+                        queued_work: false,
                     }
                 }
             },
@@ -473,6 +479,13 @@ pub struct Cmd {
     /// If this is `None`, `update` doesn't need to be called because the Link-Layer is in Standby
     /// state.
     pub next_update: NextUpdate,
+
+    /// Whether the Link-Layer code has enqueued more work into the packet queue.
+    ///
+    /// If this is `true`, the caller needs to ensure that the queue is drained and processed by
+    /// calling the `Responder`. The apps idle loop might unconditionally do that, in which case
+    /// checking this flag is not necessary.
+    pub queued_work: bool,
 }
 
 /// Specifies when the Link Layer's `update` method should be called the next time.

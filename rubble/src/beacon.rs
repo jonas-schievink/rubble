@@ -116,6 +116,8 @@ impl<C: ScanCallback, F: AddressFilter> BeaconScanner<C, F> {
             radio: RadioCmd::ListenAdvertising {
                 channel: self.channel,
             },
+
+            queued_work: false,
         }
     }
 
@@ -132,6 +134,8 @@ impl<C: ScanCallback, F: AddressFilter> BeaconScanner<C, F> {
             radio: RadioCmd::ListenAdvertising {
                 channel: self.channel,
             },
+
+            queued_work: false,
         }
     }
 
@@ -155,6 +159,7 @@ impl<C: ScanCallback, F: AddressFilter> BeaconScanner<C, F> {
             radio: RadioCmd::ListenAdvertising {
                 channel: self.channel,
             },
+            queued_work: false,
         }
     }
 }
