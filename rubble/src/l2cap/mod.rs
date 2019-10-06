@@ -393,6 +393,10 @@ pub struct Sender<'a> {
 }
 
 impl<'a> Sender<'a> {
+    /// Creates a `Sender` from a `Producer`, ensuring that sufficient free space is available to
+    /// fit a PDU described by `chdata`.
+    ///
+    /// If there is not enough space in `tx`, returns `None`.
     fn new<T: ?Sized>(chdata: &ChannelData<'_, T>, tx: &'a mut dyn Producer) -> Option<Self> {
         let free = tx.free_space();
         let needed = chdata.pdu_size() + Header::SIZE;

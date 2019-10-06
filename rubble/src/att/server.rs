@@ -25,6 +25,11 @@ impl<A: AttributeProvider> AttributeServer<A> {
     }
 
     /// Prepares for performing a server-initiated action (eg. sending a notification/indication).
+    ///
+    /// The caller must ensure that `sender` has at least `RSP_PDU_SIZE` bytes of free space
+    /// available.
+    ///
+    /// It is usually not necessary to use this function. Instead, call `L2CAPStateTx::att`.
     pub fn with_sender<'a>(&'a mut self, sender: Sender<'a>) -> AttributeServerTx<'a, A> {
         AttributeServerTx {
             server: self,
@@ -308,10 +313,15 @@ impl<'a, A: AttributeProvider> AttributeServerTx<'a, A> {
     /// If `value` is too large to be transmitted in a single `ATT_MTU`, it will be truncated to
     /// fit. A client may fetch the rest of the truncated value by using a *Read Blob Request*.
     /// If this is unwanted, only notify with a `value` of 19 Bytes or less.
-    pub fn notify_raw(&mut self, handle: Handle, value: &[u8]) -> Result<(), Error> {
-        self.sender.send(AttPdu::HandleValueNotification {
-            handle,
-            value: HexSlice(value),
-        })
+    pub fn notify_raw(mut self, handle: Handle, value: &[u8]) {
+        // This cannot fail. The `self` guarantees that there's `RSP_PDU_SIZE` bytes free in
+        // `sender`, and is consumed by this method. `AttPdu`s encoder will truncate `value` to fit
+        // and doesn't error.
+        self.sender
+            .send(AttPdu::HandleValueNotification {
+                handle,
+                value: HexSlice(value),
+            })
+            .unwrap()
     }
 }
