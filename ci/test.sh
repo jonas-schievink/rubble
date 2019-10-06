@@ -25,13 +25,20 @@ cargo test --all
 
 # Check that the demo app builds with all feature combinations.
 # Here we do a proper build to also make sure linking the final binary works.
-for dir in demos/nrf52*; do
+(
+    TARGET=thumbv7em-none-eabi
+    echo "Building demos/nrf52810-demo for $TARGET..."
+    cd "demos/nrf52810-demo"
+    cargo build --target "$TARGET" --no-default-features
+    cargo build --target "$TARGET"
+)
+
+for device in 52810 52832 52840; do
     (
         TARGET=thumbv7em-none-eabi
-        echo "Building $dir for $TARGET..."
-        cd "$dir"
-        cargo build --target "$TARGET" --no-default-features
-        cargo build --target "$TARGET"
+        echo "Building demos/nrf52-beacon for device $device, target $TARGET..."
+        cd "demos/nrf52-beacon"
+        cargo build --target "$TARGET" --features "$device"
     )
 done
 
