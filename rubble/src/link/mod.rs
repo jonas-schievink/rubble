@@ -440,8 +440,18 @@ impl<C: Config> LinkLayer<C> {
         }
     }
 
+    /// Returns whether the Link-Layer is currently broadcasting advertisement packets.
     pub fn is_advertising(&self) -> bool {
         if let State::Advertising { .. } = self.state {
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Returns whether the Link-Layer is currently connected.
+    pub fn is_connected(&self) -> bool {
+        if let State::Connection { .. } = self.state {
             true
         } else {
             false
