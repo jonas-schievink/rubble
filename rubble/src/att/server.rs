@@ -8,6 +8,7 @@ use {
     crate::{
         bytes::{ByteReader, FromBytes, ToBytes},
         l2cap::{Protocol, ProtocolObj, Sender},
+        utils::HexSlice,
         Error,
     },
 };
@@ -279,8 +280,25 @@ impl<A: AttributeProvider> Protocol for AttributeServer<A> {
 ///
 /// This type is needed for any server-initiated procedure, where the server sends out a packet on
 /// its own instead of reacting to a client packet.
-#[allow(unused)] // TODO: Implement notifications/indications with this
 pub struct AttributeServerTx<'a, A: AttributeProvider> {
+    #[allow(unused)]
     server: &'a mut AttributeServer<A>,
+
     sender: Sender<'a>,
+}
+
+impl<'a, A: AttributeProvider> AttributeServerTx<'a, A> {
+    /// Sends an attribute value notification to the connected client.
+    ///
+    /// Notifications are not acknowledged by the client.
+    ///
+    /// If `value` is too large to be transmitted in a single `ATT_MTU`, it will be truncated to
+    /// fit. A client may fetch the rest of the truncated value by using a *Read Blob Request*.
+    /// If this is unwanted, only notify with a `value` of 19 Bytes or less.
+    pub fn notify_raw(&mut self, handle: Handle, value: &[u8]) -> Result<(), Error> {
+        self.sender.send(AttPdu::HandleValueNotification {
+            handle,
+            value: HexSlice(value),
+        })
+    }
 }

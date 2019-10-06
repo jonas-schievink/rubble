@@ -123,14 +123,7 @@ impl<'a> ToBytes for ByTypeAttData<'a> {
         writer.write_u16_le(self.handle.as_u16())?;
 
         // If the writer doesn't have enough space, truncate the value
-        let left = writer.space_left();
-        let value = if self.value.as_ref().len() > left {
-            &self.value.as_ref()[..left]
-        } else {
-            self.value.as_ref()
-        };
-
-        writer.write_slice(value)?;
+        writer.write_slice_truncate(self.value.as_ref());
 
         Ok(())
     }
@@ -183,14 +176,8 @@ impl<'a> ToBytes for ByGroupAttData<'a> {
         writer.write_u16_le(self.group_end_handle.as_u16())?;
 
         // If the writer doesn't have enough space, truncate the value
-        let left = writer.space_left();
-        let value = if self.value.as_ref().len() > left {
-            &self.value.as_ref()[..left]
-        } else {
-            self.value.as_ref()
-        };
+        writer.write_slice_truncate(self.value.as_ref());
 
-        writer.write_slice(value)?;
         Ok(())
     }
 }
@@ -639,11 +626,11 @@ impl<'a> ToBytes for AttPdu<'a> {
             AttPdu::ExecuteWriteRsp => {}
             AttPdu::HandleValueNotification { handle, value } => {
                 handle.to_bytes(writer)?;
-                writer.write_slice(value.as_ref())?;
+                writer.write_slice_truncate(value.as_ref());
             }
             AttPdu::HandleValueIndication { handle, value } => {
                 handle.to_bytes(writer)?;
-                writer.write_slice(value.as_ref())?;
+                writer.write_slice_truncate(value.as_ref());
             }
             AttPdu::HandleValueConfirmation => {}
             AttPdu::Unknown { opcode: _, params } => {

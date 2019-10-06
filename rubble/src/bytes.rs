@@ -20,7 +20,7 @@
 use {
     crate::Error,
     byteorder::{ByteOrder, LittleEndian},
-    core::{fmt, iter, mem},
+    core::{cmp, fmt, iter, mem},
 };
 
 /// Reference to a `T`, or to a byte slice that can be decoded as a `T`.
@@ -330,6 +330,16 @@ impl<'a> ByteWriter<'a> {
             self.0 = &mut this[other.len()..];
             Ok(())
         }
+    }
+
+    /// Writes as many bytes as can fit from `other` into `self`.
+    ///
+    /// Returns the number of bytes written.
+    pub fn write_slice_truncate(&mut self, other: &[u8]) -> usize {
+        let num = cmp::min(self.space_left(), other.len());
+        let other = &other[..num];
+        self.write_slice(other).unwrap();
+        num
     }
 
     /// Writes a single byte to `self`.
