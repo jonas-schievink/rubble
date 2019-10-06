@@ -208,6 +208,20 @@ impl<A: AttributeProvider> AttributeServer<A> {
                 Ok(())
             }
 
+            AttPdu::WriteReq { .. } => {
+                // FIXME: ATT Writes are not yet supported, but we pretend they work so that some
+                // applications that only need CCCD writes work (eg. BLE MIDI).
+                warn!("NYI: ATT Write Req");
+
+                responder
+                    .send_with(|writer| -> Result<(), Error> {
+                        writer.write_u8(Opcode::WriteRsp.into())?;
+                        Ok(())
+                    })
+                    .unwrap();
+                Ok(())
+            }
+
             // Responses are always invalid here
             AttPdu::ErrorRsp { .. }
             | AttPdu::ExchangeMtuRsp { .. }
@@ -232,7 +246,6 @@ impl<A: AttributeProvider> AttributeServer<A> {
             | AttPdu::FindByTypeValueReq { .. }
             | AttPdu::ReadBlobReq { .. }
             | AttPdu::ReadMultipleReq { .. }
-            | AttPdu::WriteReq { .. }
             | AttPdu::WriteCommand { .. }
             | AttPdu::SignedWriteCommand { .. }
             | AttPdu::PrepareWriteReq { .. }
