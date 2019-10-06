@@ -123,6 +123,7 @@ impl<C: Config> Connection<C> {
                 access_address: this.access_address,
                 crc_init: this.crc_init,
             },
+            queued_work: false,
         };
 
         (this, cmd)
@@ -158,7 +159,11 @@ impl<C: Config> Connection<C> {
             self.transmit_seq_num += SeqNum::ONE;
         }
 
+        // Whether we've already sent a response packet.
         let mut responded = false;
+        // Whether we've pushed more work into the RX queue.
+        let mut queued_work = false;
+
         if is_new {
             if is_empty {
                 // Always acknowledge empty packets, no need to process them
@@ -221,6 +226,7 @@ impl<C: Config> Connection<C> {
                 if result.is_ok() {
                     // Acknowledge the packet
                     self.next_expected_seq_num += SeqNum::ONE;
+                    queued_work = true;
                 } else {
                     trace!("NACK (no space in rx buffer)");
                 }
@@ -280,7 +286,8 @@ impl<C: Config> Connection<C> {
                     // Next conn event will the the first one with these parameters.
                     let result = self.apply_llcp_update(update, rx_end);
                     info!("LLCP patch applied: {:?} -> {:?}", update, result);
-                    if let Some(cmd) = result {
+                    if let Some(mut cmd) = result {
+                        cmd.queued_work = queued_work;
                         return Ok(cmd);
                     }
                 } else {
@@ -311,6 +318,7 @@ impl<C: Config> Connection<C> {
                 access_address: self.access_address,
                 crc_init: self.crc_init,
             },
+            queued_work,
         })
     }
 
@@ -340,6 +348,7 @@ impl<C: Config> Connection<C> {
                     access_address: self.access_address,
                     crc_init: self.crc_init,
                 },
+                queued_work: false,
             })
         } else {
             // Master did not transmit the first packet during this transmit window.
@@ -499,6 +508,8 @@ impl<C: Config> Connection<C> {
                         access_address: self.access_address,
                         crc_init: self.crc_init,
                     },
+                    // This function never queues work, but the caller might change this to `true`
+                    queued_work: false,
                 })
             }
             LlcpUpdate::ChannelMap { map, .. } => {
