@@ -197,7 +197,7 @@ const APP: () = {
         resources.BLE_LL.timer().configure_interrupt(next_update);
     }
 
-    #[interrupt(resources = [RADIO, BLE_LL])]
+    #[interrupt(resources = [RADIO, BLE_LL], spawn = [ble_worker])]
     fn TIMER0() {
         let timer = resources.BLE_LL.timer();
         if !timer.is_interrupt_pending() {
@@ -212,6 +212,12 @@ const APP: () = {
             .BLE_LL
             .timer()
             .configure_interrupt(cmd.next_update);
+
+        if cmd.queued_work {
+            // If there's any lower-priority work to be done, ensure that happens.
+            // If we fail to spawn the task, it's already scheduled.
+            spawn.ble_worker().ok();
+        }
     }
 
     /// Fire the beacon.
@@ -223,7 +229,7 @@ const APP: () = {
         resources.BEACON.broadcast(&mut *resources.RADIO);
     }
 
-    #[idle(resources = [LOG_SINK, SERIAL, BLE_R])]
+    #[idle(resources = [LOG_SINK, SERIAL])]
     fn idle() -> ! {
         // Drain the logging buffer through the serial connection
         loop {
@@ -236,10 +242,18 @@ const APP: () = {
                     resources.LOG_SINK.release(grant.buf().len(), grant);
                 }
             }
-
-            if resources.BLE_R.has_work() {
-                resources.BLE_R.process_one().unwrap();
-            }
         }
+    }
+
+    #[task(resources = [BLE_R])]
+    fn ble_worker() {
+        // Fully drain the packet queue
+        while resources.BLE_R.has_work() {
+            resources.BLE_R.process_one().unwrap();
+        }
+    }
+
+    extern "C" {
+        fn WDT();
     }
 };
