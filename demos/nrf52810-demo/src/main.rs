@@ -189,12 +189,24 @@ const APP: () = {
         LOG_SINK = log_sink;
     }
 
-    #[interrupt(resources = [RADIO, BLE_LL])]
+    #[interrupt(resources = [RADIO, BLE_LL], spawn = [ble_worker])]
     fn RADIO() {
-        let next_update = resources
+        if let Some(cmd) = resources
             .RADIO
-            .recv_interrupt(resources.BLE_LL.timer().now(), &mut resources.BLE_LL);
-        resources.BLE_LL.timer().configure_interrupt(next_update);
+            .recv_interrupt(resources.BLE_LL.timer().now(), &mut resources.BLE_LL)
+        {
+            resources.RADIO.configure_receiver(cmd.radio);
+            resources
+                .BLE_LL
+                .timer()
+                .configure_interrupt(cmd.next_update);
+
+            if cmd.queued_work {
+                // If there's any lower-priority work to be done, ensure that happens.
+                // If we fail to spawn the task, it's already scheduled.
+                spawn.ble_worker().ok();
+            }
+        }
     }
 
     #[interrupt(resources = [RADIO, BLE_LL], spawn = [ble_worker])]

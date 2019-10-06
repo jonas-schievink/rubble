@@ -58,9 +58,7 @@ use {
     pac::{radio::state::STATER, RADIO},
     rubble::{
         config::Config,
-        link::{
-            advertising, data, LinkLayer, NextUpdate, RadioCmd, Transmitter, CRC_POLY, MIN_PDU_BUF,
-        },
+        link::{advertising, data, Cmd, LinkLayer, RadioCmd, Transmitter, CRC_POLY, MIN_PDU_BUF},
         phy::{AdvertisingChannel, DataChannel},
         time::{Duration, Instant},
     },
@@ -261,9 +259,9 @@ impl BleRadio {
         &mut self,
         timestamp: Instant,
         ll: &mut LinkLayer<C>,
-    ) -> NextUpdate {
+    ) -> Option<Cmd> {
         if self.radio.events_disabled.read().bits() == 0 {
-            return NextUpdate::Keep;
+            return None;
         }
 
         // "Subsequent reads and writes cannot be moved ahead of preceding reads."
@@ -302,8 +300,7 @@ impl BleRadio {
             cmd
         };
 
-        self.configure_receiver(cmd.radio);
-        cmd.next_update
+        Some(cmd)
     }
 
     /// Perform preparations to receive or send on an advertising channel.
