@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "log"), allow(unused))]
 
 use {
+    crate::pac,
     bbqueue::{bbq, BBQueue, Consumer},
     cortex_m::interrupt,
     demo_utils::logging::{BbqLogger, StampedLogger, WriteLogger},
-    nrf52810_hal::nrf52810_pac as pac,
     rubble_nrf52::timer::StampSource,
 };
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -o errexit
 
@@ -10,7 +10,7 @@ cargo fmt --all -- --check
 
 # Run all tests in the workspace
 echo "Running tests with Cargo..."
-cargo test --all
+cargo test -p rubble
 
 # Check that the device crates build with all feature combinations.
 # Only use `cargo check` because the PAC crates are very slow to build.
@@ -23,23 +23,18 @@ cargo test --all
     cargo check --features="52840" --target "$TARGET"
 )
 
-# Check that the demo app builds with all feature combinations.
+# Check that the demo apps build with all supported feature combinations.
 # Here we do a proper build to also make sure linking the final binary works.
-(
-    TARGET=thumbv7em-none-eabi
-    echo "Building demos/nrf52810-demo for $TARGET..."
-    cd "demos/nrf52810-demo"
-    cargo build --target "$TARGET" --no-default-features
-    cargo build --target "$TARGET"
-)
-
-for device in 52810 52832 52840; do
-    (
-        TARGET=thumbv7em-none-eabi
-        echo "Building demos/nrf52-beacon for device $device, target $TARGET..."
-        cd "demos/nrf52-beacon"
-        cargo build --target "$TARGET" --features "$device"
-    )
+for demo in demos/nrf52*; do
+    for device in 52810 52832 52840; do
+        (
+            TARGET=thumbv7em-none-eabi
+            echo "Building $demo for device $device, target $TARGET..."
+            cd "$demo"
+            cargo build --target "$TARGET" --features "$device"
+            cargo build --target "$TARGET" --features "$device" --no-default-features
+        )
+    done
 done
 
 # Check that the core library builds on thumbv6
