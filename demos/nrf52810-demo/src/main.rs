@@ -7,18 +7,25 @@ use panic_semihosting as _;
 
 mod logger;
 
+// Import the right HAL/PAC crate, depending on the target chip
+#[cfg(feature = "52810")]
+use nrf52810_hal::{self as hal, nrf52810_pac as pac};
+#[cfg(feature = "52832")]
+use nrf52832_hal::{self as hal, nrf52832_pac as pac};
+#[cfg(feature = "52840")]
+use nrf52840_hal::{self as hal, nrf52840_pac as pac};
+
 use {
     bbqueue::Consumer,
     byteorder::{ByteOrder, LittleEndian},
     core::fmt::Write,
     cortex_m_semihosting::hprintln,
-    nrf52810_hal::{
-        self as hal,
+    hal::{
         gpio::Level,
-        nrf52810_pac::{self as pac, UARTE0},
         prelude::*,
         uarte::{Baudrate, Parity, Uarte},
     },
+    pac::UARTE0,
     rtfm::app,
     rubble::{
         beacon::Beacon,
@@ -57,7 +64,7 @@ impl Config for AppConfig {
 /// at the same time unless you also generate separate device addresses.
 const TEST_BEACON: bool = false;
 
-#[app(device = nrf52810_hal::nrf52810_pac)]
+#[app(device = crate::pac)]
 const APP: () = {
     static mut BLE_TX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
     static mut BLE_RX_BUF: PacketBuffer = [0; MIN_PDU_BUF];

@@ -33,13 +33,15 @@ cargo test --all
     cargo build --target "$TARGET"
 )
 
-for device in 52810 52832 52840; do
-    (
-        TARGET=thumbv7em-none-eabi
-        echo "Building demos/nrf52-beacon for device $device, target $TARGET..."
-        cd "demos/nrf52-beacon"
-        cargo build --target "$TARGET" --features "$device"
-    )
+for demo in demos/nrf52*; do
+    for device in 52810 52832 52840; do
+        (
+            TARGET=thumbv7em-none-eabi
+            echo "Building $demo for device $device, target $TARGET..."
+            cd "$demo"
+            cargo build --target "$TARGET" --features "$device"
+        )
+    done
 done
 
 # Check that the core library builds on thumbv6
