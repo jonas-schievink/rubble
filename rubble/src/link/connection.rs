@@ -83,12 +83,6 @@ impl<C: Config> Connection<C> {
         tx: C::PacketConsumer,
         rx: C::PacketProducer,
     ) -> (Self, Cmd) {
-        assert_eq!(
-            lldata.slave_latency(),
-            0,
-            "slave latency is not implemented"
-        );
-
         let mut this = Self {
             access_address: lldata.access_address(),
             crc_init: lldata.crc_init(),
@@ -492,7 +486,6 @@ impl<C: Config> Connection<C> {
     fn apply_llcp_update(&mut self, update: LlcpUpdate, rx_end: Instant) -> Option<Cmd> {
         match update {
             LlcpUpdate::ConnUpdate(data) => {
-                assert_eq!(data.latency(), 0, "slave latency not implemented");
                 let old_conn_interval = self.conn_interval;
                 self.conn_interval = data.interval();
 
