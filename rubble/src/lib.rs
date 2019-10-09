@@ -47,7 +47,7 @@ pub mod uuid;
 
 pub use self::error::Error;
 
-use self::link::data::VersionNumber;
+use self::link::llcp::VersionNumber;
 
 /// Version of the Bluetooth specification implemented by Rubble.
 pub const BLUETOOTH_VERSION: VersionNumber = VersionNumber::V4_2;

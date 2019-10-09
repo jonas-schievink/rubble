@@ -3,7 +3,8 @@ use crate::{
     config::Config,
     l2cap::{L2CAPState, L2CAPStateTx},
     link::{
-        data::{ControlPdu, Llid, Pdu},
+        data::{Llid, Pdu},
+        llcp::ControlPdu,
         queue::{Consume, Consumer, Producer},
     },
     utils::HexSlice,

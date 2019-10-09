@@ -7,7 +7,8 @@ use {
         link::{
             advertising::ConnectRequestData,
             channel_map::ChannelMap,
-            data::{self, ConnectionUpdateData, ControlPdu, Header, Llid, Pdu},
+            data::{self, Header, Llid, Pdu},
+            llcp::{ConnectionUpdateData, ControlPdu},
             queue::{Consume, Consumer, Producer},
             Cmd, CompanyId, FeatureSet, NextUpdate, RadioCmd, SeqNum, Transmitter,
         },
