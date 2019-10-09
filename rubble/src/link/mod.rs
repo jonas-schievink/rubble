@@ -288,7 +288,7 @@ impl<C: Config> LinkLayer<C> {
             channel: AdvertisingChannel::first(),
             data_queues: Some((tx, rx)),
         };
-        Ok(self.update(transmitter).next_update)
+        Ok(self.update_timer(transmitter).next_update)
     }
 
     /// Process an incoming packet from an advertising channel.
@@ -394,16 +394,14 @@ impl<C: Config> LinkLayer<C> {
         }
     }
 
-    /// Update the Link-Layer state.
+    /// Update the Link-Layer state after the timer expires.
     ///
-    /// This should be called in regular intervals, independent of whether packets were received and
-    /// processed.
+    /// This should be called whenever the timer set by the last returned `Cmd` has expired.
     ///
     /// # Parameters
     ///
     /// * `tx`: A `Transmitter` for sending packets.
-    /// * `elapsed`: Time since the last `update` call or creation of this `LinkLayer`.
-    pub fn update(&mut self, tx: &mut C::Transmitter) -> Cmd {
+    pub fn update_timer(&mut self, tx: &mut C::Transmitter) -> Cmd {
         match &mut self.state {
             State::Advertising {
                 next_adv,

@@ -217,7 +217,7 @@ const APP: () = {
         }
         timer.clear_interrupt();
 
-        let cmd = resources.BLE_LL.update(&mut *resources.RADIO);
+        let cmd = resources.BLE_LL.update_timer(&mut *resources.RADIO);
         resources.RADIO.configure_receiver(cmd.radio);
 
         resources
