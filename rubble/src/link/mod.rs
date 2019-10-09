@@ -131,6 +131,7 @@ mod responder;
 mod seq_num;
 
 pub use self::comp_id::*;
+pub use self::connection::Connection;
 pub use self::device_address::*;
 pub use self::features::*;
 pub use self::responder::*;
@@ -139,7 +140,6 @@ use {
     self::{
         ad_structure::AdStructure,
         advertising::{Pdu, PduBuf},
-        connection::Connection,
         seq_num::SeqNum,
     },
     crate::{
@@ -441,6 +441,17 @@ impl<C: Config> LinkLayer<C> {
                 }
             },
             State::Standby => unreachable!("LL in standby received timer event"),
+        }
+    }
+
+    /// Returns a reference to the connection state.
+    ///
+    /// If the Link Layer is not currently in a connection, returns `None`.
+    pub fn connection(&self) -> Option<&Connection<C>> {
+        if let State::Connection(conn) = &self.state {
+            Some(conn)
+        } else {
+            None
         }
     }
 

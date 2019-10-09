@@ -19,7 +19,7 @@ use {
     core::{marker::PhantomData, num::Wrapping},
 };
 
-/// Connection state.
+/// Connection state and parameters.
 pub struct Connection<C: Config> {
     access_address: u32,
     crc_init: u32,
@@ -76,7 +76,7 @@ impl<C: Config> Connection<C> {
     /// * **`rx_end`**: Instant at which the `CONNECT_REQ` PDU was fully received.
     /// * **`tx`**: Channel for packets to transmit.
     /// * **`rx`**: Channel for received packets.
-    pub fn create(
+    pub(crate) fn create(
         lldata: &ConnectRequestData,
         rx_end: Instant,
         tx: C::PacketConsumer,
@@ -132,7 +132,7 @@ impl<C: Config> Connection<C> {
     /// Called by the `LinkLayer` when a data channel packet is received.
     ///
     /// Returns `Err(())` when the connection is ended (not necessarily due to an error condition).
-    pub fn process_data_packet(
+    pub(crate) fn process_data_packet(
         &mut self,
         rx_end: Instant,
         tx: &mut C::Transmitter,
@@ -327,7 +327,7 @@ impl<C: Config> Connection<C> {
     ///
     /// Returns `Err(())` when the connection is closed or lost. In that case, the Link-Layer will
     /// return to standby state.
-    pub fn timer_update(&mut self, timer: &mut C::Timer) -> Result<Cmd, ()> {
+    pub(crate) fn timer_update(&mut self, timer: &mut C::Timer) -> Result<Cmd, ()> {
         if self.received_packet {
             // No packet from master, skip this connection event and listen on the next channel
 
@@ -517,6 +517,22 @@ impl<C: Config> Connection<C> {
                 None
             }
         }
+    }
+}
+
+// Public API
+impl<C: Config> Connection<C> {
+    /// Returns the configured interval between connection events.
+    ///
+    /// The connection event interval is arbitrated by the device in the Central role and heavily
+    /// influences the data transmission latency of the connection, which is important for some
+    /// applications.
+    ///
+    /// The Peripheral can request the Central to change the interval by sending an L2CAP signaling
+    /// message, or by using the Link Layer control procedure for requesting new connection
+    /// parameters.
+    pub fn connection_interval(&self) -> Duration {
+        self.conn_interval
     }
 }
 
