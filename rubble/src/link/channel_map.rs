@@ -1,7 +1,4 @@
-use {
-    crate::{phy::DataChannel, utils::ReverseBits},
-    core::fmt,
-};
+use {crate::phy::DataChannel, core::fmt};
 
 /// A map marking data channels as used or unused.
 ///
@@ -87,9 +84,9 @@ impl ChannelMap {
 impl fmt::Display for ChannelMap {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for b in &self.raw[..4] {
-            write!(f, "{:08b}", b.reverse_bits_ext())?;
+            write!(f, "{:08b}", b.reverse_bits())?;
         }
-        write!(f, "{:05b}", self.raw[4].reverse_bits_ext() >> 3)?;
+        write!(f, "{:05b}", self.raw[4].reverse_bits() >> 3)?;
         Ok(())
     }
 }
