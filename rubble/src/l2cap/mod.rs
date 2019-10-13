@@ -21,7 +21,10 @@
 //! [`Channel`]: struct.Channel.html
 //! [l2c]: https://www.bluetooth.com/specifications/assigned-numbers/logical-link-control
 
+mod signaling;
+
 use {
+    self::signaling::SignalingState,
     crate::{
         att::{self, AttributeProvider, AttributeServer, NoAttributes},
         bytes::*,
@@ -225,6 +228,7 @@ impl<'a, P: ?Sized> ChannelData<'a, P> {
 /// * `0x0006`: LE Security Manager protocol.
 pub struct BleChannelMap<A: AttributeProvider, S: SecurityLevel> {
     att: AttributeServer<A>,
+    signaling: SignalingState,
     sm: SecurityManager<S>,
 }
 
@@ -237,6 +241,7 @@ impl BleChannelMap<NoAttributes, NoSecurity> {
     pub fn empty() -> Self {
         Self {
             att: AttributeServer::new(NoAttributes),
+            signaling: SignalingState::new(),
             sm: SecurityManager::no_security(),
         }
     }
@@ -246,6 +251,7 @@ impl<A: AttributeProvider> BleChannelMap<A, NoSecurity> {
     pub fn with_attributes(att: A) -> Self {
         Self {
             att: AttributeServer::new(att),
+            signaling: SignalingState::new(),
             sm: SecurityManager::no_security(),
         }
     }
@@ -256,12 +262,9 @@ impl<A: AttributeProvider, S: SecurityLevel> ChannelMapper for BleChannelMap<A, 
 
     fn lookup(&mut self, channel: Channel) -> Option<ChannelData<'_, dyn ProtocolObj + '_>> {
         match channel {
-            Channel::ATT => Some(ChannelData::new_dyn(Channel::ATT, &mut self.att)),
-            Channel::LE_SECURITY_MANAGER => Some(ChannelData::new_dyn(
-                Channel::LE_SECURITY_MANAGER,
-                &mut self.sm,
-            )),
-            // FIXME implement the LE Signaling Channel
+            Channel::ATT => Some(ChannelData::new_dyn(channel, &mut self.att)),
+            Channel::LE_SIGNALING => Some(ChannelData::new_dyn(channel, &mut self.signaling)),
+            Channel::LE_SECURITY_MANAGER => Some(ChannelData::new_dyn(channel, &mut self.sm)),
             _ => None,
         }
     }
