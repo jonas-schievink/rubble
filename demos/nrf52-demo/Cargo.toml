@@ -1,11 +1,11 @@
 [package]
 authors = ["Jonas Schievink <jonasschievink@gmail.com>"]
-description = "Rubble BLE stack demo for nRF52810"
+description = "Rubble BLE stack demo for the nRF52 MCU family"
 categories = ["embedded", "no-std"]
 keywords = ["arm", "nrf", "bluetooth", "low", "energy"]
 repository = "https://github.com/jonas-schievink/rubble/"
 license = "0BSD"
-name = "nrf52810-demo"
+name = "nrf52-demo"
 version = "0.0.0"
 edition = "2018"
 publish = false
@@ -36,7 +36,7 @@ optional = true
 
 # Disable documentation to avoid spurious rustdoc warnings
 [[bin]]
-name = "nrf52810-demo"
+name = "nrf52-demo"
 doc = false
 test = false
 
