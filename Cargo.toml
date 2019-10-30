@@ -2,6 +2,7 @@
 members = [
     "rubble",
     "rubble-nrf52",
+    "rubble-docs",
     "demos/*/",
 ]
 

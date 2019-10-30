@@ -40,3 +40,10 @@ done
 # Check that the core library builds on thumbv6
 echo "Building rubble for thumbv6m-none-eabi..."
 cargo check -p rubble --target thumbv6m-none-eabi
+
+# Build documentation.
+(
+    echo "Generating documentation..."
+    cd rubble-docs
+    cargo doc --no-deps -p rubble -p rubble-nrf52
+)
