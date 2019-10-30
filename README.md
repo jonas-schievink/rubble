@@ -17,15 +17,13 @@ must not be used in commercial products!**
 
 ## Usage
 
-See [demos](./demos/) for usage examples.
+See [demos](./demos/) for a few self-contained usage examples.
 
-```bash
-$ cd rubble-demo
-$ cp .gdbinit-openocd .gdbinit
-$ cargo run
-```
+API documentation can be viewed [on docs.rs][docs-rs] for the latest crates.io release,
+or [here for API docs generated from master][docs-master].
 
-Logging is done over UART, TX and RX on pin 06 and 08 respectively, at 1MBd.
+[docs-rs]: https://docs.rs/rubble/
+[docs-master]: https://jonas-schievink.github.io/rubble/
 
 ## Contributing
 
