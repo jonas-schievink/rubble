@@ -2,6 +2,9 @@
 name = "rubble-docs"
 version = "0.0.0"
 
+# This crate only exists to work around this Cargo bug:
+# https://github.com/rust-lang/cargo/issues/5015
+
 [dependencies]
 rubble = { path = "../rubble" }
 rubble-nrf52 = { path = "../rubble-nrf52", features = ["52840"] }
