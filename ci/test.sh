@@ -4,11 +4,8 @@ set -o errexit
 
 RUSTFLAGS=${RUSTFLAGS:---deny warnings}
 
-# First, check formatting.
-echo "Checking code formatting..."
-cargo fmt --all -- --check
-
-# Run all tests in the workspace
+# Run unit tests. We'd prefer to run `cargo test --all`, but some packages
+# require enabling Cargo features, which Cargo does not support in that case.
 echo "Running tests with Cargo..."
 cargo test -p rubble
 
@@ -40,6 +37,12 @@ done
 # Check that the core library builds on thumbv6
 echo "Building rubble for thumbv6m-none-eabi..."
 cargo check -p rubble --target thumbv6m-none-eabi
+
+# Lastly, check formatting. We'd like to do this earlier, but some crates copy
+# module files around in their build scripts, so they can only be formatted once
+# they've been built at least once.
+echo "Checking code formatting..."
+cargo fmt --all -- --check
 
 # Build documentation.
 (
