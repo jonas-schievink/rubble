@@ -5,6 +5,38 @@
 // We need to import this crate explicitly so we have a panic handler
 use panic_semihosting as _;
 
+/// Configuration macro to be called by the user configuration in `config.rs`.
+///
+/// Expands to yet another `apply_config!` macro that's called from `init` and performs some
+/// hardware initialization based on the config values.
+macro_rules! config {
+    (
+        baudrate = $baudrate:ident;
+        tx_pin = $tx_pin:ident;
+        rx_pin = $rx_pin:ident;
+    ) => {
+        macro_rules! apply_config {
+            ( $p0:ident, $device:ident ) => {{
+                let rxd = $p0.$rx_pin.into_floating_input().degrade();
+                let txd = $p0.$tx_pin.into_push_pull_output(Level::Low).degrade();
+
+                let pins = hal::uarte::Pins {
+                    rxd,
+                    txd,
+                    cts: None,
+                    rts: None,
+                };
+
+                $device
+                    .UARTE0
+                    .constrain(pins, Parity::EXCLUDED, Baudrate::$baudrate)
+            }};
+        }
+    };
+}
+
+#[macro_use]
+mod config;
 mod logger;
 
 // Import the right HAL/PAC crate, depending on the target chip
@@ -114,21 +146,7 @@ const APP: () = {
 
         let p0 = device.P0.split();
 
-        let mut serial = {
-            let rxd = p0.p0_08.into_floating_input().degrade();
-            let txd = p0.p0_06.into_push_pull_output(Level::Low).degrade();
-
-            let pins = hal::uarte::Pins {
-                rxd,
-                txd,
-                cts: None,
-                rts: None,
-            };
-
-            device
-                .UARTE0
-                .constrain(pins, Parity::EXCLUDED, Baudrate::BAUD1M)
-        };
+        let mut serial = apply_config!(p0, device);
         writeln!(serial, "\n--- INIT ---").unwrap();
 
         let mut devaddr = [0u8; 6];
