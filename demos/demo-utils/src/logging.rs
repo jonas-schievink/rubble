@@ -8,6 +8,9 @@ use {
     rubble::time::Timer,
 };
 
+
+const DATA_LOST_MSG: &str = "…\n";
+
 /// A `fmt::Write` adapter that prints a timestamp before each line.
 pub struct StampedLogger<T: Timer, L: fmt::Write> {
     timer: T,
@@ -42,39 +45,47 @@ impl<T: Timer, L: fmt::Write> fmt::Write for StampedLogger<T, L> {
 /// that we never block or drop data.
 pub struct BbqLogger {
     p: Producer,
+    data_lost: bool,
 }
 
 impl BbqLogger {
     pub fn new(p: Producer) -> Self {
-        Self { p }
+        Self {
+            p,
+            data_lost: false
+        }
     }
 }
 
 impl fmt::Write for BbqLogger {
     fn write_str(&mut self, s: &str) -> fmt::Result {
+        let data_lost_msg_bytes: usize = if self.data_lost {
+            DATA_LOST_MSG.as_bytes().len()
+        }
+        else {
+            0
+        };
+
         let mut bytes = s.as_bytes();
 
         while !bytes.is_empty() {
-            let mut grant = match self.p.grant_max(bytes.len()) {
-                Ok(grant) => grant,
+            match self.p.grant_max(bytes.len() + data_lost_msg_bytes) {
+                Ok(mut grant) => {
+                    let granted_buf = grant.buf();
+                    if self.data_lost {
+                        granted_buf[..data_lost_msg_bytes].copy_from_slice(DATA_LOST_MSG.as_bytes());
+                        self.data_lost = false;
+                    }
+                    let size = granted_buf.len() - data_lost_msg_bytes;
+                    granted_buf[data_lost_msg_bytes..].copy_from_slice(&bytes[..size]);
+                    bytes = &bytes[size..];
+                    self.p.commit(granted_buf.len(), grant);
+                },
                 Err(_) => {
-                    let cap = self.p.capacity();
-                    let max_len = self
-                        .p
-                        .grant_max(cap)
-                        .map(|mut g| g.buf().len())
-                        .unwrap_or(0);
-                    panic!(
-                        "log buffer overflow: failed to grant {} Bytes ({} available)",
-                        bytes.len(),
-                        max_len
-                    );
+                    self.data_lost = true;
+                    bytes = &[];
                 }
             };
-            let size = grant.buf().len();
-            grant.buf().copy_from_slice(&bytes[..size]);
-            bytes = &bytes[size..];
-            self.p.commit(size, grant);
         }
 
         Ok(())
