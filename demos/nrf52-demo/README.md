@@ -1,7 +1,7 @@
-# `nrf52810-demo`
+# `nrf52-demo`
 
-This is a demo application we're using when hacking on Rubble. It targets the
-nRF52810.
+This is a demo application we're using when hacking on Rubble. It runs on any
+chip in the nRF52 family.
 
 The demo allows establishing a connection and provides a GATT server. A *lot*
 of things are logged over the UART, so it's recommended to hook that up.
