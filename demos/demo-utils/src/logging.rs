@@ -1,7 +1,7 @@
 //! Logging-related utilities and adapters.
 
 use {
-    bbqueue::{Producer, GrantW},
+    bbqueue::{GrantW, Producer},
     core::{cell::RefCell, fmt},
     cortex_m::interrupt::{self, Mutex},
     log::{Log, Metadata, Record},
@@ -51,7 +51,7 @@ impl BbqLogger {
     pub fn new(p: Producer) -> Self {
         Self {
             p,
-            data_lost: false
+            data_lost: false,
         }
     }
 }
@@ -60,7 +60,11 @@ impl fmt::Write for BbqLogger {
     fn write_str(&mut self, msg: &str) -> fmt::Result {
         let mut msg_bytes = msg.as_bytes();
         while !msg_bytes.is_empty() {
-            let data_lost_msg_bytes_len = if self.data_lost { DATA_LOST_MSG.as_bytes().len() } else { 0 };
+            let data_lost_msg_bytes_len = if self.data_lost {
+                DATA_LOST_MSG.as_bytes().len()
+            } else {
+                0
+            };
             let total_bytes = data_lost_msg_bytes_len + msg_bytes.len();
 
             match self.p.grant_max(total_bytes) {
@@ -73,7 +77,7 @@ impl fmt::Write for BbqLogger {
                     let appended_len = granted_buf.append(msg_bytes);
                     msg_bytes = &msg_bytes[appended_len..];
                     granted_buf.commit(&mut self.p);
-                },
+                }
                 Err(_) => {
                     self.data_lost = true;
                     break;
@@ -93,10 +97,7 @@ struct GrantedBuffer {
 
 impl GrantedBuffer {
     pub fn new(grant: GrantW) -> Self {
-        GrantedBuffer {
-            grant,
-            written: 0,
-        }
+        GrantedBuffer { grant, written: 0 }
     }
 
     fn append(&mut self, data: &[u8]) -> usize {
