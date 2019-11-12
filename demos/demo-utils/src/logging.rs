@@ -1,13 +1,12 @@
 //! Logging-related utilities and adapters.
 
 use {
-    bbqueue::Producer,
+    bbqueue::{Producer, GrantW},
     core::{cell::RefCell, fmt},
     cortex_m::interrupt::{self, Mutex},
     log::{Log, Metadata, Record},
     rubble::time::Timer,
 };
-
 
 const DATA_LOST_MSG: &str = "…\n";
 
@@ -58,37 +57,61 @@ impl BbqLogger {
 }
 
 impl fmt::Write for BbqLogger {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        let data_lost_msg_bytes: usize = if self.data_lost {
-            DATA_LOST_MSG.as_bytes().len()
-        }
-        else {
-            0
-        };
+    fn write_str(&mut self, msg: &str) -> fmt::Result {
+        let mut msg_bytes = msg.as_bytes();
+        while !msg_bytes.is_empty() {
+            let data_lost_msg_bytes_len = if self.data_lost { DATA_LOST_MSG.as_bytes().len() } else { 0 };
+            let total_bytes = data_lost_msg_bytes_len + msg_bytes.len();
 
-        let mut bytes = s.as_bytes();
-
-        while !bytes.is_empty() {
-            match self.p.grant_max(bytes.len() + data_lost_msg_bytes) {
-                Ok(mut grant) => {
-                    let granted_buf = grant.buf();
+            match self.p.grant_max(total_bytes) {
+                Ok(grant) => {
+                    let mut granted_buf = GrantedBuffer::new(grant);
                     if self.data_lost {
-                        granted_buf[..data_lost_msg_bytes].copy_from_slice(DATA_LOST_MSG.as_bytes());
+                        granted_buf.append(DATA_LOST_MSG.as_bytes());
                         self.data_lost = false;
                     }
-                    let size = granted_buf.len() - data_lost_msg_bytes;
-                    granted_buf[data_lost_msg_bytes..].copy_from_slice(&bytes[..size]);
-                    bytes = &bytes[size..];
-                    self.p.commit(granted_buf.len(), grant);
+                    let appended_len = granted_buf.append(msg_bytes);
+                    msg_bytes = &msg_bytes[appended_len..];
+                    granted_buf.commit(&mut self.p);
                 },
                 Err(_) => {
                     self.data_lost = true;
-                    bytes = &[];
+                    break;
                 }
             };
         }
 
         Ok(())
+    }
+}
+
+/// Wraps a granted buffer and provides convenience methods to append data and commit
+struct GrantedBuffer {
+    grant: GrantW,
+    written: usize,
+}
+
+impl GrantedBuffer {
+    pub fn new(grant: GrantW) -> Self {
+        GrantedBuffer {
+            grant,
+            written: 0,
+        }
+    }
+
+    fn append(&mut self, data: &[u8]) -> usize {
+        let buffer = self.grant.buf();
+        let remaining = buffer.len() - self.written;
+        let written = usize::min(remaining, data.len());
+        let write_range = self.written..self.written + written;
+        buffer[write_range].copy_from_slice(&data[..written]);
+        self.written += written;
+        written
+    }
+
+    pub fn commit(mut self, producer: &mut Producer) {
+        let buffer = self.grant.buf();
+        producer.commit(buffer.len(), self.grant)
     }
 }
 
