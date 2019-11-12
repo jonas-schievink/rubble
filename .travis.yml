@@ -16,11 +16,7 @@ jobs:
     - stage: test
       script:
         - ci/test.sh
-        # Deploy the docs generated in ci/test.sh:
-        - echo "<meta http-equiv=refresh content=0;url=rubble/index.html>" > target/doc/index.html
-        - sudo pip install ghp-import
-        - ghp-import -n target/doc
-        - git push -qf https://${GH_TOKEN}@github.com/jonas-schievink/rubble.git gh-pages
+        - ci/upload-docs.sh
 
 notifications:
   email:
