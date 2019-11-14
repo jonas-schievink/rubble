@@ -5,7 +5,7 @@ set -o errexit
 echo "TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST"
 echo "TRAVIS_BRANCH=$TRAVIS_BRANCH"
 
-if [ "$TRAVIS_PULL_REQUEST" == "true" ]; then
+if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
     exit
 fi
 
