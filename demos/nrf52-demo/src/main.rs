@@ -16,7 +16,7 @@ macro_rules! config {
         rx_pin = $rx_pin:ident;
     ) => {
         macro_rules! apply_config {
-            ( $p0:ident, $device:ident ) => {{
+            ( $p0:ident, $uart:ident ) => {{
                 let rxd = $p0.$rx_pin.into_floating_input().degrade();
                 let txd = $p0.$tx_pin.into_push_pull_output(Level::Low).degrade();
 
@@ -27,9 +27,7 @@ macro_rules! config {
                     rts: None,
                 };
 
-                $device
-                    .UARTE0
-                    .constrain(pins, Parity::EXCLUDED, Baudrate::$baudrate)
+                $uart.constrain(pins, Parity::EXCLUDED, Baudrate::$baudrate)
             }};
         }
     };
@@ -41,11 +39,11 @@ mod logger;
 
 // Import the right HAL/PAC crate, depending on the target chip
 #[cfg(feature = "52810")]
-use nrf52810_hal::{self as hal, nrf52810_pac as pac};
+use nrf52810_hal as hal;
 #[cfg(feature = "52832")]
-use nrf52832_hal::{self as hal, nrf52832_pac as pac};
+use nrf52832_hal as hal;
 #[cfg(feature = "52840")]
-use nrf52840_hal::{self as hal, nrf52840_pac as pac};
+use nrf52840_hal as hal;
 
 use {
     bbqueue::Consumer,
@@ -54,10 +52,9 @@ use {
     hal::{
         gpio::Level,
         prelude::*,
+        target::UARTE0,
         uarte::{Baudrate, Parity, Uarte},
     },
-    pac::UARTE0,
-    rtfm::app,
     rubble::{
         config::Config,
         gatt::BatteryServiceAttrs,
@@ -79,7 +76,7 @@ use {
 pub enum AppConfig {}
 
 impl Config for AppConfig {
-    type Timer = BleTimer<pac::TIMER0>;
+    type Timer = BleTimer<hal::target::TIMER0>;
     type Transmitter = BleRadio;
     type ChannelMapper = BleChannelMap<BatteryServiceAttrs, NoSecurity>;
 
@@ -88,45 +85,52 @@ impl Config for AppConfig {
     type PacketConsumer = SimpleConsumer<'static>;
 }
 
-#[app(device = crate::pac)]
+#[rtfm::app(device = crate::hal::target, peripherals = true)]
 const APP: () = {
-    static mut BLE_TX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
-    static mut BLE_RX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
-    static mut BLE_LL: LinkLayer<AppConfig> = ();
-    static mut TX_QUEUE: SimpleQueue = SimpleQueue::new();
-    static mut RX_QUEUE: SimpleQueue = SimpleQueue::new();
-    static mut BLE_R: Responder<AppConfig> = ();
-    static mut RADIO: BleRadio = ();
-    static mut SERIAL: Uarte<UARTE0> = ();
-    static mut LOG_SINK: Consumer = ();
+    struct Resources {
+        #[init([0; MIN_PDU_BUF])]
+        ble_tx_buf: PacketBuffer,
+        #[init([0; MIN_PDU_BUF])]
+        ble_rx_buf: PacketBuffer,
+        #[init(SimpleQueue::new())]
+        tx_queue: SimpleQueue,
+        #[init(SimpleQueue::new())]
+        rx_queue: SimpleQueue,
+        ble_ll: LinkLayer<AppConfig>,
+        ble_r: Responder<AppConfig>,
+        radio: BleRadio,
+        serial: Uarte<UARTE0>,
+        log_sink: Consumer,
+    }
 
-    #[init(resources = [BLE_TX_BUF, BLE_RX_BUF, TX_QUEUE, RX_QUEUE])]
-    fn init() {
+    #[init(resources = [ble_tx_buf, ble_rx_buf, tx_queue, rx_queue])]
+    fn init(ctx: init::Context) -> init::LateResources {
         {
             // On reset the internal high frequency clock is used, but starting the HFCLK task
             // switches to the external crystal; this is needed for Bluetooth to work.
-
-            device
+            ctx.device
                 .CLOCK
                 .tasks_hfclkstart
                 .write(|w| unsafe { w.bits(1) });
-            while device.CLOCK.events_hfclkstarted.read().bits() == 0 {}
+            while ctx.device.CLOCK.events_hfclkstarted.read().bits() == 0 {}
         }
 
-        let ble_timer = BleTimer::init(device.TIMER0);
+        let ble_timer = BleTimer::init(ctx.device.TIMER0);
 
-        let p0 = device.P0.split();
+        let p0 = ctx.device.P0.split();
 
-        let mut serial = apply_config!(p0, device);
+        let uart = ctx.device.UARTE0;
+        let mut serial = apply_config!(p0, uart);
         writeln!(serial, "\n--- INIT ---").unwrap();
 
         let mut devaddr = [0u8; 6];
-        let devaddr_lo = device.FICR.deviceaddr[0].read().bits();
-        let devaddr_hi = device.FICR.deviceaddr[1].read().bits() as u16;
+        let devaddr_lo = ctx.device.FICR.deviceaddr[0].read().bits();
+        let devaddr_hi = ctx.device.FICR.deviceaddr[1].read().bits() as u16;
         LittleEndian::write_u32(&mut devaddr, devaddr_lo);
         LittleEndian::write_u16(&mut devaddr[4..], devaddr_hi);
 
-        let devaddr_type = if device
+        let devaddr_type = if ctx
+            .device
             .FICR
             .deviceaddrtype
             .read()
@@ -137,27 +141,31 @@ const APP: () = {
         } else {
             AddressKind::Random
         };
-        let device_address = DeviceAddress::new(devaddr, devaddr_type);
 
-        let mut radio = BleRadio::new(device.RADIO, resources.BLE_TX_BUF, resources.BLE_RX_BUF);
+        let device_address = DeviceAddress::new(devaddr, devaddr_type);
+        let mut radio = BleRadio::new(
+            ctx.device.RADIO,
+            ctx.resources.ble_tx_buf,
+            ctx.resources.ble_rx_buf,
+        );
 
         let log_sink = logger::init(ble_timer.create_stamp_source());
 
         // Create TX/RX queues
-        let (tx, tx_cons) = resources.TX_QUEUE.split();
-        let (rx_prod, rx) = resources.RX_QUEUE.split();
+        let (tx, tx_cons) = ctx.resources.tx_queue.split();
+        let (rx_prod, rx) = ctx.resources.rx_queue.split();
 
         // Create the actual BLE stack objects
-        let mut ll = LinkLayer::<AppConfig>::new(device_address, ble_timer);
+        let mut ble_ll = LinkLayer::<AppConfig>::new(device_address, ble_timer);
 
-        let resp = Responder::new(
+        let ble_r = Responder::new(
             tx,
             rx,
             L2CAPState::new(BleChannelMap::with_attributes(BatteryServiceAttrs::new())),
         );
 
         // Send advertisement and set up regular interrupt
-        let next_update = ll
+        let next_update = ble_ll
             .start_advertise(
                 Duration::from_millis(200),
                 &[AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS")],
@@ -166,79 +174,81 @@ const APP: () = {
                 rx_prod,
             )
             .unwrap();
-        ll.timer().configure_interrupt(next_update);
 
-        RADIO = radio;
-        BLE_LL = ll;
-        BLE_R = resp;
-        SERIAL = serial;
-        LOG_SINK = log_sink;
+        ble_ll.timer().configure_interrupt(next_update);
+
+        init::LateResources {
+            radio,
+            ble_ll,
+            ble_r,
+            serial,
+            log_sink,
+        }
     }
 
-    #[interrupt(resources = [RADIO, BLE_LL], spawn = [ble_worker])]
-    fn RADIO() {
-        if let Some(cmd) = resources
-            .RADIO
-            .recv_interrupt(resources.BLE_LL.timer().now(), &mut resources.BLE_LL)
+    #[task(binds = RADIO, resources = [radio, ble_ll], spawn = [ble_worker])]
+    fn radio(ctx: radio::Context) {
+        let ble_ll: &mut LinkLayer<AppConfig> = ctx.resources.ble_ll;
+        if let Some(cmd) = ctx
+            .resources
+            .radio
+            .recv_interrupt(ble_ll.timer().now(), ble_ll)
         {
-            resources.RADIO.configure_receiver(cmd.radio);
-            resources
-                .BLE_LL
-                .timer()
-                .configure_interrupt(cmd.next_update);
+            ctx.resources.radio.configure_receiver(cmd.radio);
+            ble_ll.timer().configure_interrupt(cmd.next_update);
 
             if cmd.queued_work {
                 // If there's any lower-priority work to be done, ensure that happens.
                 // If we fail to spawn the task, it's already scheduled.
-                spawn.ble_worker().ok();
+                ctx.spawn.ble_worker().ok();
             }
         }
     }
 
-    #[interrupt(resources = [RADIO, BLE_LL], spawn = [ble_worker])]
-    fn TIMER0() {
-        let timer = resources.BLE_LL.timer();
+    #[task(binds = TIMER0, resources = [radio, ble_ll], spawn = [ble_worker])]
+    fn timer0(ctx: timer0::Context) {
+        let timer = ctx.resources.ble_ll.timer();
         if !timer.is_interrupt_pending() {
             return;
         }
         timer.clear_interrupt();
 
-        let cmd = resources.BLE_LL.update_timer(&mut *resources.RADIO);
-        resources.RADIO.configure_receiver(cmd.radio);
+        let cmd = ctx.resources.ble_ll.update_timer(&mut *ctx.resources.radio);
+        ctx.resources.radio.configure_receiver(cmd.radio);
 
-        resources
-            .BLE_LL
+        ctx.resources
+            .ble_ll
             .timer()
             .configure_interrupt(cmd.next_update);
 
         if cmd.queued_work {
             // If there's any lower-priority work to be done, ensure that happens.
             // If we fail to spawn the task, it's already scheduled.
-            spawn.ble_worker().ok();
+            ctx.spawn.ble_worker().ok();
         }
     }
 
-    #[idle(resources = [LOG_SINK, SERIAL])]
-    fn idle() -> ! {
+    #[idle(resources = [log_sink, serial])]
+    fn idle(ctx: idle::Context) -> ! {
         // Drain the logging buffer through the serial connection
         loop {
             if cfg!(feature = "log") {
-                while let Ok(grant) = resources.LOG_SINK.read() {
+                while let Ok(grant) = ctx.resources.log_sink.read() {
                     for chunk in grant.buf().chunks(255) {
-                        resources.SERIAL.write(chunk).unwrap();
+                        ctx.resources.serial.write(chunk).unwrap();
                     }
 
-                    resources.LOG_SINK.release(grant.buf().len(), grant);
+                    ctx.resources.log_sink.release(grant.buf().len(), grant);
                 }
             }
         }
     }
 
-    #[task(resources = [BLE_R])]
-    fn ble_worker() {
+    #[task(resources = [ble_r])]
+    fn ble_worker(ctx: ble_worker::Context) {
         // Fully drain the packet queue
-        while resources.BLE_R.has_work() {
-            resources.BLE_R.process_one().unwrap();
+        while ctx.resources.ble_r.has_work() {
+            ctx.resources.ble_r.process_one().unwrap();
         }
     }
 
