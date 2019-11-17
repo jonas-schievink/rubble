@@ -7,17 +7,16 @@ use panic_halt as _;
 
 // Import the right HAL and PAC
 #[cfg(feature = "52810")]
-use nrf52810_hal::nrf52810_pac as pac;
+use nrf52810_hal as hal;
 
 #[cfg(feature = "52832")]
-use nrf52832_hal::nrf52832_pac as pac;
+use nrf52832_hal as hal;
 
 #[cfg(feature = "52840")]
-use nrf52840_hal::nrf52840_pac as pac;
+use nrf52840_hal as hal;
 
 use {
     byteorder::{ByteOrder, LittleEndian},
-    rtfm::app,
     rubble::{
         beacon::Beacon,
         link::{ad_structure::AdStructure, AddressKind, DeviceAddress, MIN_PDU_BUF},
@@ -25,49 +24,63 @@ use {
     rubble_nrf52::radio::{BleRadio, PacketBuffer},
 };
 
-#[app(device = crate::pac)]
+#[rtfm::app(device = crate::hal::target, peripherals = true)]
 const APP: () = {
-    static mut BLE_TX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
-    static mut BLE_RX_BUF: PacketBuffer = [0; MIN_PDU_BUF];
-    static mut RADIO: BleRadio = ();
-    static mut BEACON: Beacon = ();
-    static mut BEACON_TIMER: pac::TIMER1 = ();
+    struct Resources {
+        #[init([0; MIN_PDU_BUF])]
+        ble_tx_buf: PacketBuffer,
+        #[init([0; MIN_PDU_BUF])]
+        ble_rx_buf: PacketBuffer,
+        radio: BleRadio,
+        beacon: Beacon,
+        beacon_timer: hal::target::TIMER1,
+    }
 
-    #[init(resources = [BLE_TX_BUF, BLE_RX_BUF])]
-    fn init() {
+    #[init(resources = [ble_tx_buf, ble_rx_buf])]
+    fn init(ctx: init::Context) -> init::LateResources {
         {
             // On reset the internal high frequency clock is used, but starting the HFCLK task
             // switches to the external crystal; this is needed for Bluetooth to work.
 
-            device
+            ctx.device
                 .CLOCK
                 .tasks_hfclkstart
                 .write(|w| unsafe { w.bits(1) });
-            while device.CLOCK.events_hfclkstarted.read().bits() == 0 {}
+            while ctx.device.CLOCK.events_hfclkstarted.read().bits() == 0 {}
         }
 
-        {
-            // Configure TIMER1 as the beacon timer. It's only used as a 16-bit timer.
-            let timer = &mut device.TIMER1;
-            timer.bitmode.write(|w| w.bitmode()._16bit());
-            // prescaler = 2^9    = 512
-            // 16 MHz / prescaler = 31_250 Hz
-            timer.prescaler.write(|w| unsafe { w.prescaler().bits(9) }); // 0-9
-            timer.intenset.write(|w| w.compare0().set());
-            timer.shorts.write(|w| w.compare0_clear().enabled());
-            timer.cc[0].write(|w| unsafe { w.bits(31_250 / 3) }); // ~3x per second
-            timer.tasks_clear.write(|w| unsafe { w.bits(1) });
+        // Configure TIMER1 as the beacon timer. It's only used as a 16-bit timer.
+        ctx.device.TIMER1.bitmode.write(|w| w.bitmode()._16bit());
+        // prescaler = 2^9    = 512
+        // 16 MHz / prescaler = 31_250 Hz
+        ctx.device
+            .TIMER1
+            .prescaler
+            .write(|w| unsafe { w.prescaler().bits(9) }); // 0-9
+        ctx.device.TIMER1.intenset.write(|w| w.compare0().set());
+        ctx.device
+            .TIMER1
+            .shorts
+            .write(|w| w.compare0_clear().enabled());
+        ctx.device.TIMER1.cc[0].write(|w| unsafe { w.bits(31_250 / 3) }); // ~3x per second
+        ctx.device
+            .TIMER1
+            .tasks_clear
+            .write(|w| unsafe { w.bits(1) });
 
-            timer.tasks_start.write(|w| unsafe { w.bits(1) });
-        }
+        ctx.device
+            .TIMER1
+            .tasks_start
+            .write(|w| unsafe { w.bits(1) });
 
         let mut devaddr = [0u8; 6];
-        let devaddr_lo = device.FICR.deviceaddr[0].read().bits();
-        let devaddr_hi = device.FICR.deviceaddr[1].read().bits() as u16;
+        let devaddr_lo = ctx.device.FICR.deviceaddr[0].read().bits();
+        let devaddr_hi = ctx.device.FICR.deviceaddr[1].read().bits() as u16;
         LittleEndian::write_u32(&mut devaddr, devaddr_lo);
         LittleEndian::write_u16(&mut devaddr[4..], devaddr_hi);
 
-        let devaddr_type = if device
+        let devaddr_type = if ctx
+            .device
             .FICR
             .deviceaddrtype
             .read()
@@ -82,7 +95,11 @@ const APP: () = {
 
         // Rubble currently requires an RX buffer even though the radio is only used as a TX-only
         // beacon.
-        let radio = BleRadio::new(device.RADIO, resources.BLE_TX_BUF, resources.BLE_RX_BUF);
+        let radio = BleRadio::new(
+            ctx.device.RADIO,
+            ctx.resources.ble_tx_buf,
+            ctx.resources.ble_rx_buf,
+        );
 
         let beacon = Beacon::new(
             device_address,
@@ -90,17 +107,19 @@ const APP: () = {
         )
         .unwrap();
 
-        RADIO = radio;
-        BEACON = beacon;
-        BEACON_TIMER = device.TIMER1;
+        init::LateResources {
+            radio,
+            beacon,
+            beacon_timer: ctx.device.TIMER1,
+        }
     }
 
     /// Fire the beacon.
-    #[interrupt(resources = [BEACON_TIMER, BEACON, RADIO])]
-    fn TIMER1() {
+    #[task(binds = TIMER1, resources = [beacon_timer, beacon, radio])]
+    fn timer1(ctx: timer1::Context) {
         // Acknowledge event so that the interrupt doesn't keep firing
-        resources.BEACON_TIMER.events_compare[0].reset();
+        ctx.resources.beacon_timer.events_compare[0].reset();
 
-        resources.BEACON.broadcast(&mut *resources.RADIO);
+        ctx.resources.beacon.broadcast(&mut *ctx.resources.radio);
     }
 };
