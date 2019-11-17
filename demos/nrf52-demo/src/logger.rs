@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "log"), allow(unused))]
 
 use {
-    crate::pac,
     bbqueue::{bbq, BBQueue, Consumer},
     cortex_m::interrupt,
     demo_utils::logging::{BbqLogger, StampedLogger, WriteLogger},
@@ -13,7 +12,7 @@ use log::LevelFilter;
 
 type Logger = StampedLogger<StampSource<LogTimer>, BbqLogger>;
 
-type LogTimer = pac::TIMER0;
+type LogTimer = crate::hal::target::TIMER0;
 
 /// Stores the global logger used by the `log` crate.
 static mut LOGGER: Option<WriteLogger<Logger>> = None;
