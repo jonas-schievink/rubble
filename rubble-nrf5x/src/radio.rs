@@ -89,7 +89,7 @@ impl BleRadio {
     // TODO: Use type-safe clock configuration to ensure that chip uses ext. crystal
     pub fn new(
         radio: RADIO,
-        #[cfg(feature = "51")] ficr: pac::FICR,
+        ficr: &pac::FICR,
         tx_buf: &'static mut PacketBuffer,
         rx_buf: &'static mut PacketBuffer,
     ) -> Self {

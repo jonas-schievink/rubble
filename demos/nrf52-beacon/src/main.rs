@@ -97,6 +97,7 @@ const APP: () = {
         // beacon.
         let radio = BleRadio::new(
             ctx.device.RADIO,
+            &ctx.device.FICR,
             ctx.resources.ble_tx_buf,
             ctx.resources.ble_rx_buf,
         );
