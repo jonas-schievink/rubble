@@ -41,6 +41,9 @@
 //! length), the `Length` field, and the `S1` field (which just contains 2 unused bits, but they
 //! must still be sent, of course).
 
+#[cfg(feature = "51")]
+use nrf51_hal::nrf51 as pac;
+
 #[cfg(feature = "52810")]
 use nrf52810_hal::nrf52810_pac as pac;
 
@@ -86,10 +89,37 @@ impl BleRadio {
     // TODO: Use type-safe clock configuration to ensure that chip uses ext. crystal
     pub fn new(
         radio: RADIO,
+        #[cfg(feature = "51")] ficr: pac::FICR,
         tx_buf: &'static mut PacketBuffer,
         rx_buf: &'static mut PacketBuffer,
     ) -> Self {
         assert!(radio.state.read().state().is_disabled());
+
+        #[cfg(feature = "51")]
+        {
+            if ficr.overrideen.read().ble_1mbit().is_override_() {
+                unsafe {
+                    radio
+                        .override0
+                        .write(|w| w.override0().bits(ficr.ble_1mbit[0].read().bits()));
+                    radio
+                        .override1
+                        .write(|w| w.override1().bits(ficr.ble_1mbit[1].read().bits()));
+                    radio
+                        .override2
+                        .write(|w| w.override2().bits(ficr.ble_1mbit[2].read().bits()));
+                    radio
+                        .override3
+                        .write(|w| w.override3().bits(ficr.ble_1mbit[3].read().bits()));
+                    radio.override4.write(|w| {
+                        w.override4()
+                            .bits(ficr.ble_1mbit[4].read().bits())
+                            .enable()
+                            .set_bit()
+                    });
+                }
+            }
+        }
 
         radio.mode.write(|w| w.mode().ble_1mbit());
         radio.txpower.write(|w| w.txpower().pos4d_bm());

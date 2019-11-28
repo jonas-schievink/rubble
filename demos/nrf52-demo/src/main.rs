@@ -67,7 +67,7 @@ use {
         security::NoSecurity,
         time::{Duration, Timer},
     },
-    rubble_nrf52::{
+    rubble_nrf5x::{
         radio::{BleRadio, PacketBuffer},
         timer::BleTimer,
     },

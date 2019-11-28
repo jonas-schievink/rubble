@@ -7,4 +7,4 @@ version = "0.0.0"
 
 [dependencies]
 rubble = { path = "../rubble" }
-rubble-nrf52 = { path = "../rubble-nrf52", features = ["52840"] }
+rubble-nrf5x = { path = "../rubble-nrf5x", features = ["52840"] }

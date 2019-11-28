@@ -4,7 +4,7 @@ use {
     bbqueue::{bbq, BBQueue, Consumer},
     cortex_m::interrupt,
     demo_utils::logging::{BbqLogger, StampedLogger, WriteLogger},
-    rubble_nrf52::timer::StampSource,
+    rubble_nrf5x::timer::StampSource,
 };
 
 #[cfg(feature = "log")]

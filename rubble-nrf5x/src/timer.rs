@@ -1,5 +1,8 @@
 //! Generic `Timer` implementation that works with all 3 timers on the chip.
 
+#[cfg(feature = "51")]
+use nrf51_hal::nrf51 as pac;
+
 #[cfg(feature = "52810")]
 use nrf52810_hal::nrf52810_pac as pac;
 
@@ -19,6 +22,8 @@ use {
 };
 
 /// Implements Rubble's `Timer` trait for the timers on the nRF chip.
+///
+/// (note: on the nRF51, only `TIMER0` is usable)
 pub struct BleTimer<T: NrfTimerExt> {
     inner: T,
     next: Instant,
@@ -183,5 +188,8 @@ macro_rules! impl_timer {
 }
 
 impl_timer!(TIMER0);
+
+#[cfg(not(feature = "51"))]
 impl_timer!(TIMER1);
+#[cfg(not(feature = "51"))]
 impl_timer!(TIMER2);
