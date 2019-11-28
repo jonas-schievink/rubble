@@ -12,12 +12,17 @@ cargo test -p rubble
 # Check that the device crates build with all feature combinations.
 # Only use `cargo check` because the PAC crates are very slow to build.
 (
+    cd rubble-nrf5x
+
     TARGET=thumbv7em-none-eabi
-    echo "Checking rubble-nrf52 for $TARGET..."
-    cd rubble-nrf52
+    echo "Checking rubble-nrf5x for $TARGET..."
     cargo check --features="52810" --target "$TARGET"
     cargo check --features="52832" --target "$TARGET"
     cargo check --features="52840" --target "$TARGET"
+
+    TARGET=thumbv6m-none-eabi
+    echo "Checking rubble-nrf5x for $TARGET..."
+    cargo check --features="51" --target "$TARGET"
 )
 
 # Check that the demo apps build with all supported feature combinations.
@@ -34,10 +39,6 @@ for demo in demos/nrf52*; do
     done
 done
 
-# Check that the core library builds on thumbv6
-echo "Building rubble for thumbv6m-none-eabi..."
-cargo check -p rubble --target thumbv6m-none-eabi
-
 # Lastly, check formatting. We'd like to do this earlier, but some crates copy
 # module files around in their build scripts, so they can only be formatted once
 # they've been built at least once.
@@ -48,5 +49,5 @@ cargo fmt --all -- --check
 (
     echo "Generating documentation..."
     cd rubble-docs
-    cargo doc --no-deps -p rubble -p rubble-nrf52
+    cargo doc --no-deps -p rubble -p rubble-nrf5x
 )
