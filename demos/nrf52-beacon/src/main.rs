@@ -21,7 +21,7 @@ use {
         beacon::Beacon,
         link::{ad_structure::AdStructure, AddressKind, DeviceAddress, MIN_PDU_BUF},
     },
-    rubble_nrf52::radio::{BleRadio, PacketBuffer},
+    rubble_nrf5x::radio::{BleRadio, PacketBuffer},
 };
 
 #[rtfm::app(device = crate::hal::target, peripherals = true)]
@@ -97,6 +97,7 @@ const APP: () = {
         // beacon.
         let radio = BleRadio::new(
             ctx.device.RADIO,
+            &ctx.device.FICR,
             ctx.resources.ble_tx_buf,
             ctx.resources.ble_rx_buf,
         );

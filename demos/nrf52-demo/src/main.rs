@@ -67,7 +67,7 @@ use {
         security::NoSecurity,
         time::{Duration, Timer},
     },
-    rubble_nrf52::{
+    rubble_nrf5x::{
         radio::{BleRadio, PacketBuffer},
         timer::BleTimer,
     },
@@ -145,6 +145,7 @@ const APP: () = {
         let device_address = DeviceAddress::new(devaddr, devaddr_type);
         let mut radio = BleRadio::new(
             ctx.device.RADIO,
+            &ctx.device.FICR,
             ctx.resources.ble_tx_buf,
             ctx.resources.ble_rx_buf,
         );
