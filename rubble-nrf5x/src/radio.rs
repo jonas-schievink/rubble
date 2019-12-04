@@ -95,6 +95,7 @@ impl BleRadio {
     ) -> Self {
         assert!(radio.state.read().state().is_disabled());
 
+        // The nRF51 requires manually setting the trim values.
         #[cfg(feature = "51")]
         {
             if ficr.overrideen.read().ble_1mbit().is_override_() {
@@ -120,6 +121,10 @@ impl BleRadio {
                 }
             }
         }
+
+        // The nRF52/53 do not require setting trim values, but we take the `ficr` reference anyways
+        // to have a consistent interface. Silence the unused variable warning:
+        let _ = ficr;
 
         radio.mode.write(|w| w.mode().ble_1mbit());
         radio.txpower.write(|w| w.txpower().pos4d_bm());

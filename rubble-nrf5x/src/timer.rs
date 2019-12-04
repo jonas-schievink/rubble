@@ -14,7 +14,6 @@ use nrf52840_hal::nrf52840_pac as pac;
 
 use {
     core::mem,
-    pac::{TIMER0, TIMER1, TIMER2},
     rubble::{
         link::NextUpdate,
         time::{Instant, Timer},
@@ -142,54 +141,55 @@ pub trait NrfTimerExt: sealed::Sealed {
 }
 
 macro_rules! impl_timer {
-    ($ty:ident) => {
-        impl NrfTimerExt for $ty {
-            unsafe fn duplicate(&self) -> Self {
-                mem::transmute_copy(self)
+    ( $($ty:ty),+ ) => {
+        $(
+            impl NrfTimerExt for $ty {
+                unsafe fn duplicate(&self) -> Self {
+                    mem::transmute_copy(self)
+                }
+
+                fn init(&mut self) {
+                    self.bitmode.write(|w| w.bitmode()._32bit());
+                    // 2^4 = 16
+                    // 16 MHz / 16 = 1 MHz = µs resolution
+                    self.prescaler.write(|w| unsafe { w.prescaler().bits(4) });
+                    self.tasks_clear.write(|w| unsafe { w.bits(1) });
+                    self.tasks_start.write(|w| unsafe { w.bits(1) });
+                }
+
+                fn set_interrupt(&mut self, at: Instant) {
+                    // Not sure if an assertion is the right thing here, we might want to trigger the
+                    // interrupt immediately instead.
+                    at.duration_since(self.now());
+
+                    self.cc[1].write(|w| unsafe { w.bits(at.raw_micros()) });
+                    self.events_compare[1].reset();
+                    self.intenset.write(|w| w.compare1().set());
+                }
+
+                fn clear_interrupt(&mut self) {
+                    self.intenclr.write(|w| w.compare1().clear());
+                    self.events_compare[1].reset();
+                }
+
+                fn is_pending(&self) -> bool {
+                    self.events_compare[1].read().bits() == 1u32
+                }
+
+                fn now(&self) -> Instant {
+                    self.tasks_capture[0].write(|w| unsafe { w.bits(1) });
+                    let micros = self.cc[0].read().bits();
+                    Instant::from_raw_micros(micros)
+                }
             }
 
-            fn init(&mut self) {
-                self.bitmode.write(|w| w.bitmode()._32bit());
-                // 2^4 = 16
-                // 16 MHz / 16 = 1 MHz = µs resolution
-                self.prescaler.write(|w| unsafe { w.prescaler().bits(4) });
-                self.tasks_clear.write(|w| unsafe { w.bits(1) });
-                self.tasks_start.write(|w| unsafe { w.bits(1) });
-            }
-
-            fn set_interrupt(&mut self, at: Instant) {
-                // Not sure if an assertion is the right thing here, we might want to trigger the
-                // interrupt immediately instead.
-                at.duration_since(self.now());
-
-                self.cc[1].write(|w| unsafe { w.bits(at.raw_micros()) });
-                self.events_compare[1].reset();
-                self.intenset.write(|w| w.compare1().set());
-            }
-
-            fn clear_interrupt(&mut self) {
-                self.intenclr.write(|w| w.compare1().clear());
-                self.events_compare[1].reset();
-            }
-
-            fn is_pending(&self) -> bool {
-                self.events_compare[1].read().bits() == 1u32
-            }
-
-            fn now(&self) -> Instant {
-                self.tasks_capture[0].write(|w| unsafe { w.bits(1) });
-                let micros = self.cc[0].read().bits();
-                Instant::from_raw_micros(micros)
-            }
-        }
-
-        impl sealed::Sealed for $ty {}
+            impl sealed::Sealed for $ty {}
+        )+
     };
 }
 
-impl_timer!(TIMER0);
+#[cfg(not(feature = "51"))]
+impl_timer!(pac::TIMER0, pac::TIMER1, pac::TIMER2);
 
-#[cfg(not(feature = "51"))]
-impl_timer!(TIMER1);
-#[cfg(not(feature = "51"))]
-impl_timer!(TIMER2);
+#[cfg(feature = "51")]
+impl_timer!(pac::TIMER0);
