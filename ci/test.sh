@@ -2,7 +2,7 @@
 
 set -o errexit
 
-RUSTFLAGS=${RUSTFLAGS:---deny warnings}
+export RUSTFLAGS=${RUSTFLAGS:---deny warnings}
 
 # Run unit tests. We'd prefer to run `cargo test --all`, but some packages
 # require enabling Cargo features, which Cargo does not support in that case.
