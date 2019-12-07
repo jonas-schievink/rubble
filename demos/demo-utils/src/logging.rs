@@ -1,7 +1,7 @@
 //! Logging-related utilities and adapters.
 
 use {
-    bbqueue::{GrantW, Producer},
+    bbqueue::{ArrayLength, GrantW, Producer},
     core::{cell::RefCell, fmt},
     cortex_m::interrupt::{self, Mutex},
     log::{Log, Metadata, Record},
@@ -38,17 +38,17 @@ impl<T: Timer, L: fmt::Write> fmt::Write for StampedLogger<T, L> {
     }
 }
 
-/// A `fmt::Write` sink that writes to a `BBQueue`.
+/// A `fmt::Write` sink that writes to a `BBBuffer`.
 ///
-/// The sink will panic when the `BBQueue` doesn't have enough space to the data. This is to ensure
+/// The sink will panic when the `BBBuffer` doesn't have enough space to the data. This is to ensure
 /// that we never block or drop data.
-pub struct BbqLogger {
-    p: Producer,
+pub struct BbqLogger<'a, N: ArrayLength<u8>> {
+    p: Producer<'a, N>,
     data_lost: bool,
 }
 
-impl BbqLogger {
-    pub fn new(p: Producer) -> Self {
+impl<'a, N: ArrayLength<u8>> BbqLogger<'a, N> {
+    pub fn new(p: Producer<'a, N>) -> Self {
         Self {
             p,
             data_lost: false,
@@ -56,7 +56,7 @@ impl BbqLogger {
     }
 }
 
-impl fmt::Write for BbqLogger {
+impl<N: ArrayLength<u8>> fmt::Write for BbqLogger<'_, N> {
     fn write_str(&mut self, msg: &str) -> fmt::Result {
         let mut msg_bytes = msg.as_bytes();
         while !msg_bytes.is_empty() {
@@ -67,7 +67,7 @@ impl fmt::Write for BbqLogger {
             };
             let total_bytes = data_lost_msg_bytes_len + msg_bytes.len();
 
-            match self.p.grant_max(total_bytes) {
+            match self.p.grant_max_remaining(total_bytes) {
                 Ok(grant) => {
                     let mut granted_buf = GrantedBuffer::new(grant);
                     if self.data_lost {
@@ -76,7 +76,7 @@ impl fmt::Write for BbqLogger {
                     }
                     let appended_len = granted_buf.append(msg_bytes);
                     msg_bytes = &msg_bytes[appended_len..];
-                    granted_buf.commit(&mut self.p);
+                    granted_buf.commit();
                 }
                 Err(_) => {
                     self.data_lost = true;
@@ -90,13 +90,13 @@ impl fmt::Write for BbqLogger {
 }
 
 /// Wraps a granted buffer and provides convenience methods to append data and commit
-struct GrantedBuffer {
-    grant: GrantW,
+struct GrantedBuffer<'a, N: ArrayLength<u8>> {
+    grant: GrantW<'a, N>,
     written: usize,
 }
 
-impl GrantedBuffer {
-    pub fn new(grant: GrantW) -> Self {
+impl<'a, N: ArrayLength<u8>> GrantedBuffer<'a, N> {
+    pub fn new(grant: GrantW<'a, N>) -> Self {
         GrantedBuffer { grant, written: 0 }
     }
 
@@ -110,9 +110,9 @@ impl GrantedBuffer {
         written
     }
 
-    pub fn commit(mut self, producer: &mut Producer) {
-        let buffer = self.grant.buf();
-        producer.commit(buffer.len(), self.grant)
+    pub fn commit(mut self) {
+        let len = self.grant.buf().len();
+        self.grant.commit(len)
     }
 }
 
