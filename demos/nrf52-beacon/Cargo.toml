@@ -14,10 +14,10 @@ publish = false
 rubble = { path = "../../rubble", default-features = false }
 rubble-nrf5x = { path = "../../rubble-nrf5x" }
 demo-utils = { path = "../demo-utils" }
-cortex-m = "0.6.0"
-cortex-m-rtfm = "0.5.0"
-cortex-m-rt = "0.6.8"
-byteorder = { version = "1.3.1", default-features = false }
+cortex-m = "0.6.1"
+cortex-m-rtfm = "0.5.1"
+cortex-m-rt = "0.6.11"
+byteorder = { version = "1.3.2", default-features = false }
 panic-halt = "0.2.0"
 
 nrf52810-hal = { version = "0.8.1", features = ["rt"], optional = true }
