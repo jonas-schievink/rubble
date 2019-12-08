@@ -100,7 +100,7 @@ const APP: () = {
         ble_r: Responder<AppConfig>,
         radio: BleRadio,
         serial: Uarte<UARTE0>,
-        log_sink: Consumer,
+        log_sink: Consumer<'static, logger::BufferSize>,
     }
 
     #[init(resources = [ble_tx_buf, ble_rx_buf, tx_queue, rx_queue])]
@@ -239,7 +239,8 @@ const APP: () = {
                         ctx.resources.serial.write(chunk).unwrap();
                     }
 
-                    ctx.resources.log_sink.release(grant.buf().len(), grant);
+                    let len = grant.buf().len();
+                    grant.release(len);
                 }
             }
         }
