@@ -48,7 +48,10 @@ use nrf52840_hal as hal;
 use {
     bbqueue::Consumer,
     byteorder::{ByteOrder, LittleEndian},
-    core::fmt::Write,
+    core::{
+        fmt::Write,
+        sync::atomic::{compiler_fence, Ordering},
+    },
     hal::{
         gpio::Level,
         prelude::*,
@@ -242,6 +245,9 @@ const APP: () = {
                     let len = grant.buf().len();
                     grant.release(len);
                 }
+            } else {
+                // Work around https://github.com/rust-lang/rust/issues/28728
+                compiler_fence(Ordering::SeqCst);
             }
         }
     }
