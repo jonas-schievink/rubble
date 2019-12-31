@@ -58,7 +58,7 @@ use {
         cmp,
         sync::atomic::{compiler_fence, Ordering},
     },
-    pac::{radio::state::STATER, RADIO},
+    pac::{radio::state::STATE_R, RADIO},
     rubble::{
         config::Config,
         link::{advertising, data, Cmd, LinkLayer, RadioCmd, Transmitter, CRC_POLY, MIN_PDU_BUF},
@@ -208,7 +208,7 @@ impl BleRadio {
     }
 
     /// Returns the current radio state.
-    pub fn state(&self) -> STATER {
+    pub fn state(&self) -> STATE_R {
         self.radio.state.read().state()
     }
 
