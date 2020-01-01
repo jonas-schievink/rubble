@@ -3,7 +3,7 @@
 use {
     crate::{
         bytes::*,
-        config::Config,
+        config::*,
         link::{
             advertising::ConnectRequestData,
             channel_map::ChannelMap,
@@ -54,8 +54,8 @@ pub struct Connection<C: Config> {
     /// Whether we have ever received a data packet in this connection.
     received_packet: bool,
 
-    tx: C::PacketConsumer,
-    rx: C::PacketProducer,
+    tx: ConfConsumer<C>,
+    rx: ConfProducer<C>,
 
     /// LLCP connection update data received in a previous LL Control PDU.
     ///
@@ -80,8 +80,8 @@ impl<C: Config> Connection<C> {
     pub(crate) fn create(
         lldata: &ConnectRequestData,
         rx_end: Instant,
-        tx: C::PacketConsumer,
-        rx: C::PacketProducer,
+        tx: ConfConsumer<C>,
+        rx: ConfProducer<C>,
     ) -> (Self, Cmd) {
         let mut this = Self {
             access_address: lldata.access_address(),

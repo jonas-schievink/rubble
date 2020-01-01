@@ -145,7 +145,7 @@ use {
     },
     crate::{
         bytes::ByteReader,
-        config::Config,
+        config::*,
         crc::ble_crc24,
         phy::{AdvertisingChannel, DataChannel, Radio},
         time::{Duration, Instant, Timer},
@@ -228,7 +228,7 @@ enum State<C: Config> {
         // FIXME: spec check; no idea what order or change delay
         channel: AdvertisingChannel,
 
-        data_queues: Option<(C::PacketConsumer, C::PacketProducer)>,
+        data_queues: Option<(ConfConsumer<C>, ConfProducer<C>)>,
     },
 
     /// Connected with another device.
@@ -274,8 +274,8 @@ impl<C: Config> LinkLayer<C> {
         interval: Duration,
         data: &[AdStructure<'_>],
         transmitter: &mut C::Transmitter,
-        tx: C::PacketConsumer,
-        rx: C::PacketProducer,
+        tx: ConfConsumer<C>,
+        rx: ConfProducer<C>,
     ) -> Result<NextUpdate, Error> {
         // TODO tear down existing connection?
 

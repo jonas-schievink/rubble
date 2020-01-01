@@ -1,6 +1,6 @@
 use crate::{
     bytes::ToBytes,
-    config::Config,
+    config::*,
     l2cap::{L2CAPState, L2CAPStateTx},
     link::{
         data::{Llid, Pdu},
@@ -21,16 +21,16 @@ use crate::{
 /// the responder directly, and all L2CAP data is forwarded to an `L2CAPState<M>`. Note that most
 /// LLCPDUs are handled directly by the real-time code.
 pub struct Responder<C: Config> {
-    tx: C::PacketProducer,
-    rx: Option<C::PacketConsumer>,
+    tx: ConfProducer<C>,
+    rx: Option<ConfConsumer<C>>,
     l2cap: L2CAPState<C::ChannelMapper>,
 }
 
 impl<C: Config> Responder<C> {
     /// Creates a new packet processor hooked up to data channel packet queues.
     pub fn new(
-        tx: C::PacketProducer,
-        rx: C::PacketConsumer,
+        tx: ConfProducer<C>,
+        rx: ConfConsumer<C>,
         l2cap: L2CAPState<C::ChannelMapper>,
     ) -> Self {
         Self {
@@ -93,7 +93,7 @@ impl<C: Config> Responder<C> {
     }
 
     /// Obtains access to the L2CAP instance.
-    pub fn l2cap(&mut self) -> L2CAPStateTx<'_, C::ChannelMapper, C::PacketProducer> {
+    pub fn l2cap(&mut self) -> L2CAPStateTx<'_, C::ChannelMapper, ConfProducer<C>> {
         self.l2cap.tx(&mut self.tx)
     }
 
@@ -101,7 +101,7 @@ impl<C: Config> Responder<C> {
     ///
     /// This can possibly be removed after *RFC 2229 (Closures Capture Disjoint Fields)* is
     /// implemented in stable Rust.
-    fn with_rx<R>(&mut self, f: impl FnOnce(&mut C::PacketConsumer, &mut Self) -> R) -> R {
+    fn with_rx<R>(&mut self, f: impl FnOnce(&mut ConfConsumer<C>, &mut Self) -> R) -> R {
         let mut rx = self.rx.take().unwrap();
         let result = f(&mut rx, self);
         self.rx = Some(rx);

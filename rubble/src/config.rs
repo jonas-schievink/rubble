@@ -2,10 +2,7 @@
 
 use crate::{
     l2cap::ChannelMapper,
-    link::{
-        queue::{self, PacketQueue},
-        Transmitter,
-    },
+    link::{queue::PacketQueue, Transmitter},
     time::Timer,
 };
 
@@ -18,7 +15,7 @@ use crate::{
 ///
 /// Every application must define a type implementing this trait and supply it to the stack.
 pub trait Config {
-    /// A timesource with microsecond resolution.
+    /// A time source with microsecond resolution.
     type Timer: Timer;
 
     /// The BLE packet transmitter (radio).
@@ -31,8 +28,9 @@ pub trait Config {
 
     /// The packet queue to use for exchanging data between the real-time Link-Layer and
     /// non-realtime parts of the stack.
-    type PacketQueue: PacketQueue<Producer = Self::PacketProducer, Consumer = Self::PacketConsumer>;
-
-    type PacketProducer: queue::Producer;
-    type PacketConsumer: queue::Consumer;
+    type PacketQueue: PacketQueue;
 }
+
+// Helper aliases to make accessing producer/consumer more convenient
+pub(crate) type ConfProducer<C> = <<C as Config>::PacketQueue as PacketQueue>::Producer;
+pub(crate) type ConfConsumer<C> = <<C as Config>::PacketQueue as PacketQueue>::Consumer;

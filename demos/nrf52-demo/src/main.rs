@@ -64,7 +64,7 @@ use {
         l2cap::{BleChannelMap, L2CAPState},
         link::{
             ad_structure::AdStructure,
-            queue::{PacketQueue, SimpleConsumer, SimpleProducer, SimpleQueue},
+            queue::{PacketQueue, SimpleQueue},
             AddressKind, DeviceAddress, LinkLayer, Responder, MIN_PDU_BUF,
         },
         security::NoSecurity,
@@ -82,10 +82,7 @@ impl Config for AppConfig {
     type Timer = BleTimer<hal::target::TIMER0>;
     type Transmitter = BleRadio;
     type ChannelMapper = BleChannelMap<BatteryServiceAttrs, NoSecurity>;
-
     type PacketQueue = &'static mut SimpleQueue;
-    type PacketProducer = SimpleProducer<'static>;
-    type PacketConsumer = SimpleConsumer<'static>;
 }
 
 #[rtfm::app(device = crate::hal::target, peripherals = true)]
