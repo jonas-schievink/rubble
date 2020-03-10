@@ -1,6 +1,7 @@
 [package]
 name = "rubble-docs"
 version = "0.0.0"
+license = "0BSD"
 
 # This crate only exists to work around this Cargo bug:
 # https://github.com/rust-lang/cargo/issues/5015
