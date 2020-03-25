@@ -187,7 +187,7 @@ const APP: () = {
         }
     }
 
-    #[task(binds = RADIO, resources = [radio, ble_ll], spawn = [ble_worker])]
+    #[task(binds = RADIO, resources = [radio, ble_ll], spawn = [ble_worker], priority = 3)]
     fn radio(ctx: radio::Context) {
         let ble_ll: &mut LinkLayer<AppConfig> = ctx.resources.ble_ll;
         if let Some(cmd) = ctx
@@ -206,7 +206,7 @@ const APP: () = {
         }
     }
 
-    #[task(binds = TIMER0, resources = [radio, ble_ll], spawn = [ble_worker])]
+    #[task(binds = TIMER0, resources = [radio, ble_ll], spawn = [ble_worker], priority = 3)]
     fn timer0(ctx: timer0::Context) {
         let timer = ctx.resources.ble_ll.timer();
         if !timer.is_interrupt_pending() {
@@ -249,7 +249,7 @@ const APP: () = {
         }
     }
 
-    #[task(resources = [ble_r])]
+    #[task(resources = [ble_r], priority = 2)]
     fn ble_worker(ctx: ble_worker::Context) {
         // Fully drain the packet queue
         while ctx.resources.ble_r.has_work() {

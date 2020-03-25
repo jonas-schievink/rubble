@@ -117,6 +117,7 @@ impl<C: Config> Connection<C> {
                 channel: this.channel,
                 access_address: this.access_address,
                 crc_init: this.crc_init,
+                timeout: false,
             },
             queued_work: false,
         };
@@ -131,7 +132,6 @@ impl<C: Config> Connection<C> {
         &mut self,
         rx_end: Instant,
         tx: &mut C::Transmitter,
-        timer: &mut C::Timer,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
@@ -307,11 +307,12 @@ impl<C: Config> Connection<C> {
         );
 
         Ok(Cmd {
-            next_update: NextUpdate::At(timer.now() + self.conn_event_timeout()),
+            next_update: NextUpdate::At(rx_end + self.conn_event_timeout()),
             radio: RadioCmd::ListenData {
                 channel: self.channel,
                 access_address: self.access_address,
                 crc_init: self.crc_init,
+                timeout: false,
             },
             queued_work,
         })
@@ -342,6 +343,7 @@ impl<C: Config> Connection<C> {
                     channel: self.channel,
                     access_address: self.access_address,
                     crc_init: self.crc_init,
+                    timeout: true,
                 },
                 queued_work: false,
             })
@@ -501,6 +503,7 @@ impl<C: Config> Connection<C> {
                         channel: self.channel,
                         access_address: self.access_address,
                         crc_init: self.crc_init,
+                        timeout: false,
                     },
                     // This function never queues work, but the caller might change this to `true`
                     queued_work: false,

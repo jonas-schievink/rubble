@@ -377,7 +377,7 @@ impl<C: Config> LinkLayer<C> {
         crc_ok: bool,
     ) -> Cmd {
         if let State::Connection(conn) = &mut self.state {
-            match conn.process_data_packet(rx_end, tx, &mut self.timer, header, payload, crc_ok) {
+            match conn.process_data_packet(rx_end, tx, header, payload, crc_ok) {
                 Ok(cmd) => cmd,
                 Err(()) => {
                     debug!("connection ended, standby");
@@ -546,6 +546,9 @@ pub enum RadioCmd {
         ///
         /// Only the least significant 24 bits are relevant.
         crc_init: u32,
+
+        /// Flag to indicate if the last connection event timed out.
+        timeout: bool,
     },
 }
 

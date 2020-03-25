@@ -214,6 +214,16 @@ impl BleRadio {
 
     /// Configures the Radio for (not) receiving data according to `cmd`.
     pub fn configure_receiver(&mut self, cmd: RadioCmd) {
+        // Waits for the end of any ongoing transmissions. Don't wait if we lost the last connection
+        // event, since we shouldn't be transmitting anyway
+        if let RadioCmd::ListenData { timeout, .. } = cmd {
+            if !timeout {
+                while self.state().is_tx() || self.state().is_tx_ru() {}
+            }
+        }
+        // "Subsequent reads and writes cannot be moved ahead of preceding reads."
+        compiler_fence(Ordering::Acquire);
+
         // Disable `DISABLED` interrupt, effectively stopping reception
         self.radio.intenclr.write(|w| w.disabled().clear());
 
@@ -240,6 +250,11 @@ impl BleRadio {
                 // Match on logical address 0 only
                 self.radio.rxaddresses.write(|w| w.addr0().enabled());
 
+                // Enable the correct shortcuts in case it was changed in a previous connection.
+                self.radio
+                    .shorts
+                    .write(|w| w.ready_start().enabled().end_disable().enabled());
+
                 // "Preceding reads and writes cannot be moved past subsequent writes."
                 compiler_fence(Ordering::Release);
 
@@ -250,22 +265,14 @@ impl BleRadio {
                 channel,
                 access_address,
                 crc_init,
+                ..
             } => {
                 self.prepare_txrx_data(channel, access_address, crc_init);
 
-                // Enforce T_IFS in hardware and enable the required shortcuts.
-                // The radio will go into `TXIDLE` state automatically after receiving a packet.
+                // Enforce T_IFS in hardware.
                 self.radio
                     .tifs
                     .write(|w| unsafe { w.bits(Duration::T_IFS.as_micros()) });
-                self.radio.shorts.write(|w| {
-                    w.end_disable()
-                        .enabled()
-                        .disabled_txen()
-                        .enabled()
-                        .ready_start()
-                        .enabled()
-                });
 
                 let rx_buf = (*self.rx_buf.as_mut().unwrap()) as *mut _ as u32;
                 self.radio.packetptr.write(|w| unsafe { w.bits(rx_buf) });
@@ -281,6 +288,17 @@ impl BleRadio {
 
                 // ...and enter RX mode
                 self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
+
+                // Enable the required shortcuts for T_IFS. The radio will go into `TXIDLE` state
+                // automatically after receiving a packet.
+                self.radio.shorts.write(|w| {
+                    w.end_disable()
+                        .enabled()
+                        .disabled_txen()
+                        .enabled()
+                        .ready_start()
+                        .enabled()
+                });
             }
         }
     }
@@ -323,6 +341,7 @@ impl BleRadio {
         } else {
             // Important! Turn ready->start off before TXREADY is reached (in ~150µs)
             self.radio.shorts.modify(|_, w| w.ready_start().disabled());
+            assert!(!self.state().is_tx());
 
             let header = data::Header::parse(*self.rx_buf.as_ref().unwrap());
 
@@ -449,8 +468,10 @@ impl BleRadio {
 
 impl Transmitter for BleRadio {
     fn tx_payload_buf(&mut self) -> &mut [u8] {
-        // FIXME: Some check must be done to ensure that no transaction is being processed
-        // Also, a suitable compiler fence must be added
+        // Wait for any ongoing transmissions
+        while self.state().is_tx() {}
+        // "Subsequent reads and writes cannot be moved ahead of preceding reads."
+        compiler_fence(Ordering::Acquire);
 
         // Leave 2 Bytes for the data/advertising PDU header.
         &mut self.tx_buf[2..]
@@ -505,6 +526,6 @@ impl Transmitter for BleRadio {
         // ...and kick off the transmission
         self.radio
             .shorts
-            .write(|w| w.ready_start().enabled().end_disable().enabled());
+            .write(|w| w.ready_start().enabled().end_disable().disabled());
     }
 }
