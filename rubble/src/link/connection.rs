@@ -117,6 +117,7 @@ impl<C: Config> Connection<C> {
                 channel: this.channel,
                 access_address: this.access_address,
                 crc_init: this.crc_init,
+                timeout: false,
             },
             queued_work: false,
         };
@@ -312,6 +313,7 @@ impl<C: Config> Connection<C> {
                 channel: self.channel,
                 access_address: self.access_address,
                 crc_init: self.crc_init,
+                timeout: false,
             },
             queued_work,
         })
@@ -342,6 +344,7 @@ impl<C: Config> Connection<C> {
                     channel: self.channel,
                     access_address: self.access_address,
                     crc_init: self.crc_init,
+                    timeout: true,
                 },
                 queued_work: false,
             })
@@ -501,6 +504,7 @@ impl<C: Config> Connection<C> {
                         channel: self.channel,
                         access_address: self.access_address,
                         crc_init: self.crc_init,
+                        timeout: false,
                     },
                     // This function never queues work, but the caller might change this to `true`
                     queued_work: false,
