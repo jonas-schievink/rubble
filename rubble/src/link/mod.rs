@@ -547,7 +547,7 @@ pub enum RadioCmd {
         /// Only the least significant 24 bits are relevant.
         crc_init: u32,
 
-        /// Flag to indicate if the last connection event timeout.
+        /// Flag to indicate if the last connection event timed out.
         timeout: bool,
     },
 }

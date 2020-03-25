@@ -250,6 +250,11 @@ impl BleRadio {
                 // Match on logical address 0 only
                 self.radio.rxaddresses.write(|w| w.addr0().enabled());
 
+                // Enable the correct shortcuts in case it was changed in a previous connection.
+                self.radio
+                    .shorts
+                    .write(|w| w.ready_start().enabled().end_disable().enabled());
+
                 // "Preceding reads and writes cannot be moved past subsequent writes."
                 compiler_fence(Ordering::Release);
 
@@ -264,8 +269,7 @@ impl BleRadio {
             } => {
                 self.prepare_txrx_data(channel, access_address, crc_init);
 
-                // Enforce T_IFS in hardware and enable the required shortcuts.
-                // The radio will go into `TXIDLE` state automatically after receiving a packet.
+                // Enforce T_IFS in hardware.
                 self.radio
                     .tifs
                     .write(|w| unsafe { w.bits(Duration::T_IFS.as_micros()) });
@@ -284,6 +288,9 @@ impl BleRadio {
 
                 // ...and enter RX mode
                 self.radio.tasks_rxen.write(|w| unsafe { w.bits(1) });
+
+                // Enable the required shortcuts for T_IFS. The radio will go into `TXIDLE` state
+                // automatically after receiving a packet.
                 self.radio.shorts.write(|w| {
                     w.end_disable()
                         .enabled()
