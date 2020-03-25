@@ -377,7 +377,7 @@ impl<C: Config> LinkLayer<C> {
         crc_ok: bool,
     ) -> Cmd {
         if let State::Connection(conn) = &mut self.state {
-            match conn.process_data_packet(rx_end, tx, &mut self.timer, header, payload, crc_ok) {
+            match conn.process_data_packet(rx_end, tx, header, payload, crc_ok) {
                 Ok(cmd) => cmd,
                 Err(()) => {
                     debug!("connection ended, standby");

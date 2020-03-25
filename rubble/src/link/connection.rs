@@ -132,7 +132,6 @@ impl<C: Config> Connection<C> {
         &mut self,
         rx_end: Instant,
         tx: &mut C::Transmitter,
-        timer: &mut C::Timer,
         header: data::Header,
         payload: &[u8],
         crc_ok: bool,
@@ -308,7 +307,7 @@ impl<C: Config> Connection<C> {
         );
 
         Ok(Cmd {
-            next_update: NextUpdate::At(timer.now() + self.conn_event_timeout()),
+            next_update: NextUpdate::At(rx_end + self.conn_event_timeout()),
             radio: RadioCmd::ListenData {
                 channel: self.channel,
                 access_address: self.access_address,
