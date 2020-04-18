@@ -7,6 +7,7 @@ use crate::{
 };
 
 // TODO: Use associated type defaults in the trait once stable
+// https://github.com/rust-lang/rust/issues/29661
 
 /// Trait for Rubble stack configurations.
 ///
@@ -31,6 +32,9 @@ pub trait Config {
     type PacketQueue: PacketQueue;
 }
 
-// Helper aliases to make accessing producer/consumer more convenient
+// Helper aliases to make accessing producer/consumer more convenient.
 pub(crate) type ConfProducer<C> = <<C as Config>::PacketQueue as PacketQueue>::Producer;
 pub(crate) type ConfConsumer<C> = <<C as Config>::PacketQueue as PacketQueue>::Consumer;
+
+// (`C::PacketQueue::Producer` should work, but doesn't)
+// (see: https://github.com/rust-lang/rust/issues/22519)
