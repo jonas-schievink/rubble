@@ -35,7 +35,6 @@ pub mod att;
 pub mod beacon;
 pub mod bytes;
 pub mod config;
-mod crc;
 mod error;
 pub mod gatt;
 pub mod l2cap;

@@ -146,14 +146,11 @@ use {
     crate::{
         bytes::ByteReader,
         config::*,
-        crc::ble_crc24,
-        phy::{AdvertisingChannel, DataChannel, Radio},
+        phy::{AdvertisingChannel, DataChannel},
         time::{Duration, Instant, Timer},
         utils::HexSlice,
         Error,
     },
-    byteorder::{ByteOrder, LittleEndian},
-    core::ops::Range,
 };
 
 /// The CRC polynomial to use for CRC24 generation.
@@ -605,83 +602,4 @@ pub trait Transmitter {
         header: data::Header,
         channel: DataChannel,
     );
-}
-
-/// A `Transmitter` that lowers Link-Layer packets to raw byte arrays that can be directly
-/// transmitted over the air, given a suitable radio.
-///
-/// This implements preamble generation, CRC calculation and whitening in software.
-pub struct RawTransmitter<R: Radio> {
-    tx_buf: [u8; MIN_PACKET_BUF],
-    radio: R,
-}
-
-// First 5 octets are Preamble and Access Address
-const PDU_START: usize = 5;
-const HEADER_RANGE: Range<usize> = PDU_START..PDU_START + 2;
-const PAYLOAD_RANGE: Range<usize> = PDU_START + 2..PDU_START + MIN_PDU_BUF;
-
-impl<R: Radio> RawTransmitter<R> {
-    pub fn new(radio: R) -> Self {
-        Self {
-            tx_buf: [0; MIN_PACKET_BUF as usize],
-            radio,
-        }
-    }
-
-    fn transmit(&mut self, access_address: u32, payload_length: u8, crc_iv: u32, freq: u16) {
-        let preamble = if access_address & 1 == 1 {
-            0b01010101
-        } else {
-            0b10101010
-        };
-        self.tx_buf[0] = preamble;
-
-        LittleEndian::write_u32(&mut self.tx_buf[1..5], access_address);
-
-        let crc = ble_crc24(
-            &self.tx_buf[PDU_START..PDU_START + 2 + payload_length as usize],
-            crc_iv,
-        );
-        LittleEndian::write_u24(&mut self.tx_buf[MIN_PACKET_BUF - 3..], crc);
-
-        // TODO whitening
-        if true {
-            unimplemented!();
-        }
-
-        self.radio.transmit(&mut self.tx_buf, freq);
-    }
-}
-
-impl<R: Radio> Transmitter for RawTransmitter<R> {
-    fn tx_payload_buf(&mut self) -> &mut [u8] {
-        &mut self.tx_buf[PAYLOAD_RANGE]
-    }
-
-    fn transmit_advertising(&mut self, header: advertising::Header, channel: AdvertisingChannel) {
-        LittleEndian::write_u16(&mut self.tx_buf[HEADER_RANGE], header.to_u16());
-        self.transmit(
-            advertising::ACCESS_ADDRESS,
-            header.payload_length(),
-            advertising::CRC_PRESET,
-            channel.freq(),
-        );
-    }
-
-    fn transmit_data(
-        &mut self,
-        access_address: u32,
-        crc_iv: u32,
-        header: data::Header,
-        channel: DataChannel,
-    ) {
-        LittleEndian::write_u16(&mut self.tx_buf[HEADER_RANGE], header.to_u16());
-        self.transmit(
-            access_address,
-            header.payload_length(),
-            crc_iv,
-            channel.freq(),
-        );
-    }
 }
