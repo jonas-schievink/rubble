@@ -21,7 +21,7 @@ byteorder = { version = "1.3.2", default-features = false }
 panic-halt = "0.2.0"
 
 nrf52810-hal = { version = "0.8.1", features = ["rt"], optional = true }
-nrf52832-hal = { version = "0.8.1", features = ["rt"], optional = true }
+nrf52832-hal = { version = "0.10.0", features = ["rt"], optional = true }
 nrf52840-hal = { version = "0.8.1", features = ["rt"], optional = true }
 
 # Disable documentation to avoid spurious rustdoc warnings
