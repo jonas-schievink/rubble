@@ -27,7 +27,7 @@ macro_rules! config {
                     rts: None,
                 };
 
-                $uart.constrain(pins, Parity::EXCLUDED, Baudrate::$baudrate)
+                hal::uarte::Uarte::new($uart, pins, Parity::EXCLUDED, Baudrate::$baudrate)
             }};
         }
     };
@@ -54,7 +54,6 @@ use {
     },
     hal::{
         gpio::Level,
-        prelude::*,
         target::UARTE0,
         uarte::{Baudrate, Parity, Uarte},
     },
@@ -117,7 +116,7 @@ const APP: () = {
 
         let ble_timer = BleTimer::init(ctx.device.TIMER0);
 
-        let p0 = ctx.device.P0.split();
+        let p0 = hal::gpio::p0::Parts::new(ctx.device.P0);
 
         let uart = ctx.device.UARTE0;
         let mut serial = apply_config!(p0, uart);

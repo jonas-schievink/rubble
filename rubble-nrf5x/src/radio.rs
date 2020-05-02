@@ -42,23 +42,23 @@
 //! must still be sent, of course).
 
 #[cfg(feature = "51")]
-use nrf51_hal::nrf51 as pac;
+use nrf51_hal::pac;
 
 #[cfg(feature = "52810")]
-use nrf52810_hal::nrf52810_pac as pac;
+use nrf52810_hal::pac;
 
 #[cfg(feature = "52832")]
-use nrf52832_hal::nrf52832_pac as pac;
+use nrf52832_hal::pac;
 
 #[cfg(feature = "52840")]
-use nrf52840_hal::nrf52840_pac as pac;
+use nrf52840_hal::pac;
 
 use {
     core::{
         cmp,
         sync::atomic::{compiler_fence, Ordering},
     },
-    pac::{radio::state::STATER, RADIO},
+    pac::{radio::state::STATE_R, RADIO},
     rubble::{
         config::Config,
         link::{advertising, data, Cmd, LinkLayer, RadioCmd, Transmitter, CRC_POLY, MIN_PDU_BUF},
@@ -208,7 +208,7 @@ impl BleRadio {
     }
 
     /// Returns the current radio state.
-    pub fn state(&self) -> STATER {
+    pub fn state(&self) -> STATE_R {
         self.radio.state.read().state()
     }
 
