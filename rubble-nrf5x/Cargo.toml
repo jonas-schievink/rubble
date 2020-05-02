@@ -11,10 +11,10 @@ edition = "2018"
 
 [dependencies]
 rubble = { path = "../rubble", version = "0.0.3", default-features = false }
-nrf51-hal = { version = "0.10", optional = true }
-nrf52810-hal = { version = "0.10", optional = true }
-nrf52832-hal = { version = "0.10", optional = true }
-nrf52840-hal = { version = "0.10", optional = true }
+nrf51-hal = { version = "0.10", optional = true, default-features = false }
+nrf52810-hal = { version = "0.10", optional = true, default-features = false }
+nrf52832-hal = { version = "0.10", optional = true, default-features = false }
+nrf52840-hal = { version = "0.10", optional = true, default-features = false }
 
 [features]
 51 = ["nrf51-hal"]
