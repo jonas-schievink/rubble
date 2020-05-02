@@ -16,12 +16,14 @@ use nrf52832_hal as hal;
 use nrf52840_hal as hal;
 
 use {
-    byteorder::{ByteOrder, LittleEndian},
     rubble::{
         beacon::Beacon,
-        link::{ad_structure::AdStructure, AddressKind, DeviceAddress, MIN_PDU_BUF},
+        link::{ad_structure::AdStructure, MIN_PDU_BUF},
     },
-    rubble_nrf5x::radio::{BleRadio, PacketBuffer},
+    rubble_nrf5x::{
+        radio::{BleRadio, PacketBuffer},
+        utils::get_device_address,
+    },
 };
 
 #[rtfm::app(device = crate::hal::target, peripherals = true)]
@@ -67,25 +69,8 @@ const APP: () = {
             .tasks_start
             .write(|w| unsafe { w.bits(1) });
 
-        let mut devaddr = [0u8; 6];
-        let devaddr_lo = ctx.device.FICR.deviceaddr[0].read().bits();
-        let devaddr_hi = ctx.device.FICR.deviceaddr[1].read().bits() as u16;
-        LittleEndian::write_u32(&mut devaddr, devaddr_lo);
-        LittleEndian::write_u16(&mut devaddr[4..], devaddr_hi);
-
-        let devaddr_type = if ctx
-            .device
-            .FICR
-            .deviceaddrtype
-            .read()
-            .deviceaddrtype()
-            .is_public()
-        {
-            AddressKind::Public
-        } else {
-            AddressKind::Random
-        };
-        let device_address = DeviceAddress::new(devaddr, devaddr_type);
+        // Determine device address
+        let device_address = get_device_address();
 
         // Rubble currently requires an RX buffer even though the radio is only used as a TX-only
         // beacon.

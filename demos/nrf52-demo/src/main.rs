@@ -47,7 +47,6 @@ use nrf52840_hal as hal;
 
 use {
     bbqueue::Consumer,
-    byteorder::{ByteOrder, LittleEndian},
     core::{
         fmt::Write,
         sync::atomic::{compiler_fence, Ordering},
@@ -64,7 +63,7 @@ use {
         link::{
             ad_structure::AdStructure,
             queue::{PacketQueue, SimpleQueue},
-            AddressKind, DeviceAddress, LinkLayer, Responder, MIN_PDU_BUF,
+            LinkLayer, Responder, MIN_PDU_BUF,
         },
         security::NoSecurity,
         time::{Duration, Timer},
@@ -72,6 +71,7 @@ use {
     rubble_nrf5x::{
         radio::{BleRadio, PacketBuffer},
         timer::BleTimer,
+        utils::get_device_address,
     },
 };
 
@@ -117,26 +117,9 @@ const APP: () = {
         let mut serial = apply_config!(p0, uart);
         writeln!(serial, "\n--- INIT ---").unwrap();
 
-        let mut devaddr = [0u8; 6];
-        let devaddr_lo = ctx.device.FICR.deviceaddr[0].read().bits();
-        let devaddr_hi = ctx.device.FICR.deviceaddr[1].read().bits() as u16;
-        LittleEndian::write_u32(&mut devaddr, devaddr_lo);
-        LittleEndian::write_u16(&mut devaddr[4..], devaddr_hi);
+        // Determine device address
+        let device_address = get_device_address();
 
-        let devaddr_type = if ctx
-            .device
-            .FICR
-            .deviceaddrtype
-            .read()
-            .deviceaddrtype()
-            .is_public()
-        {
-            AddressKind::Public
-        } else {
-            AddressKind::Random
-        };
-
-        let device_address = DeviceAddress::new(devaddr, devaddr_type);
         let mut radio = BleRadio::new(
             ctx.device.RADIO,
             &ctx.device.FICR,
