@@ -104,15 +104,10 @@ const APP: () = {
 
     #[init(resources = [ble_tx_buf, ble_rx_buf, tx_queue, rx_queue])]
     fn init(ctx: init::Context) -> init::LateResources {
-        {
-            // On reset the internal high frequency clock is used, but starting the HFCLK task
-            // switches to the external crystal; this is needed for Bluetooth to work.
-            ctx.device
-                .CLOCK
-                .tasks_hfclkstart
-                .write(|w| unsafe { w.bits(1) });
-            while ctx.device.CLOCK.events_hfclkstarted.read().bits() == 0 {}
-        }
+        // On reset, the internal high frequency clock is already used, but we
+        // also need to switch to the external HF oscillator. This is needed
+        // for Bluetooth to work.
+        let _clocks = hal::clocks::Clocks::new(ctx.device.CLOCK).enable_ext_hfosc();
 
         let ble_timer = BleTimer::init(ctx.device.TIMER0);
 
