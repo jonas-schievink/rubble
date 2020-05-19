@@ -42,7 +42,7 @@ impl DeviceAddress {
 
 impl fmt::Debug for DeviceAddress {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}[{:?}]", self, self.kind)?;
+        write!(f, "DeviceAddress({}, {:?})", self, self.kind)?;
         Ok(())
     }
 }
@@ -71,7 +71,10 @@ mod tests {
         // Logitech device with OUI prefix 88:C6:26
         // https://macaddresschanger.com/bluetooth-mac-lookup/88%3AC6%3A26
         let addr = DeviceAddress::new([0x5A, 0x92, 0x04, 0x26, 0xC6, 0x88], AddressKind::Public);
-        assert_eq!(format!("{:?}", addr), "88:c6:26:04:92:5a[Public]");
+        assert_eq!(
+            format!("{:?}", addr),
+            "DeviceAddress(88:c6:26:04:92:5a, Public)"
+        );
     }
 
     #[test]
