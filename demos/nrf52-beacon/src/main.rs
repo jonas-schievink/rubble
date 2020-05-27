@@ -115,6 +115,6 @@ const APP: () = {
         // Acknowledge event so that the interrupt doesn't keep firing
         ctx.resources.beacon_timer.events_compare[0].reset();
 
-        ctx.resources.beacon.broadcast(&mut *ctx.resources.radio);
+        ctx.resources.beacon.broadcast(ctx.resources.radio);
     }
 };

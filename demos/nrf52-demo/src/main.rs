@@ -208,7 +208,7 @@ const APP: () = {
         }
         timer.clear_interrupt();
 
-        let cmd = ctx.resources.ble_ll.update_timer(&mut *ctx.resources.radio);
+        let cmd = ctx.resources.ble_ll.update_timer(ctx.resources.radio);
         ctx.resources.radio.configure_receiver(cmd.radio);
 
         ctx.resources
