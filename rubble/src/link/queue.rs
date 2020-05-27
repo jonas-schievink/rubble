@@ -315,8 +315,8 @@ impl<'a> Consumer for SimpleConsumer<'a> {
 /// here means that the queue must have a finite, practical size as the test suite may fill it up
 /// completely.
 ///
-/// Simultaneously, this function ensures that `PacketQueue` implementors can be created and used by
-/// a generic function, something that sometimes doesn't work when invariant lifetimes are involved.
+/// Simultaneously, this function ensures that `PacketQueue` implementors can be used by a generic
+/// function, something that sometimes doesn't work when invariant lifetimes are involved.
 pub fn run_tests(queue: impl PacketQueue) {
     fn assert_empty(c: &mut impl Consumer) {
         assert!(!c.has_data(), "empty queue `has_data()` returned true");

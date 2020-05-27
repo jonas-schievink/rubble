@@ -7,7 +7,14 @@ export RUSTFLAGS=${RUSTFLAGS:---deny warnings}
 # Run unit tests. We'd prefer to run `cargo test --all`, but some packages
 # require enabling Cargo features, which Cargo does not support in that case.
 echo "Running tests with Cargo..."
-cargo test -p rubble
+(
+    cd rubble
+
+    cargo test
+
+    # Run the P-256 provider tests
+    cargo test --features ring -- ecdh
+)
 
 # Check that the device crates build with all feature combinations.
 # Only use `cargo check` because the PAC crates are very slow to build.
