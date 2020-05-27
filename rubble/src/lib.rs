@@ -35,6 +35,7 @@ pub mod att;
 pub mod beacon;
 pub mod bytes;
 pub mod config;
+pub mod ecdh;
 mod error;
 pub mod gatt;
 pub mod l2cap;
