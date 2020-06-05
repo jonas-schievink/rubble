@@ -1,0 +1,35 @@
+[package]
+authors = ["Danilo Bargen <mail@dbrgn.ch>"]
+description = "Rubble BLE stack demo showcasing passive beacon scanning on the nRF52 MCUs"
+categories = ["embedded", "no-std"]
+keywords = ["arm", "nrf", "bluetooth", "low", "energy"]
+repository = "https://github.com/jonas-schievink/rubble/"
+license = "0BSD"
+name = "nrf52-scanner"
+version = "0.0.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+rubble = { path = "../../rubble", default-features = false }
+rubble-nrf5x = { path = "../../rubble-nrf5x" }
+demo-utils = { path = "../demo-utils" }
+cortex-m = "0.6.1"
+cortex-m-rtfm = "0.5.1"
+cortex-m-rt = "0.6.11"
+panic-halt = "0.2.0"
+
+nrf52810-hal = { version = "0.10", features = ["rt"], optional = true }
+nrf52832-hal = { version = "0.10", features = ["rt"], optional = true }
+nrf52840-hal = { version = "0.10", features = ["rt"], optional = true }
+
+# Disable documentation to avoid spurious rustdoc warnings
+[[bin]]
+name = "nrf52-scanner"
+doc = false
+test = false
+
+[features]
+52810 = ["rubble-nrf5x/52810", "nrf52810-hal"]
+52832 = ["rubble-nrf5x/52832", "nrf52832-hal"]
+52840 = ["rubble-nrf5x/52840", "nrf52840-hal"]
