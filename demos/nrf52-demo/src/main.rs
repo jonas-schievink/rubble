@@ -170,7 +170,7 @@ const APP: () = {
         if let Some(cmd) = ctx
             .resources
             .radio
-            .recv_interrupt(ble_ll.timer().now(), ble_ll)
+            .recv_ll_interrupt(ble_ll.timer().now(), ble_ll)
         {
             ctx.resources.radio.configure_receiver(cmd.radio);
             ble_ll.timer().configure_interrupt(cmd.next_update);
