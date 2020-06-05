@@ -50,7 +50,14 @@ impl AdvertisingChannel {
         }
     }
 
-    /// Returns the RF channel corresponding to this advertising channel index.
+    /// Returns the channel index.
+    ///
+    /// Channels 37, 38 and 39 are used for advertising.
+    pub fn channel(&self) -> u8 {
+        self.0
+    }
+
+    /// Returns the physical RF channel corresponding to this advertising channel index.
     ///
     /// RF channels 0, 12 and 39 are used for advertising.
     pub fn rf_channel(&self) -> u8 {
