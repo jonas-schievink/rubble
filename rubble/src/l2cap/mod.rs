@@ -23,25 +23,14 @@
 
 mod signaling;
 
-use {
-    self::signaling::SignalingState,
-    crate::{
-        att::{self, AttributeProvider, AttributeServer, NoAttributes},
-        bytes::*,
-        link::{
-            data::Llid,
-            queue::{Consume, Producer},
-            MIN_DATA_PAYLOAD_BUF,
-        },
-        security::{NoSecurity, SecurityLevel, SecurityManager},
-        utils::HexSlice,
-        Error,
-    },
-    core::{
-        fmt,
-        ops::{Deref, DerefMut},
-    },
-};
+use self::signaling::SignalingState;
+use crate::att::{self, AttributeProvider, AttributeServer, NoAttributes};
+use crate::link::queue::{Consume, Producer};
+use crate::link::{data::Llid, MIN_DATA_PAYLOAD_BUF};
+use crate::security::{NoSecurity, SecurityLevel, SecurityManager};
+use crate::{bytes::*, utils::HexSlice, Error};
+use core::fmt;
+use core::ops::{Deref, DerefMut};
 
 /// An L2CAP channel identifier (CID).
 ///

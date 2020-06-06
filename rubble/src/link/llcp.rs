@@ -1,15 +1,8 @@
 //! Defines packet structures used by the Link Layer Control Protocol.
 
-use {
-    crate::{
-        bytes::*,
-        link::{channel_map::ChannelMap, comp_id::CompanyId, features::FeatureSet},
-        time::Duration,
-        utils::Hex,
-        Error,
-    },
-    core::{cmp, convert::TryInto},
-};
+use crate::link::{channel_map::ChannelMap, comp_id::CompanyId, features::FeatureSet};
+use crate::{bytes::*, time::Duration, utils::Hex, Error};
+use core::{cmp, convert::TryInto};
 
 /// A connection parameter update request or response (`LL_CONNECTION_PARAM_REQ`/
 /// `LL_CONNECTION_PARAM_RSP`).

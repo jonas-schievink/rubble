@@ -1,8 +1,6 @@
-use {
-    super::*,
-    ::p256::arithmetic::{AffinePoint, ProjectivePoint, Scalar},
-    rand_core::{CryptoRng, RngCore},
-};
+use super::*;
+use ::p256::arithmetic::{AffinePoint, ProjectivePoint, Scalar};
+use rand_core::{CryptoRng, RngCore};
 
 /// An ECDH provider using the pure-Rust `p256` crate.
 pub struct P256Provider {}

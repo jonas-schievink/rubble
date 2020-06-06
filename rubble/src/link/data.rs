@@ -1,14 +1,9 @@
 //! Data Channel structures.
 
-use {
-    crate::{
-        bytes::*,
-        link::{llcp::ControlPdu, SeqNum},
-        Error,
-    },
-    byteorder::{ByteOrder, LittleEndian},
-    core::fmt,
-};
+use crate::link::{llcp::ControlPdu, SeqNum};
+use crate::{bytes::*, Error};
+use byteorder::{ByteOrder, LittleEndian};
+use core::fmt;
 
 /// 16-bit data channel header preceding the payload.
 ///

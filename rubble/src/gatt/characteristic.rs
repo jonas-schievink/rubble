@@ -1,7 +1,5 @@
-use {
-    crate::{att::AttUuid, uuid::Uuid16},
-    bitflags::bitflags,
-};
+use crate::{att::AttUuid, uuid::Uuid16};
+use bitflags::bitflags;
 
 bitflags! {
     pub struct Properties: u8 {

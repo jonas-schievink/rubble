@@ -1,21 +1,13 @@
 //! BLE beacon support, without dealing with Link-Layer stuff.
 
-use {
-    super::{
-        link::{
-            ad_structure::AdStructure,
-            advertising::{Header, Pdu, PduBuf},
-            filter::{self, AddressFilter, ScanFilter},
-            Cmd, DeviceAddress, NextUpdate, RadioCmd, Transmitter,
-        },
-        phy::AdvertisingChannel,
-    },
-    crate::{
-        bytes::*,
-        time::{Duration, Instant},
-        Error,
-    },
+use crate::link::advertising::{Header, Pdu, PduBuf};
+use crate::link::filter::{self, AddressFilter, ScanFilter};
+use crate::link::{
+    ad_structure::AdStructure, Cmd, DeviceAddress, NextUpdate, RadioCmd, Transmitter,
 };
+use crate::phy::AdvertisingChannel;
+use crate::time::{Duration, Instant};
+use crate::{bytes::*, Error};
 
 /// A BLE beacon.
 ///

@@ -1,12 +1,10 @@
 //! Logging-related utilities and adapters.
 
-use {
-    bbqueue::{ArrayLength, GrantW, Producer},
-    core::{cell::RefCell, fmt},
-    cortex_m::interrupt::{self, Mutex},
-    log::{Log, Metadata, Record},
-    rubble::time::Timer,
-};
+use bbqueue::{ArrayLength, GrantW, Producer};
+use core::{cell::RefCell, fmt};
+use cortex_m::interrupt::{self, Mutex};
+use log::{Log, Metadata, Record};
+use rubble::time::Timer;
 
 const DATA_LOST_MSG: &str = "…\n";
 

@@ -1,15 +1,8 @@
-use crate::{
-    bytes::ToBytes,
-    config::*,
-    l2cap::{L2CAPState, L2CAPStateTx},
-    link::{
-        data::{Llid, Pdu},
-        llcp::ControlPdu,
-        queue::{Consume, Consumer, Producer},
-    },
-    utils::HexSlice,
-    Error,
-};
+use crate::l2cap::{L2CAPState, L2CAPStateTx};
+use crate::link::data::{Llid, Pdu};
+use crate::link::llcp::ControlPdu;
+use crate::link::queue::{Consume, Consumer, Producer};
+use crate::{bytes::ToBytes, config::*, utils::HexSlice, Error};
 
 /// Data channel packet processor.
 ///

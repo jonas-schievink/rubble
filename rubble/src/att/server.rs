@@ -1,17 +1,12 @@
 //! ATT server implementation.
 
-use {
-    super::{
-        pdus::{AttPdu, ByGroupAttData, ByTypeAttData, ErrorCode, Opcode},
-        AttError, AttributeProvider, Handle, HandleRange,
-    },
-    crate::{
-        bytes::{ByteReader, FromBytes, ToBytes},
-        l2cap::{Protocol, ProtocolObj, Sender},
-        utils::HexSlice,
-        Error,
-    },
+use super::{
+    pdus::{AttPdu, ByGroupAttData, ByTypeAttData, ErrorCode, Opcode},
+    AttError, AttributeProvider, Handle, HandleRange,
 };
+use crate::bytes::{ByteReader, FromBytes, ToBytes};
+use crate::l2cap::{Protocol, ProtocolObj, Sender};
+use crate::{utils::HexSlice, Error};
 
 /// An Attribute Protocol server providing read and write access to stored attributes.
 pub struct AttributeServer<A: AttributeProvider> {

@@ -45,35 +45,18 @@ use nrf52832_hal as hal;
 #[cfg(feature = "52840")]
 use nrf52840_hal as hal;
 
-use {
-    bbqueue::Consumer,
-    core::{
-        fmt::Write,
-        sync::atomic::{compiler_fence, Ordering},
-    },
-    hal::{
-        gpio::Level,
-        target::UARTE0,
-        uarte::{Baudrate, Parity, Uarte},
-    },
-    rubble::{
-        config::Config,
-        gatt::BatteryServiceAttrs,
-        l2cap::{BleChannelMap, L2CAPState},
-        link::{
-            ad_structure::AdStructure,
-            queue::{PacketQueue, SimpleQueue},
-            LinkLayer, Responder, MIN_PDU_BUF,
-        },
-        security::NoSecurity,
-        time::{Duration, Timer},
-    },
-    rubble_nrf5x::{
-        radio::{BleRadio, PacketBuffer},
-        timer::BleTimer,
-        utils::get_device_address,
-    },
-};
+use bbqueue::Consumer;
+use core::fmt::Write;
+use core::sync::atomic::{compiler_fence, Ordering};
+use hal::uarte::{Baudrate, Parity, Uarte};
+use hal::{gpio::Level, target::UARTE0};
+use rubble::l2cap::{BleChannelMap, L2CAPState};
+use rubble::link::queue::{PacketQueue, SimpleQueue};
+use rubble::link::{ad_structure::AdStructure, LinkLayer, Responder, MIN_PDU_BUF};
+use rubble::time::{Duration, Timer};
+use rubble::{config::Config, gatt::BatteryServiceAttrs, security::NoSecurity};
+use rubble_nrf5x::radio::{BleRadio, PacketBuffer};
+use rubble_nrf5x::{timer::BleTimer, utils::get_device_address};
 
 pub enum AppConfig {}
 

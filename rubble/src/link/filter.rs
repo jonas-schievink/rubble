@@ -1,9 +1,7 @@
 //! Link-Layer Device Filtering.
 
-use {
-    super::DeviceAddress,
-    core::{iter, slice},
-};
+use super::DeviceAddress;
+use core::{iter, slice};
 
 pub trait AddressFilter {
     fn matches(&self, address: DeviceAddress) -> bool;

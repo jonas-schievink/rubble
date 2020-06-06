@@ -1,24 +1,16 @@
 //! Link-Layer connection management and LLCP implementation.
 
-use {
-    crate::{
-        bytes::*,
-        config::*,
-        link::{
-            advertising::ConnectRequestData,
-            channel_map::ChannelMap,
-            data::{self, Header, Llid, Pdu},
-            llcp::{ConnectionUpdateData, ControlPdu},
-            queue::{Consume, Consumer, Producer},
-            Cmd, CompanyId, FeatureSet, NextUpdate, RadioCmd, SeqNum, Transmitter,
-        },
-        phy::DataChannel,
-        time::{Duration, Instant, Timer},
-        utils::{Hex, HexSlice},
-        Error, BLUETOOTH_VERSION,
-    },
-    core::{marker::PhantomData, num::Wrapping},
+use crate::link::data::{self, Header, Llid, Pdu};
+use crate::link::llcp::{ConnectionUpdateData, ControlPdu};
+use crate::link::queue::{Consume, Consumer, Producer};
+use crate::link::{
+    advertising::ConnectRequestData, channel_map::ChannelMap, Cmd, CompanyId, FeatureSet,
+    NextUpdate, RadioCmd, SeqNum, Transmitter,
 };
+use crate::time::{Duration, Instant, Timer};
+use crate::utils::{Hex, HexSlice};
+use crate::{bytes::*, config::*, phy::DataChannel, Error, BLUETOOTH_VERSION};
+use core::{marker::PhantomData, num::Wrapping};
 
 /// Connection state and parameters.
 pub struct Connection<C: Config> {

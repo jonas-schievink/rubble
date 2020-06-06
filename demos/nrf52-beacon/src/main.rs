@@ -15,16 +15,10 @@ use nrf52832_hal as hal;
 #[cfg(feature = "52840")]
 use nrf52840_hal as hal;
 
-use {
-    rubble::{
-        beacon::Beacon,
-        link::{ad_structure::AdStructure, MIN_PDU_BUF},
-    },
-    rubble_nrf5x::{
-        radio::{BleRadio, PacketBuffer},
-        utils::get_device_address,
-    },
-};
+use rubble::beacon::Beacon;
+use rubble::link::{ad_structure::AdStructure, MIN_PDU_BUF};
+use rubble_nrf5x::radio::{BleRadio, PacketBuffer};
+use rubble_nrf5x::utils::get_device_address;
 
 #[rtfm::app(device = crate::hal::target, peripherals = true)]
 const APP: () = {

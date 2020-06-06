@@ -1,9 +1,7 @@
 //! L2CAP Signaling channel PDUs and functions (`0x0005`).
 
-use {
-    super::{Protocol, ProtocolObj, Sender},
-    crate::Error,
-};
+use super::{Protocol, ProtocolObj, Sender};
+use crate::Error;
 
 enum_with_unknown! {
     /// LE Signaling Channel opcodes.

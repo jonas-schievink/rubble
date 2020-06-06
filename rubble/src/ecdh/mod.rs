@@ -32,10 +32,8 @@ mod ring;
 #[cfg(feature = "ring")]
 pub use self::ring::*;
 
-use {
-    core::fmt,
-    rand_core::{CryptoRng, RngCore},
-};
+use core::fmt;
+use rand_core::{CryptoRng, RngCore};
 
 /// A P-256 public key (point on the curve) in uncompressed format.
 ///

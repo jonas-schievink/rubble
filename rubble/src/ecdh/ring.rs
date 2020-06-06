@@ -1,9 +1,7 @@
-use {
-    super::*,
-    ::ring::{
-        agreement::{agree_ephemeral, EphemeralPrivateKey, UnparsedPublicKey, ECDH_P256},
-        rand::SystemRandom,
-    },
+use super::*;
+use ::ring::{
+    agreement::{agree_ephemeral, EphemeralPrivateKey, UnparsedPublicKey, ECDH_P256},
+    rand::SystemRandom,
 };
 
 /// An ECDH provider that uses *ring* under the hood.

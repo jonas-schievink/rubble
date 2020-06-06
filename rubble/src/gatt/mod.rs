@@ -5,15 +5,10 @@
 
 pub mod characteristic;
 
-use {
-    crate::{
-        att::{AttUuid, Attribute, AttributeProvider, Handle, HandleRange},
-        utils::HexSlice,
-        uuid::{Uuid, Uuid16},
-        Error,
-    },
-    core::{cmp, slice},
-};
+use crate::att::{AttUuid, Attribute, AttributeProvider, Handle, HandleRange};
+use crate::uuid::{Uuid, Uuid16};
+use crate::{utils::HexSlice, Error};
+use core::{cmp, slice};
 
 /// A demo `AttributeProvider` that will enumerate as a *Battery Service*.
 pub struct BatteryServiceAttrs {

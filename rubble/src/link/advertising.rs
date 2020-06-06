@@ -7,21 +7,12 @@
 //! Note that while the types in here do not completely eliminate illegal values to be created, they
 //! do employ a range of sanity checks that prevent bogus packets from being sent by the stack.
 
-use {
-    crate::{
-        bytes::*,
-        link::{
-            ad_structure::{AdStructure, Flags},
-            channel_map::ChannelMap,
-            AddressKind, DeviceAddress,
-        },
-        time::Duration,
-        utils::{Hex, HexSlice},
-        Error,
-    },
-    byteorder::{ByteOrder, LittleEndian},
-    core::{fmt, iter},
-};
+use crate::link::ad_structure::{AdStructure, Flags};
+use crate::link::{channel_map::ChannelMap, AddressKind, DeviceAddress};
+use crate::utils::{Hex, HexSlice};
+use crate::{bytes::*, time::Duration, Error};
+use byteorder::{ByteOrder, LittleEndian};
+use core::{fmt, iter};
 
 /// CRC initialization value for advertising channel packets.
 ///

@@ -3,10 +3,8 @@
 //! These APIs are made for the BLE stack and are not meant to be general-purpose. The APIs here
 //! have microsecond resolution and use 32-bit arithmetic wherever possible.
 
-use core::{
-    fmt,
-    ops::{Add, AddAssign, Sub, SubAssign},
-};
+use core::fmt;
+use core::ops::{Add, AddAssign, Sub, SubAssign};
 
 /// A duration with microsecond resolution.
 ///

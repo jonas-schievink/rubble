@@ -12,12 +12,10 @@ use nrf52832_hal::pac;
 #[cfg(feature = "52840")]
 use nrf52840_hal::pac;
 
-use {
-    core::mem,
-    rubble::{
-        link::NextUpdate,
-        time::{Instant, Timer},
-    },
+use core::mem;
+use rubble::{
+    link::NextUpdate,
+    time::{Instant, Timer},
 };
 
 /// Implements Rubble's `Timer` trait for the timers on the nRF chip.

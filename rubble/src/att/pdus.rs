@@ -1,10 +1,8 @@
 //! Packets and types used in the ATT protocol.
 
-use {
-    super::{AttUuid, Handle, RawHandleRange},
-    crate::{bytes::*, utils::HexSlice, Error},
-    core::convert::TryInto,
-};
+use super::{AttUuid, Handle, RawHandleRange};
+use crate::{bytes::*, utils::HexSlice, Error};
+use core::convert::TryInto;
 
 enum_with_unknown! {
     /// Error codes that can be sent from the ATT server to the client in response to a request.

@@ -19,21 +19,12 @@
 //! [`SimpleProducer`]: struct.SimpleProducer.html
 //! [`SimpleConsumer`]: struct.SimpleConsumer.html
 
-use {
-    crate::{
-        bytes::*,
-        link::{
-            data::{self, Llid},
-            MIN_DATA_PAYLOAD_BUF, MIN_DATA_PDU_BUF,
-        },
-        Error,
-    },
-    byteorder::{ByteOrder, LittleEndian},
-    heapless::{
-        consts::U1,
-        spsc::{self, MultiCore},
-    },
-};
+use crate::link::data::{self, Llid};
+use crate::link::{MIN_DATA_PAYLOAD_BUF, MIN_DATA_PDU_BUF};
+use crate::{bytes::*, Error};
+use byteorder::{ByteOrder, LittleEndian};
+use heapless::consts::U1;
+use heapless::spsc::{self, MultiCore};
 
 /// A splittable SPSC queue for data channel PDUs.
 ///

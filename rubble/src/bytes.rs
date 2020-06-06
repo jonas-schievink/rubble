@@ -17,11 +17,9 @@
 //! [`ByteReader`]: struct.ByteReader.html
 //! [`BytesOr`]: struct.BytesOr.html
 
-use {
-    crate::Error,
-    byteorder::{ByteOrder, LittleEndian},
-    core::{cmp, fmt, iter, mem},
-};
+use crate::Error;
+use byteorder::{ByteOrder, LittleEndian};
+use core::{cmp, fmt, iter, mem};
 
 /// Reference to a `T`, or to a byte slice that can be decoded as a `T`.
 ///

@@ -53,19 +53,15 @@ use nrf52832_hal::pac;
 #[cfg(feature = "52840")]
 use nrf52840_hal::pac;
 
-use {
-    core::{
-        cmp,
-        sync::atomic::{compiler_fence, Ordering},
-    },
-    pac::{radio::state::STATE_R, RADIO},
-    rubble::{
-        config::Config,
-        link::{advertising, data, Cmd, LinkLayer, RadioCmd, Transmitter, CRC_POLY, MIN_PDU_BUF},
-        phy::{AdvertisingChannel, DataChannel},
-        time::{Duration, Instant},
-    },
+use core::cmp;
+use core::sync::atomic::{compiler_fence, Ordering};
+use pac::{radio::state::STATE_R, RADIO};
+use rubble::config::Config;
+use rubble::link::{
+    advertising, data, Cmd, LinkLayer, RadioCmd, Transmitter, CRC_POLY, MIN_PDU_BUF,
 };
+use rubble::phy::{AdvertisingChannel, DataChannel};
+use rubble::time::{Duration, Instant};
 
 /// A packet buffer that can hold header and payload of any advertising or data channel packet.
 pub type PacketBuffer = [u8; MIN_PDU_BUF];

@@ -1,4 +1,5 @@
-use {crate::phy::DataChannel, core::fmt};
+use crate::phy::DataChannel;
+use core::fmt;
 
 /// A map marking data channels as used or unused.
 ///

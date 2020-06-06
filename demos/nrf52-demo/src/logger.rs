@@ -1,11 +1,9 @@
 #![cfg_attr(not(feature = "log"), allow(unused))]
 
-use {
-    bbqueue::{BBBuffer, ConstBBBuffer, Consumer},
-    cortex_m::interrupt,
-    demo_utils::logging::{BbqLogger, StampedLogger, WriteLogger},
-    rubble_nrf5x::timer::StampSource,
-};
+use bbqueue::{BBBuffer, ConstBBBuffer, Consumer};
+use cortex_m::interrupt;
+use demo_utils::logging::{BbqLogger, StampedLogger, WriteLogger};
+use rubble_nrf5x::timer::StampSource;
 
 #[cfg(feature = "log")]
 pub(crate) use bbqueue::consts::U10000 as BufferSize;

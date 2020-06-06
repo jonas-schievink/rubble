@@ -14,11 +14,9 @@
 //! first 4 Bytes of the Base UUID. Hence `0x1234ABCD` would become
 //! `1234ABCD-0000-1000-8000-00805F9B34FB`.
 
-use {
-    crate::{bytes::*, Error},
-    byteorder::{BigEndian, ByteOrder},
-    core::fmt,
-};
+use crate::{bytes::*, Error};
+use byteorder::{BigEndian, ByteOrder};
+use core::fmt;
 
 pub use uuid::Uuid;
 

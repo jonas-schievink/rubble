@@ -1,7 +1,5 @@
-use {
-    crate::{bytes::*, Error},
-    bitflags::bitflags,
-};
+use crate::{bytes::*, Error};
+use bitflags::bitflags;
 
 bitflags! {
     /// A set of optional Link Layer features.

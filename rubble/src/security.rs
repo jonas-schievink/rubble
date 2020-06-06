@@ -95,16 +95,10 @@
 //!
 //! This feature is not related to encryption or authentication of connections.
 
-use {
-    crate::{
-        bytes::*,
-        l2cap::{Protocol, ProtocolObj, Sender},
-        utils::HexSlice,
-        Error,
-    },
-    bitflags::bitflags,
-    core::fmt,
-};
+use crate::l2cap::{Protocol, ProtocolObj, Sender};
+use crate::{bytes::*, utils::HexSlice, Error};
+use bitflags::bitflags;
+use core::fmt;
 
 /// Supported security levels.
 pub trait SecurityLevel {

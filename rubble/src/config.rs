@@ -1,10 +1,7 @@
 //! Stack configuration trait.
 
-use crate::{
-    l2cap::ChannelMapper,
-    link::{queue::PacketQueue, Transmitter},
-    time::Timer,
-};
+use crate::link::{queue::PacketQueue, Transmitter};
+use crate::{l2cap::ChannelMapper, time::Timer};
 
 // TODO: Use associated type defaults in the trait once stable
 // https://github.com/rust-lang/rust/issues/29661

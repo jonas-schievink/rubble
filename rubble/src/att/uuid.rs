@@ -1,7 +1,5 @@
-use {
-    crate::{bytes::*, uuid::*, Error},
-    core::{cmp::PartialEq, fmt},
-};
+use crate::{bytes::*, uuid::*, Error};
+use core::{cmp::PartialEq, fmt};
 
 /// ATT protocol UUID (either a 16 or a 128-bit UUID).
 ///

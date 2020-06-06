@@ -1,7 +1,5 @@
-use core::{
-    fmt::{self, Write},
-    ops::{Add, AddAssign},
-};
+use core::fmt::{self, Write};
+use core::ops::{Add, AddAssign};
 
 /// A 1-bit data packet sequence number.
 ///

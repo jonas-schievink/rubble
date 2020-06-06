@@ -6,14 +6,9 @@
 //!
 //! [gap]: https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
 
-use {
-    crate::{
-        bytes::*,
-        uuid::{IsUuid, Uuid, Uuid16, Uuid32, UuidKind},
-        Error,
-    },
-    bitflags::bitflags,
-};
+use crate::uuid::{IsUuid, Uuid, Uuid16, Uuid32, UuidKind};
+use crate::{bytes::*, Error};
+use bitflags::bitflags;
 
 /// A list of AD structures can be sent along with an advertising packet or scan response.
 ///

@@ -137,21 +137,11 @@ pub use self::device_address::*;
 pub use self::features::*;
 pub use self::responder::*;
 
-use {
-    self::{
-        ad_structure::AdStructure,
-        advertising::{Pdu, PduBuf},
-        seq_num::SeqNum,
-    },
-    crate::{
-        bytes::ByteReader,
-        config::*,
-        phy::{AdvertisingChannel, DataChannel},
-        time::{Duration, Instant, Timer},
-        utils::HexSlice,
-        Error,
-    },
-};
+use self::advertising::{Pdu, PduBuf};
+use self::{ad_structure::AdStructure, seq_num::SeqNum};
+use crate::phy::{AdvertisingChannel, DataChannel};
+use crate::time::{Duration, Instant, Timer};
+use crate::{bytes::ByteReader, config::*, utils::HexSlice, Error};
 
 /// The CRC polynomial to use for CRC24 generation.
 ///

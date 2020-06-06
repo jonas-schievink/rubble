@@ -1,13 +1,8 @@
 //! Attribute handles.
 
-use {
-    crate::{
-        att::{AttError, ErrorCode},
-        bytes::*,
-        Error,
-    },
-    core::{fmt, ops::RangeInclusive},
-};
+use crate::att::{AttError, ErrorCode};
+use crate::{bytes::*, Error};
+use core::{fmt, ops::RangeInclusive};
 
 /// A 16-bit handle uniquely identifying an attribute on an ATT server.
 ///
