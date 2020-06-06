@@ -1,0 +1,91 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `security` mod in crate `rubble`."><meta name="keywords" content="rust, rustlang, rust-lang, security"><title>rubble::security - Rust</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../rubble/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a><p class='location'>Module security</p><div class="sidebar-elems"><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li></ul></div><p class='location'><a href='../index.html'>rubble</a></p><script>window.sidebarCurrent = {name: 'security', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../../src/rubble/security.rs.html#1-348' title='goto source code'>[src]</a></span><span class='in-band'>Module <a href='../index.html'>rubble</a>::<wbr><a class="mod" href=''>security</a></span></h1><div class='docblock'><p>The LE Security Manager protocol.</p>
+<p>The Security Manager is a mandatory part of BLE and is connected to L2CAP channel <code>0x0006</code> when
+the Link-Layer connection is established.</p>
+<h1 id="ble-security" class="section-header"><a href="#ble-security">BLE Security</a></h1>
+<p>As is tradition, BLE security is a complexity nightmare. This section hopes to clear up a few
+things and tries to define terms used throughout the code and specficiation.</p>
+<h2 id="pairing-and-bonding" class="section-header"><a href="#pairing-and-bonding">Pairing and Bonding</a></h2>
+<ul>
+<li>
+<p><strong>Pairing</strong> is the process of generating and exchanging connection-specific keys in order to
+accomplish an encrypted Link-Layer connection.</p>
+<p>This is done by having the <em>Security Managers</em> of the devices talk to each other to perform
+the key exchange, and then using <em>LL Control PDUs</em> to enable the negotiated encryption
+parameters.</p>
+</li>
+<li>
+<p><strong>Bonding</strong> means permanently storing the shared keys derived by <em>Pairing</em> in order to reuse
+them for later connections.</p>
+<p>The way keys are stored is inherently platform- and application-dependent, we just have to
+provide interfaces to export and import key sets.</p>
+</li>
+</ul>
+<p>Most times, when talking about <em>pairing</em>, the <em>bonding</em> part is implied. If it were not, you
+would constantly have to re-pair devices when reconnecting them.</p>
+<h2 id="le-legacy-pairing-vs-le-secure-connections" class="section-header"><a href="#le-legacy-pairing-vs-le-secure-connections">LE Legacy Pairing vs. LE Secure Connections</a></h2>
+<p>Bluetooth's security track record is an actual record in that it is so atrociously bad that this
+protocol should have never seen the light of the day. Alas, here we are.</p>
+<p>LE security is generally able to utilize <em>AES-128-CCM</em> for encryption, which isn't broken by
+itself (unlike the &quot;export-grade&quot; encryption used by earlier Bluetooth versions). However, the
+way the AES key is exchanged differs between <em>LE Legacy Pairing</em> and <em>LE Secure Connections</em>
+pairing, which hugely impacts actual security.</p>
+<h3 id="le-legacy-pairing" class="section-header"><a href="#le-legacy-pairing">LE Legacy Pairing</a></h3>
+<p>For BLE 4.0 and 4.1, only the <em>LE Legacy Pairing</em> (as it is now known as) was available. Like
+every awfully designed protocol, they've rolled their own crypto and use their own key exchange
+procedure (with the usual catastrophic consequences). First, a shared 128-bit <strong>T</strong>emporary
+<strong>K</strong>ey (TK) is obtained, which is then used to generate the 128-bit <strong>S</strong>hort-<strong>T</strong>erm <strong>K</strong>ey
+(STK) that is used to initially encrypt the connection while other keys are exchanged.</p>
+<p>The STK is generated from the TK by mixing in random values from master (<code>Mrand</code>) and slave
+(<code>Srand</code>), which are exchanged in plain text. If a passive eavesdropper manages to obtain TK,
+they only need to listen for the <code>Mrand</code> and <code>Srand</code> value and can then compute the STK and
+decrypt the connection.</p>
+<p>There are 3 methods of determining the TK:</p>
+<ul>
+<li><em>&quot;Just Works&quot;</em>: TK=0</li>
+<li><em>Passkey Entry</em>: A 6-digit number is displayed on one device and input on the other device.
+The number is directly used as the TK (after zero-padding it to 128 bits).</li>
+<li><em>Out-of-Band</em> (OOB): The 128-bit TK is provided by an external mechanism (eg. NFC).</li>
+</ul>
+<p>&quot;Just Works&quot; obviously is broken without any effort other than listening for the exchanged
+<code>Mrand</code> and <code>Srand</code> values.</p>
+<p>The Passkey Entry method only allows 1000000 different TKs (equivalent to using 20-bit keys)
+and does not do any key derivation. This makes it trivial to brute-force the TK by running the
+STK derivation up to a million times.</p>
+<p><strong>The only way to perform <em>LE Legacy Pairing</em> with meaningful protection against passive
+eavesdropping is by using a secure Out-of-Band channel for agreeing on the TK.</strong></p>
+<h3 id="le-secure-connections-pairing" class="section-header"><a href="#le-secure-connections-pairing">LE Secure Connections pairing</a></h3>
+<p>Added with BLE 4.2, this finally uses established cryptography to do everything. It uses ECDH on
+the P-256 curve (aka &quot;secp256r1&quot; or &quot;prime256v1&quot;).</p>
+<p>Using ECDH immediately protects against passive eavesdropping. MITM-protection works similarly
+to what <em>LE Legacy Pairing</em> attempted to do, but is actually relevant here since the base key
+exchange isn't broken to begin with. There are several user confirmation processes that can
+offer MITM-protection:</p>
+<ul>
+<li><em>&quot;Just Works&quot;</em>: No MITM-protection. Uses the <em>Numeric Comparison</em> protocol internally, with
+automatic confirmation.</li>
+<li><em>Numeric Comparison</em>: Both devices display a 6-digit confirmation value and the user is
+required to compare them and confirm on each device if they're equal.</li>
+<li><em>Passkey Entry</em>: Either a generated passkey is displayed on one device and input on the other,
+or the user inputs the same passkey into both devices.</li>
+<li><em>Out-of-Band</em> (OOB): An Out-of-Band mechanism is used to exchange random nonces and confirm
+values. The mechanism has to be secure against MITM.</li>
+</ul>
+<h2 id="le-privacy" class="section-header"><a href="#le-privacy">LE Privacy</a></h2>
+<p>BLE devices are normally extremely easy to track. Since many people use BLE devices, and device
+addresses are device-unique, they can be very easily used to identify and track people just by
+recording BLE advertisements.</p>
+<p>The LE privacy feature can prevent this by changing the device address over time. Bonded devices
+can still <em>resolve</em> this address by using a shared <strong>I</strong>dentity <strong>R</strong>esolving <strong>K</strong>ey (IRK).</p>
+<p>This feature is not related to encryption or authentication of connections.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table><tr class='module-item'><td><a class="struct" href="struct.AuthReq.html" title='rubble::security::AuthReq struct'>AuthReq</a></td><td class='docblock-short'><p>Authentication requirements exchanged during pairing requests.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.KeyDistribution.html" title='rubble::security::KeyDistribution struct'>KeyDistribution</a></td><td class='docblock-short'><p>Indicates which types of keys a device requests for distribution.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.NoSecurity.html" title='rubble::security::NoSecurity struct'>NoSecurity</a></td><td class='docblock-short'><p><em>LE Secure Connections</em> are not supported and will not be established.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.SecureConnections.html" title='rubble::security::SecureConnections struct'>SecureConnections</a></td><td class='docblock-short'><p>Indicates support for <em>LE Secure Connections</em>.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.SecurityManager.html" title='rubble::security::SecurityManager struct'>SecurityManager</a></td><td class='docblock-short'><p>The LE Security Manager.</p>
+</td></tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table><tr class='module-item'><td><a class="enum" href="enum.BondingType.html" title='rubble::security::BondingType enum'>BondingType</a></td><td class='docblock-short'><p>Whether to perform bonding in addition to pairing.</p>
+</td></tr><tr class='module-item'><td><a class="enum" href="enum.IoCapabilities.html" title='rubble::security::IoCapabilities enum'>IoCapabilities</a></td><td class='docblock-short'><p>Describes the I/O capabilities of a device that can be used for the pairing process.</p>
+</td></tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table><tr class='module-item'><td><a class="trait" href="trait.SecurityLevel.html" title='rubble::security::SecurityLevel trait'>SecurityLevel</a></td><td class='docblock-short'><p>Supported security levels.</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "rubble";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script defer src="../../search-index.js"></script></body></html>

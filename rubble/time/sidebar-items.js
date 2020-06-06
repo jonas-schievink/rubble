@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Duration","A duration with microsecond resolution."],["Instant","A point in time, relative to an unspecfied epoch."]],"trait":[["Timer","Trait for time providers."]]});

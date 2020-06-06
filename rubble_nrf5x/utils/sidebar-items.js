@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["get_device_address","Return the `DeviceAddress`, which is pre-programmed in the device FICR (Factory information configuration registers)."]]});

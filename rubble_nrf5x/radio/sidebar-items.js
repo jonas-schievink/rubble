@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["BleRadio","An interface to the nRF radio in BLE mode."]],"type":[["PacketBuffer","A packet buffer that can hold header and payload of any advertising or data channel packet."]]});

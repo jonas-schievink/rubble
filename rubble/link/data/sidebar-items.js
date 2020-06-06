@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Llid","Values of the LLID field in `Header`."],["Pdu","Structured representation of a data channel PDU."]],"struct":[["Header","16-bit data channel header preceding the payload."]]});

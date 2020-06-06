@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Beacon","A BLE beacon."],["BeaconScanner","A passive scanner for non-connectable beacon advertisements."]],"trait":[["ScanCallback","Callback for the `BeaconScanner`."]]});

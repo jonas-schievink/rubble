@@ -1,0 +1,389 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/ecdh/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<span id="2">  2</span>
+<span id="3">  3</span>
+<span id="4">  4</span>
+<span id="5">  5</span>
+<span id="6">  6</span>
+<span id="7">  7</span>
+<span id="8">  8</span>
+<span id="9">  9</span>
+<span id="10"> 10</span>
+<span id="11"> 11</span>
+<span id="12"> 12</span>
+<span id="13"> 13</span>
+<span id="14"> 14</span>
+<span id="15"> 15</span>
+<span id="16"> 16</span>
+<span id="17"> 17</span>
+<span id="18"> 18</span>
+<span id="19"> 19</span>
+<span id="20"> 20</span>
+<span id="21"> 21</span>
+<span id="22"> 22</span>
+<span id="23"> 23</span>
+<span id="24"> 24</span>
+<span id="25"> 25</span>
+<span id="26"> 26</span>
+<span id="27"> 27</span>
+<span id="28"> 28</span>
+<span id="29"> 29</span>
+<span id="30"> 30</span>
+<span id="31"> 31</span>
+<span id="32"> 32</span>
+<span id="33"> 33</span>
+<span id="34"> 34</span>
+<span id="35"> 35</span>
+<span id="36"> 36</span>
+<span id="37"> 37</span>
+<span id="38"> 38</span>
+<span id="39"> 39</span>
+<span id="40"> 40</span>
+<span id="41"> 41</span>
+<span id="42"> 42</span>
+<span id="43"> 43</span>
+<span id="44"> 44</span>
+<span id="45"> 45</span>
+<span id="46"> 46</span>
+<span id="47"> 47</span>
+<span id="48"> 48</span>
+<span id="49"> 49</span>
+<span id="50"> 50</span>
+<span id="51"> 51</span>
+<span id="52"> 52</span>
+<span id="53"> 53</span>
+<span id="54"> 54</span>
+<span id="55"> 55</span>
+<span id="56"> 56</span>
+<span id="57"> 57</span>
+<span id="58"> 58</span>
+<span id="59"> 59</span>
+<span id="60"> 60</span>
+<span id="61"> 61</span>
+<span id="62"> 62</span>
+<span id="63"> 63</span>
+<span id="64"> 64</span>
+<span id="65"> 65</span>
+<span id="66"> 66</span>
+<span id="67"> 67</span>
+<span id="68"> 68</span>
+<span id="69"> 69</span>
+<span id="70"> 70</span>
+<span id="71"> 71</span>
+<span id="72"> 72</span>
+<span id="73"> 73</span>
+<span id="74"> 74</span>
+<span id="75"> 75</span>
+<span id="76"> 76</span>
+<span id="77"> 77</span>
+<span id="78"> 78</span>
+<span id="79"> 79</span>
+<span id="80"> 80</span>
+<span id="81"> 81</span>
+<span id="82"> 82</span>
+<span id="83"> 83</span>
+<span id="84"> 84</span>
+<span id="85"> 85</span>
+<span id="86"> 86</span>
+<span id="87"> 87</span>
+<span id="88"> 88</span>
+<span id="89"> 89</span>
+<span id="90"> 90</span>
+<span id="91"> 91</span>
+<span id="92"> 92</span>
+<span id="93"> 93</span>
+<span id="94"> 94</span>
+<span id="95"> 95</span>
+<span id="96"> 96</span>
+<span id="97"> 97</span>
+<span id="98"> 98</span>
+<span id="99"> 99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+</pre><div class="example-wrap"><pre class="rust ">
+<span class="doccomment">//! Elliptic Curve Diffie-Hellman (ECDH) on P-256.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! BLE uses ECDH on P-256 for pairing. This module provides an interface for plugging in different</span>
+<span class="doccomment">//! implementations of the P-256 operations. The main consumer of this module is the [`security`]</span>
+<span class="doccomment">//! module; refer to that for more info about pairing and encryption in BLE.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! The primary trait in this module is [`EcdhProvider`]. Rubble comes with 2 built-in</span>
+<span class="doccomment">//! implementations of that trait:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! * [`P256Provider`] and [`P256SecretKey`]: These use the pure-Rust [`p256`] crate and are always</span>
+<span class="doccomment">//!   available.</span>
+<span class="doccomment">//! * [`RingProvider`] and [`RingSecretKey`] (behind the **`ring`** Cargo feature): These use the</span>
+<span class="doccomment">//!   [*ring*][ring] library to provide the operations. Note that *ring* does not support</span>
+<span class="doccomment">//!   `#![no_std]` operation, so this is mostly useful for tests and other non-embedded usage.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! [`security`]: ../security/index.html</span>
+<span class="doccomment">//! [`EcdhProvider`]: trait.EcdhProvider.html</span>
+<span class="doccomment">//! [`P256Provider`]: struct.P256Provider.html</span>
+<span class="doccomment">//! [`P256SecretKey`]: struct.P256SecretKey.html</span>
+<span class="doccomment">//! [`RingProvider`]: struct.RingProvider.html</span>
+<span class="doccomment">//! [`RingSecretKey`]: struct.RingSecretKey.html</span>
+<span class="doccomment">//! [ring]: https://github.com/briansmith/ring</span>
+<span class="doccomment">//! [`p256`]: https://docs.rs/p256</span>
+
+<span class="kw">mod</span> <span class="ident">p256</span>;
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">p256</span>::<span class="kw-2">*</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;ring&quot;</span>)]</span>
+<span class="kw">mod</span> <span class="ident">ring</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;ring&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">ring</span>::<span class="kw-2">*</span>;
+
+<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">fmt</span>;
+<span class="kw">use</span> <span class="ident">rand_core</span>::{<span class="ident">CryptoRng</span>, <span class="ident">RngCore</span>};
+
+<span class="doccomment">/// A P-256 public key (point on the curve) in uncompressed format.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// The encoding is as specified in *[SEC 1: Elliptic Curve Cryptography]*, but without the leading</span>
+<span class="doccomment">/// byte: The first 32 Bytes are the big-endian encoding of the point&#39;s X coordinate, and the</span>
+<span class="doccomment">/// remaining 32 Bytes are the Y coordinate, encoded the same way.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Note that this type does not provide any validity guarantees (unlike [`PrivateKey`]</span>
+<span class="doccomment">/// implementors): It is possible to represent invalid public P-256 keys, such as the point at</span>
+<span class="doccomment">/// infinity, with this type. The other APIs in this module are designed to take that into account.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [SEC 1: Elliptic Curve Cryptography]: http://www.secg.org/sec1-v2.pdf</span>
+<span class="doccomment">/// [`PrivateKey`]: trait.PrivateKey.html</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PublicKey</span>(<span class="kw">pub</span> [<span class="ident">u8</span>; <span class="number">64</span>]);
+
+<span class="doccomment">/// A shared secret resulting from an ECDH key agreement.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This is returned by implementations of [`SecretKey::agree`].</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [`SecretKey::agree`]: trait.SecretKey.html#tymethod.agree</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SharedSecret</span>(<span class="kw">pub</span> [<span class="ident">u8</span>; <span class="number">32</span>]);
+
+<span class="doccomment">/// Error returned by [`SecretKey::agree`] when the public key of the other party is invalid.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [`SecretKey::agree`]: trait.SecretKey.html#tymethod.agree</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InvalidPublicKey</span> {}
+
+<span class="kw">impl</span> <span class="ident">InvalidPublicKey</span> {
+    <span class="doccomment">/// Creates a new `InvalidPublicKey` error.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {}
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">InvalidPublicKey</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="ident">f</span>.<span class="ident">write_str</span>(<span class="string">&quot;invalid public key&quot;</span>)
+    }
+}
+
+<span class="doccomment">/// Trait for ECDH providers.</span>
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">EcdhProvider</span> {
+    <span class="doccomment">/// Provider-defined secret key type.</span>
+    <span class="kw">type</span> <span class="ident">SecretKey</span>: <span class="ident">SecretKey</span>;
+
+    <span class="doccomment">/// Generates a P-256 key pair using cryptographically strong randomness.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Implementors must ensure that they only return valid private/public key pairs from this</span>
+    <span class="doccomment">/// method.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Rubble will pass a cryptographically secure random number generator `rng` to this function</span>
+    <span class="doccomment">/// that may be used to obtain entropy for key generation. Implementations may also use their</span>
+    <span class="doccomment">/// own RNG if they so choose.</span>
+    <span class="kw">fn</span> <span class="ident">generate_keypair</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span>::<span class="ident">SecretKey</span>, <span class="ident">PublicKey</span>)
+    <span class="kw">where</span>
+        <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>;
+}
+
+<span class="doccomment">/// Secret key operations required by Rubble.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This API imposes no requirements on the representation or location of secret keys. This means</span>
+<span class="doccomment">/// that it should be possible to implement this trait even for keys stored in some secure key</span>
+<span class="doccomment">/// storage like a smartcard.</span>
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">SecretKey</span>: <span class="ident">Sized</span> {
+    <span class="doccomment">/// Performs ECDH key agreement using an ephemeral secret key `self` and the public key of the</span>
+    <span class="doccomment">/// other party.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Here, &quot;ephemeral&quot; just means that this method takes `self` by value. This allows</span>
+    <span class="doccomment">/// implementing `SecretKey` for providers that enforce single-use keys using Rust ownership</span>
+    <span class="doccomment">/// (like *ring*).</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Errors</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// If `foreign_key` is an invalid public key, implementors must return an error.</span>
+    <span class="kw">fn</span> <span class="ident">agree</span>(<span class="self">self</span>, <span class="ident">foreign_key</span>: <span class="kw-2">&amp;</span><span class="ident">PublicKey</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SharedSecret</span>, <span class="ident">InvalidPublicKey</span><span class="op">&gt;</span>;
+}
+
+<span class="doccomment">/// Runs Rubble&#39;s P-256 provider testsuite against `provider`.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Note that this is just a quick smoke test that does not provide any assurance about security</span>
+<span class="doccomment">/// properties. The P-256 provider should have a dedicated test suite.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run_tests</span>(<span class="kw-2">mut</span> <span class="ident">provider</span>: <span class="kw">impl</span> <span class="ident">EcdhProvider</span>) {
+    <span class="kw">static</span> <span class="ident">RNG</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="kw-2">&amp;</span>[
+        <span class="number">0x1e</span>, <span class="number">0x66</span>, <span class="number">0x81</span>, <span class="number">0xb6</span>, <span class="number">0xa3</span>, <span class="number">0x4e</span>, <span class="number">0x06</span>, <span class="number">0x97</span>, <span class="number">0x75</span>, <span class="number">0xbe</span>, <span class="number">0xd4</span>, <span class="number">0x5c</span>, <span class="number">0xf9</span>, <span class="number">0x52</span>, <span class="number">0x3f</span>,
+        <span class="number">0xf1</span>, <span class="number">0x5b</span>, <span class="number">0x6a</span>, <span class="number">0x72</span>, <span class="number">0xe2</span>, <span class="number">0xb8</span>, <span class="number">0x35</span>, <span class="number">0xb3</span>, <span class="number">0x29</span>, <span class="number">0x5e</span>, <span class="number">0xe0</span>, <span class="number">0xbb</span>, <span class="number">0x92</span>, <span class="number">0x35</span>, <span class="number">0xa5</span>,
+        <span class="number">0xb9</span>, <span class="number">0x60</span>, <span class="number">0xc9</span>, <span class="number">0xaf</span>, <span class="number">0xe2</span>, <span class="number">0x72</span>, <span class="number">0x12</span>, <span class="number">0xf1</span>, <span class="number">0xc4</span>, <span class="number">0xfc</span>, <span class="number">0x10</span>, <span class="number">0x2d</span>, <span class="number">0x63</span>, <span class="number">0x2f</span>, <span class="number">0x05</span>,
+        <span class="number">0xd6</span>, <span class="number">0xe5</span>, <span class="number">0x0a</span>, <span class="number">0xbf</span>, <span class="number">0x2c</span>, <span class="number">0xb9</span>, <span class="number">0x02</span>, <span class="number">0x3a</span>, <span class="number">0x67</span>, <span class="number">0x23</span>, <span class="number">0x63</span>, <span class="number">0x36</span>, <span class="number">0x7a</span>, <span class="number">0x62</span>, <span class="number">0xe6</span>,
+        <span class="number">0x63</span>, <span class="number">0xce</span>, <span class="number">0x28</span>, <span class="number">0x98</span>,
+    ];
+
+    <span class="comment">// Pretend-RNG that returns a fixed sequence of pregenerated numbers. Do not do this outside of</span>
+    <span class="comment">// tests.</span>
+    <span class="kw">struct</span> <span class="ident">Rng</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> [<span class="ident">u8</span>]);
+
+    <span class="kw">impl</span> <span class="ident">RngCore</span> <span class="kw">for</span> <span class="ident">Rng</span> {
+        <span class="kw">fn</span> <span class="ident">next_u32</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u32</span> {
+            <span class="ident">rand_core</span>::<span class="ident">impls</span>::<span class="ident">next_u32_via_fill</span>(<span class="self">self</span>)
+        }
+        <span class="kw">fn</span> <span class="ident">next_u64</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="ident">rand_core</span>::<span class="ident">impls</span>::<span class="ident">next_u64_via_fill</span>(<span class="self">self</span>)
+        }
+        <span class="kw">fn</span> <span class="ident">fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">dest</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">u8</span>]) {
+            <span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">dest</span>.<span class="ident">len</span>() {
+                <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;p256::run_tests: ran out of pregenerated entropy&quot;</span>);
+            }
+
+            <span class="kw">for</span> <span class="ident">chunk</span> <span class="kw">in</span> <span class="ident">dest</span>.<span class="ident">chunks_mut</span>(<span class="self">self</span>.<span class="number">0</span>.<span class="ident">len</span>()) {
+                <span class="ident">chunk</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[..<span class="ident">chunk</span>.<span class="ident">len</span>()]);
+                <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[<span class="ident">chunk</span>.<span class="ident">len</span>()..];
+            }
+        }
+        <span class="kw">fn</span> <span class="ident">try_fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">dest</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">rand_core</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
+            <span class="self">self</span>.<span class="ident">fill_bytes</span>(<span class="ident">dest</span>);
+            <span class="prelude-val">Ok</span>(())
+        }
+    }
+
+    <span class="kw">impl</span> <span class="ident">CryptoRng</span> <span class="kw">for</span> <span class="ident">Rng</span> {}
+
+    <span class="comment">// Test that different key pairs will be generated:</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">Rng</span>(<span class="ident">RNG</span>);
+    <span class="kw">let</span> (<span class="ident">secret1</span>, <span class="ident">public1</span>) <span class="op">=</span> <span class="ident">provider</span>.<span class="ident">generate_keypair</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+    <span class="kw">let</span> (<span class="ident">secret2</span>, <span class="ident">public2</span>) <span class="op">=</span> <span class="ident">provider</span>.<span class="ident">generate_keypair</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+    <span class="macro">assert_ne</span><span class="macro">!</span>(<span class="kw-2">&amp;</span><span class="ident">public1</span>.<span class="number">0</span>[..], <span class="kw-2">&amp;</span><span class="ident">public2</span>.<span class="number">0</span>[..]);
+
+    <span class="comment">// Test that ECDH agreement results in the same shared secret:</span>
+    <span class="kw">let</span> <span class="ident">shared1</span> <span class="op">=</span> <span class="ident">secret1</span>.<span class="ident">agree</span>(<span class="kw-2">&amp;</span><span class="ident">public2</span>).<span class="ident">unwrap</span>();
+    <span class="kw">let</span> <span class="ident">shared2</span> <span class="op">=</span> <span class="ident">secret2</span>.<span class="ident">agree</span>(<span class="kw-2">&amp;</span><span class="ident">public1</span>).<span class="ident">unwrap</span>();
+    <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">shared1</span>.<span class="number">0</span>, <span class="ident">shared2</span>.<span class="number">0</span>);
+
+    <span class="comment">// Now, test that ECDH agreement with invalid public keys fails correctly.</span>
+
+    <span class="comment">// Point at infinity is an invalid public key:</span>
+    <span class="kw">let</span> <span class="ident">infty</span> <span class="op">=</span> <span class="ident">PublicKey</span>([<span class="number">0</span>; <span class="number">64</span>]);
+    <span class="kw">let</span> (<span class="ident">secret</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">provider</span>.<span class="ident">generate_keypair</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Rng</span>(<span class="ident">RNG</span>));
+    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">secret</span>.<span class="ident">agree</span>(<span class="kw-2">&amp;</span><span class="ident">infty</span>).<span class="ident">is_err</span>());
+
+    <span class="comment">// Malicious public key not on the curve:</span>
+    <span class="comment">// (taken from https://web-in-security.blogspot.com/2015/09/practical-invalid-curve-attacks.html)</span>
+    <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> [
+        <span class="number">0xb7</span>, <span class="number">0x0b</span>, <span class="number">0xf0</span>, <span class="number">0x43</span>, <span class="number">0xc1</span>, <span class="number">0x44</span>, <span class="number">0x93</span>, <span class="number">0x57</span>, <span class="number">0x56</span>, <span class="number">0xf8</span>, <span class="number">0xf4</span>, <span class="number">0x57</span>, <span class="number">0x8c</span>, <span class="number">0x36</span>, <span class="number">0x9c</span>,
+        <span class="number">0xf9</span>, <span class="number">0x60</span>, <span class="number">0xee</span>, <span class="number">0x51</span>, <span class="number">0x0a</span>, <span class="number">0x5a</span>, <span class="number">0x0f</span>, <span class="number">0x90</span>, <span class="number">0xe9</span>, <span class="number">0x3a</span>, <span class="number">0x37</span>, <span class="number">0x3a</span>, <span class="number">0x21</span>, <span class="number">0xf0</span>, <span class="number">0xd1</span>,
+        <span class="number">0x39</span>, <span class="number">0x7f</span>,
+    ];
+    <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> [
+        <span class="number">0x4a</span>, <span class="number">0x2e</span>, <span class="number">0x0d</span>, <span class="number">0xed</span>, <span class="number">0x57</span>, <span class="number">0xa5</span>, <span class="number">0x15</span>, <span class="number">0x6b</span>, <span class="number">0xb8</span>, <span class="number">0x2e</span>, <span class="number">0xb4</span>, <span class="number">0x31</span>, <span class="number">0x4c</span>, <span class="number">0x37</span>, <span class="number">0xfd</span>,
+        <span class="number">0x41</span>, <span class="number">0x55</span>, <span class="number">0x39</span>, <span class="number">0x5a</span>, <span class="number">0x7e</span>, <span class="number">0x51</span>, <span class="number">0x98</span>, <span class="number">0x8a</span>, <span class="number">0xf2</span>, <span class="number">0x89</span>, <span class="number">0xcc</span>, <span class="number">0xe5</span>, <span class="number">0x31</span>, <span class="number">0xb9</span>, <span class="number">0xc1</span>,
+        <span class="number">0x71</span>, <span class="number">0x92</span>,
+    ];
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">key</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">64</span>];
+    <span class="ident">key</span>[..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">x</span>);
+    <span class="ident">key</span>[<span class="number">32</span>..].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">y</span>);
+
+    <span class="kw">let</span> (<span class="ident">secret</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">provider</span>.<span class="ident">generate_keypair</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Rng</span>(<span class="ident">RNG</span>));
+    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">secret</span>.<span class="ident">agree</span>(<span class="kw-2">&amp;</span><span class="ident">PublicKey</span>(<span class="ident">key</span>)).<span class="ident">is_err</span>());
+}
+</pre></div>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "rubble";</script><script src="../../../aliases.js"></script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>

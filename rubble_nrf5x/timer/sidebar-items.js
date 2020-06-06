@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["BleTimer","Implements Rubble's `Timer` trait for the timers on the nRF chip."],["StampSource","A timer interface that only allows reading the current time stamp."]],"trait":[["NrfTimerExt","Extension trait implemented for the nRF timer peripherals."]]});
