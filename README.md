@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/rubble.svg)](https://crates.io/crates/rubble)
 [![docs.rs](https://docs.rs/rubble/badge.svg)](https://docs.rs/rubble/)
-[![Build Status](https://travis-ci.org/jonas-schievink/rubble.svg?branch=master)](https://travis-ci.org/jonas-schievink/rubble)
+![CI](https://github.com/jonas-schievink/rubble/workflows/CI/badge.svg)
 
 Rubble is a Bluetooth® Low Energy compatible protocol stack for embedded Rust.
 
