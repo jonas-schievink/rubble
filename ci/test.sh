@@ -58,3 +58,4 @@ cargo fmt --all -- --check
     cd rubble-docs
     cargo doc --no-deps -p rubble -p rubble-nrf5x
 )
+echo "<meta http-equiv=refresh content=0;url=rubble/index.html>" > target/doc/index.html
