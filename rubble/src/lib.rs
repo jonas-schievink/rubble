@@ -24,6 +24,7 @@
 // Deny a few warnings in doctests, since rustdoc `allow`s many warnings by default
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
 #![warn(rust_2018_idioms)]
+#![forbid(safe_packed_borrows)]
 // The claims of this lint are dubious, disable it
 #![allow(clippy::trivially_copy_pass_by_ref)]
 

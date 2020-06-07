@@ -1,169 +1,144 @@
 //! Defines packet structures used by the Link Layer Control Protocol.
 
+use crate::bytes::{self, *};
 use crate::link::{channel_map::ChannelMap, comp_id::CompanyId, features::FeatureSet};
-use crate::{bytes::*, time::Duration, utils::Hex, Error};
+use crate::{time::Duration, utils::Hex, Error};
 use core::{cmp, convert::TryInto};
+use zerocopy::{AsBytes, FromBytes, Unaligned};
 
-/// A connection parameter update request or response (`LL_CONNECTION_PARAM_REQ`/
-/// `LL_CONNECTION_PARAM_RSP`).
-#[derive(Debug, Copy, Clone)]
-pub struct ConnectionParamRequest {
-    interval_min: u16,
-    interval_max: u16,
-    slave_latency: u16,
-    supervision_timeout: u16,
-    /// `connInterval` is preferred to be a multiple of this value (in 1.25 ms steps).
-    preferred_periodicity: u8,
-    reference_conn_event_count: u16,
-    offsets: [u16; 6],
-}
+/// An undecoded LLCP PDU.
+pub struct RawPdu<T>(T);
 
-impl ConnectionParamRequest {
-    /// Creates a new connection update request structure filled with default values.
-    ///
-    /// The returned structure will use conservative (maximally permissive) default values that will
-    /// not usually result in a change in connection parameters, so users of this function likely
-    /// want to call a setter afterwards.
-    pub fn new() -> Self {
-        Self {
-            interval_min: 6,    // 7.5ms
-            interval_max: 3200, // 4s
-            slave_latency: 0,
-            supervision_timeout: 100,      // FIXME (unsure; 1s)
-            preferred_periodicity: 0,      // not valid
-            reference_conn_event_count: 0, // irrelevant
-            offsets: [0xFFFF; 6],          // none valid
-        }
+impl<T: AsRef<[u8]>> RawPdu<T> {
+    pub fn new(buf: T) -> Self {
+        RawPdu(buf)
     }
 
-    /// Sets the minimum and maximum requested connection interval.
-    ///
-    /// # Parameters
-    ///
-    /// * `min`: Minimum connection interval to request.
-    /// * `max`: Maximum connection interval to request.
-    ///
-    /// Both `min` and `max` must be in range 7.5ms to 4s, or they will be constrained to lie in
-    /// that range.
-    ///
-    /// Both `min` and `max` will be rounded down to units of 1.25 ms.
-    ///
-    /// # Panics
-    ///
-    /// This will panic if `min > max`.
-    pub fn set_conn_interval(&mut self, min: Duration, max: Duration) {
-        assert!(min <= max);
-
-        // Convert and round to units of 1.25 ms.
-        let max = max.as_micros() / 1_250;
-        let min = min.as_micros() / 1_250;
-
-        // Clamp to valid range of 6..=3200
-        let min = cmp::min(cmp::max(min, 6), 3200);
-        let max = cmp::min(cmp::max(max, 6), 3200);
-        debug_assert!(min <= max);
-        self.interval_min = min as u16;
-        self.interval_max = max as u16;
-    }
-
-    /// Returns the minimum requested connection interval.
-    pub fn min_conn_interval(&self) -> Duration {
-        Duration::from_micros(u32::from(self.interval_min) * 1_250)
-    }
-
-    /// Returns the maximum requested connection interval.
-    pub fn max_conn_interval(&self) -> Duration {
-        Duration::from_micros(u32::from(self.interval_max) * 1_250)
-    }
-
-    /// Returns the slave latency in number of connection events.
-    pub fn slave_latency(&self) -> u16 {
-        self.slave_latency
-    }
-
-    /// Returns the supervision timeout.
-    pub fn supervision_timeout(&self) -> Duration {
-        Duration::from_millis(self.supervision_timeout * 10)
-    }
-}
-
-impl<'a> FromBytes<'a> for ConnectionParamRequest {
-    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
-        Ok(Self {
-            interval_min: bytes.read_u16_le()?,
-            interval_max: bytes.read_u16_le()?,
-            slave_latency: bytes.read_u16_le()?,
-            supervision_timeout: bytes.read_u16_le()?,
-            preferred_periodicity: bytes.read_u8()?,
-            reference_conn_event_count: bytes.read_u16_le()?,
-            offsets: [
-                bytes.read_u16_le()?,
-                bytes.read_u16_le()?,
-                bytes.read_u16_le()?,
-                bytes.read_u16_le()?,
-                bytes.read_u16_le()?,
-                bytes.read_u16_le()?,
-            ],
+    /// Decodes the LLCP opcode, returning a structured representation of the PDU.
+    pub fn decode(&self) -> Option<Pdu<'_>> {
+        let bytes = self.0.as_ref();
+        let (opcode, data) = bytes.split_first()?;
+        Some(match ControlOpcode::from(*opcode) {
+            ControlOpcode::ConnectionUpdateReq => Pdu::ConnectionUpdateReq(data.decode_as()?),
+            ControlOpcode::ChannelMapReq => Pdu::ChannelMapReq(data.decode_as()?),
+            ControlOpcode::TerminateInd => Pdu::TerminateInd(data.decode_as()?),
+            ControlOpcode::EncReq => Pdu::EncReq(data.decode_as()?),
+            ControlOpcode::EncRsp => Pdu::EncRsp(data.decode_as()?),
+            ControlOpcode::StartEncReq => Pdu::StartEncReq(data.decode_as()?),
+            ControlOpcode::StartEncRsp => Pdu::StartEncRsp(data.decode_as()?),
+            ControlOpcode::UnknownRsp => Pdu::UnknownRsp(data.decode_as()?),
+            ControlOpcode::FeatureReq => Pdu::FeatureReq(data.decode_as()?),
+            ControlOpcode::FeatureRsp => Pdu::FeatureRsp(data.decode_as()?),
+            ControlOpcode::PauseEncReq => Pdu::PauseEncReq(data.decode_as()?),
+            ControlOpcode::PauseEncRsp => Pdu::PauseEncRsp(data.decode_as()?),
+            ControlOpcode::VersionInd => Pdu::VersionInd(data.decode_as()?),
+            ControlOpcode::RejectInd => Pdu::RejectInd(data.decode_as()?),
+            ControlOpcode::SlaveFeatureReq => Pdu::SlaveFeatureReq(data.decode_as()?),
+            ControlOpcode::ConnectionParamReq => Pdu::ConnectionParamReq(data.decode_as()?),
+            ControlOpcode::ConnectionParamRsp => Pdu::ConnectionParamRsp(data.decode_as()?),
+            ControlOpcode::RejectIndExt => Pdu::RejectIndExt(data.decode_as()?),
+            ControlOpcode::PingReq => Pdu::PingReq(data.decode_as()?),
+            ControlOpcode::PingRsp => Pdu::PingRsp(data.decode_as()?),
+            ControlOpcode::LengthReq => Pdu::LengthReq(data.decode_as()?),
+            ControlOpcode::LengthRsp => Pdu::LengthRsp(data.decode_as()?),
+            ControlOpcode::Unknown(_) => return None,
         })
     }
-}
 
-impl ToBytes for ConnectionParamRequest {
-    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
-        writer.write_u16_le(self.interval_min)?;
-        writer.write_u16_le(self.interval_max)?;
-        writer.write_u16_le(self.slave_latency)?;
-        writer.write_u16_le(self.supervision_timeout)?;
-        writer.write_u8(self.preferred_periodicity)?;
-        writer.write_u16_le(self.reference_conn_event_count)?;
-        for offset in &self.offsets {
-            writer.write_u16_le(*offset)?;
-        }
-        Ok(())
+    pub fn opcode(&self) -> Option<ControlOpcode> {
+        let bytes = self.0.as_ref();
+        Some(ControlOpcode::from(*bytes.get(0)?))
     }
 }
 
-/// Data transmitted with an `LL_CONNECTION_UPDATE_REQ` Control PDU, containing a new set of
-/// connection parameters.
+/// Structured representation of an LLCP PDU.
 #[derive(Debug, Copy, Clone)]
-pub struct ConnectionUpdateData {
-    win_size: u8,
-    win_offset: u16,
-    interval: u16,
-    latency: u16,
-    timeout: u16,
-    instant: u16,
+pub enum Pdu<'a> {
+    ConnectionUpdateReq(&'a ConnectionUpdateReq),
+    ChannelMapReq(&'a ChannelMapReq),
+    TerminateInd(&'a TerminateInd),
+    EncReq(&'a EncReq),
+    EncRsp(&'a EncRsp),
+    StartEncReq(&'a StartEncReq),
+    StartEncRsp(&'a StartEncRsp),
+    UnknownRsp(&'a UnknownRsp),
+    FeatureReq(&'a FeatureReq),
+    FeatureRsp(&'a FeatureRsp),
+    PauseEncReq(&'a PauseEncReq),
+    PauseEncRsp(&'a PauseEncRsp),
+    VersionInd(&'a VersionInd),
+    RejectInd(&'a RejectInd),
+    SlaveFeatureReq(&'a SlaveFeatureReq),
+    ConnectionParamReq(&'a ConnectionParamReq),
+    ConnectionParamRsp(&'a ConnectionParamRsp),
+    RejectIndExt(&'a RejectIndExt),
+    PingReq(&'a PingReq),
+    PingRsp(&'a PingRsp),
+    LengthReq(&'a LengthReq),
+    LengthRsp(&'a LengthRsp),
 }
 
-impl ConnectionUpdateData {
-    /// Returns the size of the transmit window for the first PDU of the connection.
-    pub fn win_size(&self) -> Duration {
-        Duration::from_micros(u32::from(self.win_size) * 1_250)
+impl<'a> Pdu<'a> {
+    fn opcode(&self) -> ControlOpcode {
+        match self {
+            Pdu::ConnectionUpdateReq(_) => ControlOpcode::ConnectionUpdateReq,
+            Pdu::ChannelMapReq(_) => ControlOpcode::ChannelMapReq,
+            Pdu::TerminateInd(_) => ControlOpcode::TerminateInd,
+            Pdu::EncReq(_) => ControlOpcode::EncReq,
+            Pdu::EncRsp(_) => ControlOpcode::EncRsp,
+            Pdu::StartEncReq(_) => ControlOpcode::StartEncReq,
+            Pdu::StartEncRsp(_) => ControlOpcode::StartEncRsp,
+            Pdu::UnknownRsp(_) => ControlOpcode::UnknownRsp,
+            Pdu::FeatureReq(_) => ControlOpcode::FeatureReq,
+            Pdu::FeatureRsp(_) => ControlOpcode::FeatureRsp,
+            Pdu::PauseEncReq(_) => ControlOpcode::PauseEncReq,
+            Pdu::PauseEncRsp(_) => ControlOpcode::PauseEncRsp,
+            Pdu::VersionInd(_) => ControlOpcode::VersionInd,
+            Pdu::RejectInd(_) => ControlOpcode::RejectInd,
+            Pdu::SlaveFeatureReq(_) => ControlOpcode::SlaveFeatureReq,
+            Pdu::ConnectionParamReq(_) => ControlOpcode::ConnectionParamReq,
+            Pdu::ConnectionParamRsp(_) => ControlOpcode::ConnectionParamRsp,
+            Pdu::RejectIndExt(_) => ControlOpcode::RejectIndExt,
+            Pdu::PingReq(_) => ControlOpcode::PingReq,
+            Pdu::PingRsp(_) => ControlOpcode::PingRsp,
+            Pdu::LengthReq(_) => ControlOpcode::LengthReq,
+            Pdu::LengthRsp(_) => ControlOpcode::LengthRsp,
+        }
     }
 
-    /// Returns the offset of the transmit window, as a duration since the `instant`.
-    pub fn win_offset(&self) -> Duration {
-        Duration::from_micros(u32::from(self.win_offset) * 1_250)
+    fn ctr_data(&self) -> &[u8] {
+        match self {
+            Pdu::ConnectionUpdateReq(it) => it.as_bytes(),
+            Pdu::ChannelMapReq(it) => it.as_bytes(),
+            Pdu::TerminateInd(it) => it.as_bytes(),
+            Pdu::EncReq(it) => it.as_bytes(),
+            Pdu::EncRsp(it) => it.as_bytes(),
+            Pdu::StartEncReq(it) => it.as_bytes(),
+            Pdu::StartEncRsp(it) => it.as_bytes(),
+            Pdu::UnknownRsp(it) => it.as_bytes(),
+            Pdu::FeatureReq(it) => it.as_bytes(),
+            Pdu::FeatureRsp(it) => it.as_bytes(),
+            Pdu::PauseEncReq(it) => it.as_bytes(),
+            Pdu::PauseEncRsp(it) => it.as_bytes(),
+            Pdu::VersionInd(it) => it.as_bytes(),
+            Pdu::RejectInd(it) => it.as_bytes(),
+            Pdu::SlaveFeatureReq(it) => it.as_bytes(),
+            Pdu::ConnectionParamReq(it) => it.as_bytes(),
+            Pdu::ConnectionParamRsp(it) => it.as_bytes(),
+            Pdu::RejectIndExt(it) => it.as_bytes(),
+            Pdu::PingReq(it) => it.as_bytes(),
+            Pdu::PingRsp(it) => it.as_bytes(),
+            Pdu::LengthReq(it) => it.as_bytes(),
+            Pdu::LengthRsp(it) => it.as_bytes(),
+        }
     }
+}
 
-    /// Returns the duration between connection events.
-    pub fn interval(&self) -> Duration {
-        Duration::from_micros(u32::from(self.interval) * 1_250)
-    }
-
-    /// Returns the slave latency.
-    pub fn latency(&self) -> u16 {
-        self.latency
-    }
-
-    /// Returns the connection supervision timeout (`connSupervisionTimeout`).
-    pub fn timeout(&self) -> Duration {
-        Duration::from_micros(u32::from(self.timeout) * 10_000)
-    }
-
-    /// Returns the instant at which these changes should take effect.
-    pub fn instant(&self) -> u16 {
-        self.instant
+impl<'a> ToBytes for Pdu<'a> {
+    fn to_bytes(&self, buffer: &mut ByteWriter<'_>) -> Result<(), Error> {
+        buffer.write_u8(self.opcode().into())?;
+        buffer.write_slice(self.ctr_data())?;
+        Ok(())
     }
 }
 
@@ -173,7 +148,7 @@ pub enum ControlPdu<'a> {
     /// `0x00`/`LL_CONNECTION_UPDATE_REQ` - Update connection parameters.
     ///
     /// Sent by the master. The slave does not send a response back.
-    ConnectionUpdateReq(ConnectionUpdateData),
+    ConnectionUpdateReq(ConnectionUpdateReq),
 
     /// `0x01`/`LL_CHANNEL_MAP_REQ` - Update the channel map.
     ///
@@ -222,8 +197,8 @@ pub enum ControlPdu<'a> {
         sub_vers_nr: Hex<u16>,
     },
 
-    ConnectionParamReq(ConnectionParamRequest),
-    ConnectionParamRsp(ConnectionParamRequest),
+    ConnectionParamReq(ConnectionParamReq),
+    ConnectionParamRsp(ConnectionParamRsp),
 
     /// Catch-all variant for unsupported opcodes.
     Unknown {
@@ -294,12 +269,12 @@ impl ControlPdu<'_> {
     }
 }
 
-impl<'a> FromBytes<'a> for ControlPdu<'a> {
+impl<'a> bytes::FromBytes<'a> for ControlPdu<'a> {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let opcode = ControlOpcode::from(bytes.read_u8()?);
         Ok(match opcode {
             ControlOpcode::ConnectionUpdateReq => {
-                ControlPdu::ConnectionUpdateReq(ConnectionUpdateData {
+                ControlPdu::ConnectionUpdateReq(ConnectionUpdateReq {
                     win_size: bytes.read_u8()?,
                     win_offset: bytes.read_u16_le()?,
                     interval: bytes.read_u16_le()?,
@@ -429,6 +404,329 @@ enum_with_unknown! {
     }
 }
 
+/// `LL_CONNECTION_UPDATE_REQ` - Update connection parameters.
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct ConnectionUpdateReq {
+    win_size: u8,
+    win_offset: u16,
+    interval: u16,
+    latency: u16,
+    timeout: u16,
+    instant: u16,
+}
+
+impl ConnectionUpdateReq {
+    /// Returns the size of the transmit window for the first PDU of the connection.
+    pub fn win_size(&self) -> Duration {
+        Duration::from_micros(u32::from(self.win_size) * 1_250)
+    }
+
+    /// Returns the offset of the transmit window, as a duration since the `instant`.
+    pub fn win_offset(&self) -> Duration {
+        Duration::from_micros(u32::from(self.win_offset) * 1_250)
+    }
+
+    /// Returns the duration between connection events.
+    pub fn interval(&self) -> Duration {
+        Duration::from_micros(u32::from(self.interval) * 1_250)
+    }
+
+    /// Returns the slave latency.
+    pub fn latency(&self) -> u16 {
+        self.latency
+    }
+
+    /// Returns the connection supervision timeout (`connSupervisionTimeout`).
+    pub fn timeout(&self) -> Duration {
+        Duration::from_micros(u32::from(self.timeout) * 10_000)
+    }
+
+    /// Returns the instant at which these changes should take effect.
+    pub fn instant(&self) -> u16 {
+        self.instant
+    }
+}
+
+/// `LL_CHANNEL_MAP_REQ` - Update the channel map in use.
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct ChannelMapReq {
+    map: [u8; 5],
+    instant: u16,
+}
+
+impl ChannelMapReq {
+    pub fn channel_map(&self) -> ChannelMap {
+        ChannelMap::from_raw(self.map)
+    }
+
+    pub fn instant(&self) -> u16 {
+        self.instant
+    }
+}
+
+/// `LL_TERMINATE_IND` - Connection termination indication.
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct TerminateInd {
+    error: u8,
+}
+
+/// `LL_ENC_REQ`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct EncReq {
+    rand: [u8; 8],
+    ediv: u16,
+    skdm: [u8; 8],
+    ivm: [u8; 4],
+}
+
+/// `LL_ENC_RSP`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct EncRsp {
+    sdks: [u8; 8],
+    ivs: [u8; 4],
+}
+
+/// `LL_START_END_REQ`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct StartEncReq {
+    _p: (),
+}
+
+/// `LL_START_ENC_RSP`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct StartEncRsp {
+    _p: (),
+}
+
+/// `LL_UNKNOWN_RSP`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct UnknownRsp {
+    unknown_type: u8,
+}
+
+/// `LL_FEATURE_REQ`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct FeatureReq {
+    feature_set: u64,
+}
+
+/// `LL_FEATURE_RSP`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct FeatureRsp {
+    feature_set: u64,
+}
+
+/// `LL_PAUSE_END_REQ`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct PauseEncReq {
+    _p: (),
+}
+
+/// `LL_PAUSE_END_RSP`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct PauseEncRsp {
+    _p: (),
+}
+
+/// `LL_VERSION_IND`.
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct VersionInd {
+    vers_nr: u8,
+    comp_id: u16,
+    sub_vers_nr: u16,
+}
+
+/// `LL_REJECT_IND`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct RejectInd {
+    error_code: u8,
+}
+
+/// `LL_SLAVE_FEATURE_REQ`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct SlaveFeatureReq {
+    feature_set: u64,
+}
+
+impl SlaveFeatureReq {
+    pub fn feature_set(&self) -> FeatureSet {
+        FeatureSet::from_bits_truncate(self.feature_set)
+    }
+}
+
+/// `LL_CONNECTION_PARAM_REQ` - A connection parameter update request.
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct ConnectionParamReq {
+    interval_min: u16,
+    interval_max: u16,
+    slave_latency: u16,
+    supervision_timeout: u16,
+    /// `connInterval` is preferred to be a multiple of this value (in 1.25 ms steps).
+    preferred_periodicity: u8,
+    reference_conn_event_count: u16,
+    offsets: [u16; 6],
+}
+
+impl ConnectionParamReq {
+    /// Creates a new connection update request structure filled with default values.
+    ///
+    /// The returned structure will use conservative (maximally permissive) default values that will
+    /// not usually result in a change in connection parameters, so users of this function likely
+    /// want to call a setter afterwards.
+    pub fn new() -> Self {
+        Self {
+            interval_min: 6,    // 7.5ms
+            interval_max: 3200, // 4s
+            slave_latency: 0,
+            supervision_timeout: 100,      // FIXME (unsure; 1s)
+            preferred_periodicity: 0,      // not valid
+            reference_conn_event_count: 0, // irrelevant
+            offsets: [0xFFFF; 6],          // none valid
+        }
+    }
+
+    /// Sets the minimum and maximum requested connection interval.
+    ///
+    /// # Parameters
+    ///
+    /// * `min`: Minimum connection interval to request.
+    /// * `max`: Maximum connection interval to request.
+    ///
+    /// Both `min` and `max` must be in range 7.5ms to 4s, or they will be constrained to lie in
+    /// that range.
+    ///
+    /// Both `min` and `max` will be rounded down to units of 1.25 ms.
+    ///
+    /// # Panics
+    ///
+    /// This will panic if `min > max`.
+    pub fn set_conn_interval(&mut self, min: Duration, max: Duration) {
+        assert!(min <= max);
+
+        // Convert and round to units of 1.25 ms.
+        let max = max.as_micros() / 1_250;
+        let min = min.as_micros() / 1_250;
+
+        // Clamp to valid range of 6..=3200
+        let min = cmp::min(cmp::max(min, 6), 3200);
+        let max = cmp::min(cmp::max(max, 6), 3200);
+        debug_assert!(min <= max);
+        self.interval_min = min as u16;
+        self.interval_max = max as u16;
+    }
+
+    /// Returns the minimum requested connection interval.
+    pub fn min_conn_interval(&self) -> Duration {
+        Duration::from_micros(u32::from(self.interval_min) * 1_250)
+    }
+
+    /// Returns the maximum requested connection interval.
+    pub fn max_conn_interval(&self) -> Duration {
+        Duration::from_micros(u32::from(self.interval_max) * 1_250)
+    }
+
+    /// Returns the slave latency in number of connection events.
+    pub fn slave_latency(&self) -> u16 {
+        self.slave_latency
+    }
+
+    /// Returns the supervision timeout.
+    pub fn supervision_timeout(&self) -> Duration {
+        Duration::from_millis(self.supervision_timeout * 10)
+    }
+}
+
+impl<'a> bytes::FromBytes<'a> for ConnectionParamReq {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
+        Ok(Self {
+            interval_min: bytes.read_u16_le()?,
+            interval_max: bytes.read_u16_le()?,
+            slave_latency: bytes.read_u16_le()?,
+            supervision_timeout: bytes.read_u16_le()?,
+            preferred_periodicity: bytes.read_u8()?,
+            reference_conn_event_count: bytes.read_u16_le()?,
+            offsets: [
+                bytes.read_u16_le()?,
+                bytes.read_u16_le()?,
+                bytes.read_u16_le()?,
+                bytes.read_u16_le()?,
+                bytes.read_u16_le()?,
+                bytes.read_u16_le()?,
+            ],
+        })
+    }
+}
+
+impl ToBytes for ConnectionParamReq {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
+        writer.write_u16_le(self.interval_min)?;
+        writer.write_u16_le(self.interval_max)?;
+        writer.write_u16_le(self.slave_latency)?;
+        writer.write_u16_le(self.supervision_timeout)?;
+        writer.write_u8(self.preferred_periodicity)?;
+        writer.write_u16_le(self.reference_conn_event_count)?;
+        let offsets = self.offsets;
+        for offset in &offsets {
+            writer.write_u16_le(*offset)?;
+        }
+        Ok(())
+    }
+}
+
+/// `LL_CONNECTION_PARAM_RSP`
+pub type ConnectionParamRsp = ConnectionParamReq;
+
+/// `LL_REJECT_IND_EXT`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct RejectIndExt {
+    reject_opcode: u8,
+    error_code: u8,
+}
+
+/// `LL_PING_REQ`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct PingReq {
+    _p: (),
+}
+
+/// `LL_PING_RSP`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct PingRsp {
+    _p: (),
+}
+
+/// `LL_LENGTH_REQ`
+#[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
+#[repr(C, packed)]
+pub struct LengthReq {
+    max_rx_octets: u16,
+    max_rx_time: u16,
+    max_tx_octets: u16,
+    max_tx_time: u16,
+}
+
+/// `LL_LENGTH_RSP`
+pub type LengthRsp = LengthReq;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -436,7 +734,7 @@ mod tests {
     #[test]
     fn update_req_set_conn_interval() {
         fn set(min: Duration, max: Duration) -> (Duration, Duration) {
-            let mut req = ConnectionParamRequest::new();
+            let mut req = ConnectionParamReq::new();
             req.set_conn_interval(min, max);
 
             (req.min_conn_interval(), req.max_conn_interval())
@@ -469,7 +767,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "min <= max")]
     fn update_req_set_conn_interval_minmax() {
-        let mut req = ConnectionParamRequest::new();
+        let mut req = ConnectionParamReq::new();
         req.set_conn_interval(Duration::from_secs(8), Duration::from_secs(7));
     }
 }

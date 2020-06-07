@@ -1,7 +1,7 @@
 //! Link-Layer connection management and LLCP implementation.
 
 use crate::link::data::{self, Header, Llid, Pdu};
-use crate::link::llcp::{ConnectionUpdateData, ControlPdu};
+use crate::link::llcp::{ConnectionUpdateReq, ControlPdu};
 use crate::link::queue::{Consume, Consumer, Producer};
 use crate::link::{
     advertising::ConnectRequestData, channel_map::ChannelMap, Cmd, CompanyId, FeatureSet,
@@ -541,7 +541,7 @@ enum LlcpUpdate {
     ///
     /// This effectively reset the connection to the state just after the connection request was
     /// received.
-    ConnUpdate(ConnectionUpdateData),
+    ConnUpdate(ConnectionUpdateReq),
 
     /// Start using a different `ChannelMap`.
     ChannelMap {

@@ -20,6 +20,7 @@
 use crate::Error;
 use byteorder::{ByteOrder, LittleEndian};
 use core::{cmp, fmt, iter, mem};
+use zerocopy::{LayoutVerified, Unaligned};
 
 /// Reference to a `T`, or to a byte slice that can be decoded as a `T`.
 ///
@@ -555,5 +556,15 @@ impl<'a> FromBytes<'a> for &'a [u8] {
 impl<'a> FromBytes<'a> for u8 {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         bytes.read_u8()
+    }
+}
+
+pub trait ByteSliceExt {
+    fn decode_as<T: Unaligned + zerocopy::FromBytes>(&self) -> Option<&T>;
+}
+
+impl ByteSliceExt for [u8] {
+    fn decode_as<T: Unaligned + zerocopy::FromBytes>(&self) -> Option<&T> {
+        Some(LayoutVerified::<_, T>::new_unaligned(self)?.into_ref())
     }
 }
