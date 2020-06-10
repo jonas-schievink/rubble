@@ -16,7 +16,7 @@ bitflags = "1.2.1"
 uuid = { version = "0.8.1", default-features = false }
 heapless = "0.5.1"
 rand_core = "0.5.1"
-sha2 = { version = "0.8.1", default-features = false }
+sha2 = { version = "0.9.0", default-features = false }
 
 [dependencies.p256]
 version = "0.3.0"
