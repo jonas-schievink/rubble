@@ -22,7 +22,6 @@
 use crate::link::data::{self, Llid};
 use crate::link::{MIN_DATA_PAYLOAD_BUF, MIN_DATA_PDU_BUF};
 use crate::{bytes::*, Error};
-use byteorder::{ByteOrder, LittleEndian};
 use heapless::consts::U1;
 use heapless::spsc::{self, MultiCore};
 
@@ -258,7 +257,7 @@ impl<'a> Producer for SimpleProducer<'a> {
 
         let mut header = data::Header::new(llid);
         header.set_payload_length(used as u8);
-        LittleEndian::write_u16(&mut buf, header.to_u16());
+        header.to_bytes(&mut ByteWriter::new(&mut buf[..2]))?;
 
         self.inner.enqueue(buf).map_err(|_| ()).unwrap();
         Ok(())

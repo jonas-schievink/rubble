@@ -174,6 +174,19 @@ impl fmt::Debug for Header {
     }
 }
 
+impl<'a> FromBytes<'a> for Header {
+    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
+        let raw = bytes.read_u16_le()?;
+        Ok(Header(raw))
+    }
+}
+
+impl ToBytes for Header {
+    fn to_bytes(&self, writer: &mut ByteWriter<'_>) -> Result<(), Error> {
+        writer.write_u16_le(self.to_u16())
+    }
+}
+
 /// Values of the LLID field in `Header`.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Llid {
