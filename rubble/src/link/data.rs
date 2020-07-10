@@ -2,8 +2,7 @@
 
 use crate::link::{llcp::ControlPdu, SeqNum};
 use crate::{bytes::*, Error};
-use byteorder::{ByteOrder, LittleEndian};
-use core::fmt;
+use core::{convert::TryInto, fmt};
 
 /// 16-bit data channel header preceding the payload.
 ///
@@ -74,7 +73,8 @@ impl Header {
     ///
     /// Panics when `raw` contains less than 2 Bytes.
     pub fn parse(raw: &[u8]) -> Self {
-        Header(LittleEndian::read_u16(&raw))
+        let bytes: [u8; 2] = raw[..2].try_into().expect("raw has fewer than 2 bytes");
+        Header(u16::from_le_bytes(bytes))
     }
 
     /// Returns the raw representation of the header.

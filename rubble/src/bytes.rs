@@ -18,7 +18,6 @@
 //! [`BytesOr`]: struct.BytesOr.html
 
 use crate::Error;
-use byteorder::{ByteOrder, LittleEndian};
 use core::{cmp, fmt, iter, mem};
 
 /// Reference to a `T`, or to a byte slice that can be decoded as a `T`.
@@ -354,9 +353,7 @@ impl<'a> ByteWriter<'a> {
     /// If `self` does not have enough space left, an error will be returned and no bytes will be
     /// written to `self`.
     pub fn write_u16_le(&mut self, value: u16) -> Result<(), Error> {
-        let mut bytes = [0; 2];
-        LittleEndian::write_u16(&mut bytes, value);
-        self.write_slice(&bytes)
+        self.write_slice(&value.to_le_bytes())
     }
 
     /// Writes a `u32` to `self`, using Little Endian byte order.
@@ -364,9 +361,7 @@ impl<'a> ByteWriter<'a> {
     /// If `self` does not have enough space left, an error will be returned and no bytes will be
     /// written to `self`.
     pub fn write_u32_le(&mut self, value: u32) -> Result<(), Error> {
-        let mut bytes = [0; 4];
-        LittleEndian::write_u32(&mut bytes, value);
-        self.write_slice(&bytes)
+        self.write_slice(&value.to_le_bytes())
     }
 
     /// Writes a `u64` to `self`, using Little Endian byte order.
@@ -374,9 +369,7 @@ impl<'a> ByteWriter<'a> {
     /// If `self` does not have enough space left, an error will be returned and no bytes will be
     /// written to `self`.
     pub fn write_u64_le(&mut self, value: u64) -> Result<(), Error> {
-        let mut bytes = [0; 8];
-        LittleEndian::write_u64(&mut bytes, value);
-        self.write_slice(&bytes)
+        self.write_slice(&value.to_le_bytes())
     }
 }
 
@@ -495,19 +488,19 @@ impl<'a> ByteReader<'a> {
     /// Reads a `u16` from `self`, using Little Endian byte order.
     pub fn read_u16_le(&mut self) -> Result<u16, Error> {
         let arr = self.read_array::<[u8; 2]>()?;
-        Ok(LittleEndian::read_u16(&arr))
+        Ok(u16::from_le_bytes(arr))
     }
 
     /// Reads a `u32` from `self`, using Little Endian byte order.
     pub fn read_u32_le(&mut self) -> Result<u32, Error> {
         let arr = self.read_array::<[u8; 4]>()?;
-        Ok(LittleEndian::read_u32(&arr))
+        Ok(u32::from_le_bytes(arr))
     }
 
     /// Reads a `u64` from `self`, using Little Endian byte order.
     pub fn read_u64_le(&mut self) -> Result<u64, Error> {
         let arr = self.read_array::<[u8; 8]>()?;
-        Ok(LittleEndian::read_u64(&arr))
+        Ok(u64::from_le_bytes(arr))
     }
 }
 

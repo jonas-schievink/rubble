@@ -1,7 +1,5 @@
 //! Useful utilities related to Rubble on the nRF52.
 
-use byteorder::{ByteOrder, LittleEndian};
-
 #[cfg(feature = "51")]
 use nrf51_hal::pac;
 
@@ -27,8 +25,8 @@ pub fn get_device_address() -> DeviceAddress {
     let mut devaddr = [0u8; 6];
     let devaddr_lo = ficr.deviceaddr[0].read().bits();
     let devaddr_hi = ficr.deviceaddr[1].read().bits() as u16;
-    LittleEndian::write_u32(&mut devaddr[..4], devaddr_lo);
-    LittleEndian::write_u16(&mut devaddr[4..], devaddr_hi);
+    devaddr[..4].copy_from_slice(&devaddr_lo.to_le_bytes());
+    devaddr[4..].copy_from_slice(&devaddr_hi.to_le_bytes());
 
     // Address type
     let devaddr_type = match ficr.deviceaddrtype.read().deviceaddrtype().variant() {

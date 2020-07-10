@@ -15,7 +15,6 @@
 //! `1234ABCD-0000-1000-8000-00805F9B34FB`.
 
 use crate::{bytes::*, Error};
-use byteorder::{BigEndian, ByteOrder};
 use core::fmt;
 
 pub use uuid::Uuid;
@@ -53,7 +52,7 @@ impl Into<Uuid> for Uuid16 {
 impl Into<Uuid> for Uuid32 {
     fn into(self) -> Uuid {
         let mut buf = BASE_UUID;
-        BigEndian::write_u32(&mut buf, self.0);
+        buf[..4].copy_from_slice(&self.0.to_be_bytes());
         Uuid::from_bytes(buf)
     }
 }
