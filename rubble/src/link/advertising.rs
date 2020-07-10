@@ -11,8 +11,7 @@ use crate::link::ad_structure::{AdStructure, Flags};
 use crate::link::{channel_map::ChannelMap, AddressKind, DeviceAddress};
 use crate::utils::{Hex, HexSlice};
 use crate::{bytes::*, time::Duration, Error};
-use byteorder::{ByteOrder, LittleEndian};
-use core::{fmt, iter};
+use core::{convert::TryInto, fmt, iter};
 
 /// CRC initialization value for advertising channel packets.
 ///
@@ -694,7 +693,8 @@ impl Header {
     }
 
     pub fn parse(raw: &[u8]) -> Self {
-        Header(LittleEndian::read_u16(&raw))
+        let bytes: [u8; 2] = raw[..2].try_into().expect("raw has fewer than 2 bytes");
+        Header(u16::from_le_bytes(bytes))
     }
 
     /// Returns the raw representation of the header.
