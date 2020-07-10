@@ -15,7 +15,7 @@ rubble = { path = "../../rubble", default-features = false }
 rubble-nrf5x = { path = "../../rubble-nrf5x" }
 demo-utils = { path = "../demo-utils" }
 cortex-m = "0.6.1"
-cortex-m-rtfm = "0.5.1"
+cortex-m-rtic = "0.5.3"
 cortex-m-rt = "0.6.11"
 panic-halt = "0.2.0"
 

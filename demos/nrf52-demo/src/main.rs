@@ -67,7 +67,7 @@ impl Config for AppConfig {
     type PacketQueue = &'static mut SimpleQueue;
 }
 
-#[rtfm::app(device = crate::hal::target, peripherals = true)]
+#[rtic::app(device = crate::hal::target, peripherals = true)]
 const APP: () = {
     struct Resources {
         #[init([0; MIN_PDU_BUF])]
