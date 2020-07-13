@@ -21,7 +21,7 @@ panic-semihosting = "0.5.3"
 bbqueue = "0.4.1"
 
 nrf52810-hal = { version = "0.10", features = ["rt"], optional = true }
-nrf52832-hal = { version = "0.10", features = ["rt"], optional = true }
+nrf52832-hal = { version = "0.11", features = ["rt"], optional = true }
 nrf52840-hal = { version = "0.10", features = ["rt"], optional = true }
 
 [dependencies.log]
