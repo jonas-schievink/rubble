@@ -2,7 +2,8 @@
 
 set -o errexit
 
-export RUSTFLAGS=${RUSTFLAGS:---deny warnings}
+# NOTE: CI sets `RUSTFLAGS=--deny warnings`. We don't do that in here since it
+# wipes Cargo's build cache.
 
 # Run unit tests. We'd prefer to run `cargo test --all`, but some packages
 # require enabling Cargo features, which Cargo does not support in that case.
