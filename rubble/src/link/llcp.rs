@@ -7,53 +7,57 @@ use core::{cmp, convert::TryInto};
 use zerocopy::{AsBytes, FromBytes, Unaligned};
 
 /// An undecoded LLCP PDU.
+#[derive(Debug)]
 pub struct RawPdu<T>(T);
 
 impl<T: AsRef<[u8]>> RawPdu<T> {
-    pub fn new(buf: T) -> Self {
-        RawPdu(buf)
+    pub fn new(buf: T) -> Option<Self> {
+        if buf.as_ref().len() < 1 {
+            None
+        } else {
+            Some(RawPdu(buf))
+        }
     }
 
     /// Decodes the LLCP opcode, returning a structured representation of the PDU.
-    pub fn decode(&self) -> Option<Pdu<'_>> {
+    pub fn decode(&self) -> Option<PduRef<'_>> {
         let bytes = self.0.as_ref();
         let (opcode, data) = bytes.split_first()?;
         Some(match ControlOpcode::from(*opcode) {
-            ControlOpcode::ConnectionUpdateReq => Pdu::ConnectionUpdateReq(data.decode_as()?),
-            ControlOpcode::ChannelMapReq => Pdu::ChannelMapReq(data.decode_as()?),
-            ControlOpcode::TerminateInd => Pdu::TerminateInd(data.decode_as()?),
-            ControlOpcode::EncReq => Pdu::EncReq(data.decode_as()?),
-            ControlOpcode::EncRsp => Pdu::EncRsp(data.decode_as()?),
-            ControlOpcode::StartEncReq => Pdu::StartEncReq(data.decode_as()?),
-            ControlOpcode::StartEncRsp => Pdu::StartEncRsp(data.decode_as()?),
-            ControlOpcode::UnknownRsp => Pdu::UnknownRsp(data.decode_as()?),
-            ControlOpcode::FeatureReq => Pdu::FeatureReq(data.decode_as()?),
-            ControlOpcode::FeatureRsp => Pdu::FeatureRsp(data.decode_as()?),
-            ControlOpcode::PauseEncReq => Pdu::PauseEncReq(data.decode_as()?),
-            ControlOpcode::PauseEncRsp => Pdu::PauseEncRsp(data.decode_as()?),
-            ControlOpcode::VersionInd => Pdu::VersionInd(data.decode_as()?),
-            ControlOpcode::RejectInd => Pdu::RejectInd(data.decode_as()?),
-            ControlOpcode::SlaveFeatureReq => Pdu::SlaveFeatureReq(data.decode_as()?),
-            ControlOpcode::ConnectionParamReq => Pdu::ConnectionParamReq(data.decode_as()?),
-            ControlOpcode::ConnectionParamRsp => Pdu::ConnectionParamRsp(data.decode_as()?),
-            ControlOpcode::RejectIndExt => Pdu::RejectIndExt(data.decode_as()?),
-            ControlOpcode::PingReq => Pdu::PingReq(data.decode_as()?),
-            ControlOpcode::PingRsp => Pdu::PingRsp(data.decode_as()?),
-            ControlOpcode::LengthReq => Pdu::LengthReq(data.decode_as()?),
-            ControlOpcode::LengthRsp => Pdu::LengthRsp(data.decode_as()?),
+            ControlOpcode::ConnectionUpdateReq => PduRef::ConnectionUpdateReq(data.decode_as()?),
+            ControlOpcode::ChannelMapReq => PduRef::ChannelMapReq(data.decode_as()?),
+            ControlOpcode::TerminateInd => PduRef::TerminateInd(data.decode_as()?),
+            ControlOpcode::EncReq => PduRef::EncReq(data.decode_as()?),
+            ControlOpcode::EncRsp => PduRef::EncRsp(data.decode_as()?),
+            ControlOpcode::StartEncReq => PduRef::StartEncReq(data.decode_as()?),
+            ControlOpcode::StartEncRsp => PduRef::StartEncRsp(data.decode_as()?),
+            ControlOpcode::UnknownRsp => PduRef::UnknownRsp(data.decode_as()?),
+            ControlOpcode::FeatureReq => PduRef::FeatureReq(data.decode_as()?),
+            ControlOpcode::FeatureRsp => PduRef::FeatureRsp(data.decode_as()?),
+            ControlOpcode::PauseEncReq => PduRef::PauseEncReq(data.decode_as()?),
+            ControlOpcode::PauseEncRsp => PduRef::PauseEncRsp(data.decode_as()?),
+            ControlOpcode::VersionInd => PduRef::VersionInd(data.decode_as()?),
+            ControlOpcode::RejectInd => PduRef::RejectInd(data.decode_as()?),
+            ControlOpcode::SlaveFeatureReq => PduRef::SlaveFeatureReq(data.decode_as()?),
+            ControlOpcode::ConnectionParamReq => PduRef::ConnectionParamReq(data.decode_as()?),
+            ControlOpcode::ConnectionParamRsp => PduRef::ConnectionParamRsp(data.decode_as()?),
+            ControlOpcode::RejectIndExt => PduRef::RejectIndExt(data.decode_as()?),
+            ControlOpcode::PingReq => PduRef::PingReq(data.decode_as()?),
+            ControlOpcode::PingRsp => PduRef::PingRsp(data.decode_as()?),
+            ControlOpcode::LengthReq => PduRef::LengthReq(data.decode_as()?),
+            ControlOpcode::LengthRsp => PduRef::LengthRsp(data.decode_as()?),
             ControlOpcode::Unknown(_) => return None,
         })
     }
 
-    pub fn opcode(&self) -> Option<ControlOpcode> {
-        let bytes = self.0.as_ref();
-        Some(ControlOpcode::from(*bytes.get(0)?))
+    pub fn opcode(&self) -> ControlOpcode {
+        ControlOpcode::from(self.0.as_ref()[0])
     }
 }
 
-/// Structured representation of an LLCP PDU.
+/// Reference to a structured LLCP PDU.
 #[derive(Debug, Copy, Clone)]
-pub enum Pdu<'a> {
+pub enum PduRef<'a> {
     ConnectionUpdateReq(&'a ConnectionUpdateReq),
     ChannelMapReq(&'a ChannelMapReq),
     TerminateInd(&'a TerminateInd),
@@ -78,286 +82,123 @@ pub enum Pdu<'a> {
     LengthRsp(&'a LengthRsp),
 }
 
-impl<'a> Pdu<'a> {
-    fn opcode(&self) -> ControlOpcode {
+impl<'a> PduRef<'a> {
+    pub fn opcode(&self) -> ControlOpcode {
         match self {
-            Pdu::ConnectionUpdateReq(_) => ControlOpcode::ConnectionUpdateReq,
-            Pdu::ChannelMapReq(_) => ControlOpcode::ChannelMapReq,
-            Pdu::TerminateInd(_) => ControlOpcode::TerminateInd,
-            Pdu::EncReq(_) => ControlOpcode::EncReq,
-            Pdu::EncRsp(_) => ControlOpcode::EncRsp,
-            Pdu::StartEncReq(_) => ControlOpcode::StartEncReq,
-            Pdu::StartEncRsp(_) => ControlOpcode::StartEncRsp,
-            Pdu::UnknownRsp(_) => ControlOpcode::UnknownRsp,
-            Pdu::FeatureReq(_) => ControlOpcode::FeatureReq,
-            Pdu::FeatureRsp(_) => ControlOpcode::FeatureRsp,
-            Pdu::PauseEncReq(_) => ControlOpcode::PauseEncReq,
-            Pdu::PauseEncRsp(_) => ControlOpcode::PauseEncRsp,
-            Pdu::VersionInd(_) => ControlOpcode::VersionInd,
-            Pdu::RejectInd(_) => ControlOpcode::RejectInd,
-            Pdu::SlaveFeatureReq(_) => ControlOpcode::SlaveFeatureReq,
-            Pdu::ConnectionParamReq(_) => ControlOpcode::ConnectionParamReq,
-            Pdu::ConnectionParamRsp(_) => ControlOpcode::ConnectionParamRsp,
-            Pdu::RejectIndExt(_) => ControlOpcode::RejectIndExt,
-            Pdu::PingReq(_) => ControlOpcode::PingReq,
-            Pdu::PingRsp(_) => ControlOpcode::PingRsp,
-            Pdu::LengthReq(_) => ControlOpcode::LengthReq,
-            Pdu::LengthRsp(_) => ControlOpcode::LengthRsp,
+            Self::ConnectionUpdateReq(_) => ControlOpcode::ConnectionUpdateReq,
+            Self::ChannelMapReq(_) => ControlOpcode::ChannelMapReq,
+            Self::TerminateInd(_) => ControlOpcode::TerminateInd,
+            Self::EncReq(_) => ControlOpcode::EncReq,
+            Self::EncRsp(_) => ControlOpcode::EncRsp,
+            Self::StartEncReq(_) => ControlOpcode::StartEncReq,
+            Self::StartEncRsp(_) => ControlOpcode::StartEncRsp,
+            Self::UnknownRsp(_) => ControlOpcode::UnknownRsp,
+            Self::FeatureReq(_) => ControlOpcode::FeatureReq,
+            Self::FeatureRsp(_) => ControlOpcode::FeatureRsp,
+            Self::PauseEncReq(_) => ControlOpcode::PauseEncReq,
+            Self::PauseEncRsp(_) => ControlOpcode::PauseEncRsp,
+            Self::VersionInd(_) => ControlOpcode::VersionInd,
+            Self::RejectInd(_) => ControlOpcode::RejectInd,
+            Self::SlaveFeatureReq(_) => ControlOpcode::SlaveFeatureReq,
+            Self::ConnectionParamReq(_) => ControlOpcode::ConnectionParamReq,
+            Self::ConnectionParamRsp(_) => ControlOpcode::ConnectionParamRsp,
+            Self::RejectIndExt(_) => ControlOpcode::RejectIndExt,
+            Self::PingReq(_) => ControlOpcode::PingReq,
+            Self::PingRsp(_) => ControlOpcode::PingRsp,
+            Self::LengthReq(_) => ControlOpcode::LengthReq,
+            Self::LengthRsp(_) => ControlOpcode::LengthRsp,
+        }
+    }
+}
+
+/// Structured representation of an LLCP PDU.
+#[derive(Debug, Copy, Clone)]
+pub enum Pdu {
+    ConnectionUpdateReq(ConnectionUpdateReq),
+    ChannelMapReq(ChannelMapReq),
+    TerminateInd(TerminateInd),
+    EncReq(EncReq),
+    EncRsp(EncRsp),
+    StartEncReq(StartEncReq),
+    StartEncRsp(StartEncRsp),
+    UnknownRsp(UnknownRsp),
+    FeatureReq(FeatureReq),
+    FeatureRsp(FeatureRsp),
+    PauseEncReq(PauseEncReq),
+    PauseEncRsp(PauseEncRsp),
+    VersionInd(VersionInd),
+    RejectInd(RejectInd),
+    SlaveFeatureReq(SlaveFeatureReq),
+    ConnectionParamReq(ConnectionParamReq),
+    ConnectionParamRsp(ConnectionParamRsp),
+    RejectIndExt(RejectIndExt),
+    PingReq(PingReq),
+    PingRsp(PingRsp),
+    LengthReq(LengthReq),
+    LengthRsp(LengthRsp),
+}
+
+impl Pdu {
+    pub fn opcode(&self) -> ControlOpcode {
+        match self {
+            Self::ConnectionUpdateReq(_) => ControlOpcode::ConnectionUpdateReq,
+            Self::ChannelMapReq(_) => ControlOpcode::ChannelMapReq,
+            Self::TerminateInd(_) => ControlOpcode::TerminateInd,
+            Self::EncReq(_) => ControlOpcode::EncReq,
+            Self::EncRsp(_) => ControlOpcode::EncRsp,
+            Self::StartEncReq(_) => ControlOpcode::StartEncReq,
+            Self::StartEncRsp(_) => ControlOpcode::StartEncRsp,
+            Self::UnknownRsp(_) => ControlOpcode::UnknownRsp,
+            Self::FeatureReq(_) => ControlOpcode::FeatureReq,
+            Self::FeatureRsp(_) => ControlOpcode::FeatureRsp,
+            Self::PauseEncReq(_) => ControlOpcode::PauseEncReq,
+            Self::PauseEncRsp(_) => ControlOpcode::PauseEncRsp,
+            Self::VersionInd(_) => ControlOpcode::VersionInd,
+            Self::RejectInd(_) => ControlOpcode::RejectInd,
+            Self::SlaveFeatureReq(_) => ControlOpcode::SlaveFeatureReq,
+            Self::ConnectionParamReq(_) => ControlOpcode::ConnectionParamReq,
+            Self::ConnectionParamRsp(_) => ControlOpcode::ConnectionParamRsp,
+            Self::RejectIndExt(_) => ControlOpcode::RejectIndExt,
+            Self::PingReq(_) => ControlOpcode::PingReq,
+            Self::PingRsp(_) => ControlOpcode::PingRsp,
+            Self::LengthReq(_) => ControlOpcode::LengthReq,
+            Self::LengthRsp(_) => ControlOpcode::LengthRsp,
         }
     }
 
     fn ctr_data(&self) -> &[u8] {
         match self {
-            Pdu::ConnectionUpdateReq(it) => it.as_bytes(),
-            Pdu::ChannelMapReq(it) => it.as_bytes(),
-            Pdu::TerminateInd(it) => it.as_bytes(),
-            Pdu::EncReq(it) => it.as_bytes(),
-            Pdu::EncRsp(it) => it.as_bytes(),
-            Pdu::StartEncReq(it) => it.as_bytes(),
-            Pdu::StartEncRsp(it) => it.as_bytes(),
-            Pdu::UnknownRsp(it) => it.as_bytes(),
-            Pdu::FeatureReq(it) => it.as_bytes(),
-            Pdu::FeatureRsp(it) => it.as_bytes(),
-            Pdu::PauseEncReq(it) => it.as_bytes(),
-            Pdu::PauseEncRsp(it) => it.as_bytes(),
-            Pdu::VersionInd(it) => it.as_bytes(),
-            Pdu::RejectInd(it) => it.as_bytes(),
-            Pdu::SlaveFeatureReq(it) => it.as_bytes(),
-            Pdu::ConnectionParamReq(it) => it.as_bytes(),
-            Pdu::ConnectionParamRsp(it) => it.as_bytes(),
-            Pdu::RejectIndExt(it) => it.as_bytes(),
-            Pdu::PingReq(it) => it.as_bytes(),
-            Pdu::PingRsp(it) => it.as_bytes(),
-            Pdu::LengthReq(it) => it.as_bytes(),
-            Pdu::LengthRsp(it) => it.as_bytes(),
+            Self::ConnectionUpdateReq(it) => it.as_bytes(),
+            Self::ChannelMapReq(it) => it.as_bytes(),
+            Self::TerminateInd(it) => it.as_bytes(),
+            Self::EncReq(it) => it.as_bytes(),
+            Self::EncRsp(it) => it.as_bytes(),
+            Self::StartEncReq(it) => it.as_bytes(),
+            Self::StartEncRsp(it) => it.as_bytes(),
+            Self::UnknownRsp(it) => it.as_bytes(),
+            Self::FeatureReq(it) => it.as_bytes(),
+            Self::FeatureRsp(it) => it.as_bytes(),
+            Self::PauseEncReq(it) => it.as_bytes(),
+            Self::PauseEncRsp(it) => it.as_bytes(),
+            Self::VersionInd(it) => it.as_bytes(),
+            Self::RejectInd(it) => it.as_bytes(),
+            Self::SlaveFeatureReq(it) => it.as_bytes(),
+            Self::ConnectionParamReq(it) => it.as_bytes(),
+            Self::ConnectionParamRsp(it) => it.as_bytes(),
+            Self::RejectIndExt(it) => it.as_bytes(),
+            Self::PingReq(it) => it.as_bytes(),
+            Self::PingRsp(it) => it.as_bytes(),
+            Self::LengthReq(it) => it.as_bytes(),
+            Self::LengthRsp(it) => it.as_bytes(),
         }
     }
 }
 
-impl<'a> ToBytes for Pdu<'a> {
+impl ToBytes for Pdu {
     fn to_bytes(&self, buffer: &mut ByteWriter<'_>) -> Result<(), Error> {
         buffer.write_u8(self.opcode().into())?;
         buffer.write_slice(self.ctr_data())?;
         Ok(())
-    }
-}
-
-/// A structured representation of an LL Control PDU used by the Link Layer Control Protocol (LLCP).
-#[derive(Debug, Copy, Clone)]
-pub enum ControlPdu<'a> {
-    /// `0x00`/`LL_CONNECTION_UPDATE_REQ` - Update connection parameters.
-    ///
-    /// Sent by the master. The slave does not send a response back.
-    ConnectionUpdateReq(ConnectionUpdateReq),
-
-    /// `0x01`/`LL_CHANNEL_MAP_REQ` - Update the channel map.
-    ///
-    /// Sent by the master. The slave does not send a response back.
-    ChannelMapReq {
-        map: ChannelMap,
-        instant: u16,
-    },
-
-    /// `0x02`/`LL_TERMINATE_IND` - Close the connection.
-    ///
-    /// Can be sent by master or slave.
-    TerminateInd {
-        error_code: Hex<u8>,
-    },
-
-    /// `0x07`/`LL_UNKNOWN_RSP` - Response to unknown/unsupported LL Control PDUs.
-    ///
-    /// This is returned as a response to an incoming LL Control PDU when the opcode is
-    /// unimplemented or unknown, or when the `CtrData` is invalid for the opcode.
-    UnknownRsp {
-        /// Opcode of the unknown PDU.
-        unknown_type: ControlOpcode,
-    },
-
-    /// `0x08`/`LL_FEATURE_REQ` - Master requests slave's features.
-    FeatureReq {
-        /// Supported feature set of the master.
-        features_master: FeatureSet,
-    },
-
-    /// `0x09`/`LL_FEATURE_RSP` - Slave answers `LL_FEATURE_REQ` with the used feature set.
-    FeatureRsp {
-        /// Features that will be used for the connection. Logical `AND` of master and slave
-        /// features.
-        features_used: FeatureSet,
-    },
-
-    /// `0x0C`/`LL_VERSION_IND` - Bluetooth version indication (sent by both master and slave).
-    ///
-    /// When either master or slave receive this PDU, they should respond with their version if they
-    /// have not already sent this PDU during this data connection (FIXME do this).
-    VersionInd {
-        vers_nr: VersionNumber,
-        comp_id: CompanyId,
-        sub_vers_nr: Hex<u16>,
-    },
-
-    ConnectionParamReq(ConnectionParamReq),
-    ConnectionParamRsp(ConnectionParamRsp),
-
-    /// Catch-all variant for unsupported opcodes.
-    Unknown {
-        /// The opcode we don't support. This can also be the `Unknown` variant.
-        opcode: ControlOpcode,
-
-        /// Additional data depending on the opcode.
-        ctr_data: &'a [u8],
-    },
-}
-
-impl ControlPdu<'_> {
-    /// Returns the opcode of this LL Control PDU.
-    pub fn opcode(&self) -> ControlOpcode {
-        match self {
-            ControlPdu::ConnectionUpdateReq { .. } => ControlOpcode::ConnectionUpdateReq,
-            ControlPdu::ChannelMapReq { .. } => ControlOpcode::ChannelMapReq,
-            ControlPdu::TerminateInd { .. } => ControlOpcode::TerminateInd,
-            ControlPdu::UnknownRsp { .. } => ControlOpcode::UnknownRsp,
-            ControlPdu::FeatureReq { .. } => ControlOpcode::FeatureReq,
-            ControlPdu::FeatureRsp { .. } => ControlOpcode::FeatureRsp,
-            ControlPdu::VersionInd { .. } => ControlOpcode::VersionInd,
-            ControlPdu::ConnectionParamReq(_) => ControlOpcode::ConnectionParamReq,
-            ControlPdu::ConnectionParamRsp(_) => ControlOpcode::ConnectionParamRsp,
-            ControlPdu::Unknown { opcode, .. } => *opcode,
-        }
-    }
-
-    /// Returns the encoded size of this LLCPDU, including the opcode byte.
-    pub fn encoded_size(&self) -> u8 {
-        use self::ControlOpcode::*;
-
-        1 + match self.opcode() {
-            ConnectionUpdateReq => 1 + 2 + 2 + 2 + 2 + 2,
-            ChannelMapReq => 5 + 2,
-            TerminateInd => 1,
-            EncReq => 8 + 2 + 8 + 4,
-            EncRsp => 8 + 4,
-            StartEncReq => 0,
-            StartEncRsp => 0,
-            UnknownRsp => 1,
-            FeatureReq => 8,
-            FeatureRsp => 8,
-            PauseEncReq => 0,
-            PauseEncRsp => 0,
-            VersionInd => 1 + 2 + 2,
-            RejectInd => 1,
-            SlaveFeatureReq => 8,
-            ConnectionParamReq | ConnectionParamRsp => {
-                2 + 2 + 2 + 2 + 1 + 2 + 2 + 2 + 2 + 2 + 2 + 2
-            }
-            RejectIndExt => 1 + 1,
-            PingReq => 0,
-            PingRsp => 0,
-            LengthReq | LengthRsp => 2 + 2 + 2 + 2,
-            Unknown(_) => {
-                if let ControlPdu::Unknown {
-                    ctr_data,
-                    opcode: _,
-                } = self
-                {
-                    ctr_data.len().try_into().unwrap()
-                } else {
-                    unreachable!()
-                }
-            }
-        }
-    }
-}
-
-impl<'a> bytes::FromBytes<'a> for ControlPdu<'a> {
-    fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
-        let opcode = ControlOpcode::from(bytes.read_u8()?);
-        Ok(match opcode {
-            ControlOpcode::ConnectionUpdateReq => {
-                ControlPdu::ConnectionUpdateReq(ConnectionUpdateReq {
-                    win_size: bytes.read_u8()?,
-                    win_offset: bytes.read_u16_le()?,
-                    interval: bytes.read_u16_le()?,
-                    latency: bytes.read_u16_le()?,
-                    timeout: bytes.read_u16_le()?,
-                    instant: bytes.read_u16_le()?,
-                })
-            }
-            ControlOpcode::ChannelMapReq => ControlPdu::ChannelMapReq {
-                map: ChannelMap::from_raw(bytes.read_array()?),
-                instant: bytes.read_u16_le()?,
-            },
-            ControlOpcode::TerminateInd => ControlPdu::TerminateInd {
-                error_code: Hex(bytes.read_u8()?),
-            },
-            ControlOpcode::UnknownRsp => ControlPdu::UnknownRsp {
-                unknown_type: ControlOpcode::from(bytes.read_u8()?),
-            },
-            ControlOpcode::FeatureReq => ControlPdu::FeatureReq {
-                features_master: FeatureSet::from_bytes(bytes)?,
-            },
-            ControlOpcode::FeatureRsp => ControlPdu::FeatureRsp {
-                features_used: FeatureSet::from_bytes(bytes)?,
-            },
-            ControlOpcode::VersionInd => ControlPdu::VersionInd {
-                vers_nr: VersionNumber::from(bytes.read_u8()?),
-                comp_id: CompanyId::from_raw(bytes.read_u16_le()?),
-                sub_vers_nr: Hex(bytes.read_u16_le()?),
-            },
-            _ => ControlPdu::Unknown {
-                opcode,
-                ctr_data: bytes.read_rest(),
-            },
-        })
-    }
-}
-
-impl<'a> ToBytes for ControlPdu<'a> {
-    fn to_bytes(&self, buffer: &mut ByteWriter<'_>) -> Result<(), Error> {
-        buffer.write_u8(self.opcode().into())?;
-        match self {
-            ControlPdu::ConnectionUpdateReq(data) => {
-                buffer.write_u8(data.win_size)?;
-                buffer.write_u16_le(data.win_offset)?;
-                buffer.write_u16_le(data.interval)?;
-                buffer.write_u16_le(data.latency)?;
-                buffer.write_u16_le(data.timeout)?;
-                buffer.write_u16_le(data.instant)?;
-                Ok(())
-            }
-            ControlPdu::ChannelMapReq { map, instant } => {
-                buffer.write_slice(&map.to_raw())?;
-                buffer.write_u16_le(*instant)?;
-                Ok(())
-            }
-            ControlPdu::TerminateInd { error_code } => {
-                buffer.write_u8(error_code.0)?;
-                Ok(())
-            }
-            ControlPdu::UnknownRsp { unknown_type } => {
-                buffer.write_u8(u8::from(*unknown_type))?;
-                Ok(())
-            }
-            ControlPdu::FeatureReq { features_master } => features_master.to_bytes(buffer),
-            ControlPdu::FeatureRsp { features_used } => features_used.to_bytes(buffer),
-            ControlPdu::VersionInd {
-                vers_nr,
-                comp_id,
-                sub_vers_nr,
-            } => {
-                buffer.write_u8(u8::from(*vers_nr))?;
-                buffer.write_u16_le(comp_id.as_u16())?;
-                buffer.write_u16_le(sub_vers_nr.0)?;
-                Ok(())
-            }
-            ControlPdu::ConnectionParamReq(data) | ControlPdu::ConnectionParamRsp(data) => {
-                data.to_bytes(buffer)
-            }
-            ControlPdu::Unknown { ctr_data, .. } => {
-                buffer.write_slice(ctr_data)?;
-                Ok(())
-            }
-        }
     }
 }
 
@@ -473,6 +314,12 @@ pub struct TerminateInd {
     error: u8,
 }
 
+impl TerminateInd {
+    pub fn error_code(&self) -> u8 {
+        self.error
+    }
+}
+
 /// `LL_ENC_REQ`
 #[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
 #[repr(C, packed)]
@@ -512,6 +359,14 @@ pub struct UnknownRsp {
     unknown_type: u8,
 }
 
+impl UnknownRsp {
+    pub fn new(unknown: ControlOpcode) -> Self {
+        Self {
+            unknown_type: unknown.into(),
+        }
+    }
+}
+
 /// `LL_FEATURE_REQ`
 #[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
 #[repr(C, packed)]
@@ -519,11 +374,31 @@ pub struct FeatureReq {
     feature_set: u64,
 }
 
+impl FeatureReq {
+    pub fn new(master_features: FeatureSet) -> Self {
+        Self {
+            feature_set: master_features.bits(),
+        }
+    }
+
+    pub fn master_features(&self) -> FeatureSet {
+        FeatureSet::from_bits_truncate(self.feature_set)
+    }
+}
+
 /// `LL_FEATURE_RSP`
 #[derive(Debug, Copy, Clone, FromBytes, AsBytes, Unaligned)]
 #[repr(C, packed)]
 pub struct FeatureRsp {
     feature_set: u64,
+}
+
+impl FeatureRsp {
+    pub fn new(feature_set: FeatureSet) -> Self {
+        Self {
+            feature_set: feature_set.bits(),
+        }
+    }
 }
 
 /// `LL_PAUSE_END_REQ`
@@ -547,6 +422,16 @@ pub struct VersionInd {
     vers_nr: u8,
     comp_id: u16,
     sub_vers_nr: u16,
+}
+
+impl VersionInd {
+    pub fn new(bt_vers: VersionNumber, comp_id: CompanyId, sub_vers_nr: u16) -> Self {
+        Self {
+            vers_nr: bt_vers.into(),
+            comp_id: comp_id.as_u16(),
+            sub_vers_nr,
+        }
+    }
 }
 
 /// `LL_REJECT_IND`

@@ -1,7 +1,7 @@
 //! Link-Layer connection management and LLCP implementation.
 
-use crate::link::data::{self, Header, Llid, Pdu};
-use crate::link::llcp::{ConnectionUpdateReq, ControlPdu};
+use crate::link::data::{self, Header, Llid};
+use crate::link::llcp::{self, ConnectionUpdateReq};
 use crate::link::queue::{Consume, Consumer, Producer};
 use crate::link::{
     advertising::ConnectRequestData, channel_map::ChannelMap, Cmd, CompanyId, FeatureSet,
@@ -159,7 +159,8 @@ impl<C: Config> Connection<C> {
                 // LLCP message, try to process it immediately. Certain LLCPDUs might be put in the
                 // channel instead and answered by the non-real-time part.
 
-                if let Ok(pdu) = ControlPdu::from_bytes(&mut ByteReader::new(payload)) {
+                let pdu = llcp::RawPdu::new(payload).and_then(|pdu| pdu.decode());
+                if let Some(pdu) = pdu {
                     // Some LLCPDUs don't need a response, those can always be processed and
                     // ACKed. For those that do, the other device must have ACKed the last
                     // packet we sent, because we'll directly use the radio's TX buffer to send
@@ -169,6 +170,7 @@ impl<C: Config> Connection<C> {
                         Ok(Some(response)) => {
                             self.next_expected_seq_num += SeqNum::ONE;
 
+                            let rsp = data::RawPdu::new(tx.tx_payload_buf()).unwrap();
                             let rsp = Pdu::from(&response);
                             let mut payload_writer = ByteWriter::new(tx.tx_payload_buf());
                             let left = payload_writer.space_left();
@@ -410,43 +412,44 @@ impl<C: Config> Connection<C> {
     ///   retransmission instead.
     fn process_control_pdu(
         &mut self,
-        pdu: ControlPdu<'_>,
+        pdu: llcp::PduRef<'_>,
         can_respond: bool,
-    ) -> Result<Option<ControlPdu<'static>>, LlcpError> {
+    ) -> Result<Option<llcp::Pdu>, LlcpError> {
         let response = match pdu {
-            ControlPdu::ConnectionUpdateReq(data) => {
-                self.prepare_llcp_update(LlcpUpdate::ConnUpdate(data))?;
+            llcp::PduRef::ConnectionUpdateReq(data) => {
+                self.prepare_llcp_update(LlcpUpdate::ConnUpdate(*data))?;
                 return Ok(None);
             }
-            ControlPdu::ChannelMapReq { map, instant } => {
-                self.prepare_llcp_update(LlcpUpdate::ChannelMap { map, instant })?;
+            llcp::PduRef::ChannelMapReq(req) => {
+                self.prepare_llcp_update(LlcpUpdate::ChannelMap {
+                    map: req.channel_map(),
+                    instant: req.instant(),
+                })?;
                 return Ok(None);
             }
-            ControlPdu::TerminateInd { error_code } => {
+            llcp::PduRef::TerminateInd(ind) => {
                 info!(
                     "closing connection due to termination request: code {:?}",
-                    error_code
+                    ind.error_code(),
                 );
                 return Err(LlcpError::ConnectionLost);
             }
-            ControlPdu::FeatureReq { features_master } => ControlPdu::FeatureRsp {
-                features_used: features_master & FeatureSet::supported(),
-            },
-            ControlPdu::VersionInd { .. } => {
+            llcp::PduRef::FeatureReq(req) => llcp::Pdu::FeatureRsp(llcp::FeatureRsp::new(
+                req.master_features() & FeatureSet::supported(),
+            )),
+            llcp::PduRef::VersionInd { .. } => {
                 // FIXME this should be something real, and defined somewhere else
                 let comp_id = 0xFFFF;
                 // FIXME this should correlate with the Cargo package version
                 let sub_vers_nr = 0x0000;
 
-                ControlPdu::VersionInd {
-                    vers_nr: BLUETOOTH_VERSION,
-                    comp_id: CompanyId::from_raw(comp_id),
-                    sub_vers_nr: Hex(sub_vers_nr),
-                }
+                llcp::Pdu::VersionInd(llcp::VersionInd::new(
+                    BLUETOOTH_VERSION,
+                    CompanyId::from_raw(comp_id),
+                    sub_vers_nr,
+                ))
             }
-            _ => ControlPdu::UnknownRsp {
-                unknown_type: pdu.opcode(),
-            },
+            _ => llcp::Pdu::UnknownRsp(llcp::UnknownRsp::new(pdu.opcode())),
         };
 
         // If we land here, we have a PDU we want to send

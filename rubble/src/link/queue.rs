@@ -139,7 +139,7 @@ pub trait Consumer {
     /// If the queue is empty, `Error::Eof` is returned.
     fn consume_pdu_with<R>(
         &mut self,
-        f: impl FnOnce(data::Header, data::Pdu<'_, &[u8]>) -> Consume<R>,
+        f: impl FnOnce(data::Header, data::Pdu<&[u8]>) -> Consume<R>,
     ) -> Result<R, Error> {
         self.consume_raw_with(|header, raw| {
             let pdu = match data::Pdu::parse(header, raw) {

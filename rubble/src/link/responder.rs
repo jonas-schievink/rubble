@@ -51,7 +51,7 @@ impl<C: Config> Responder<C> {
                     // Also see:
                     // https://github.com/jonas-schievink/rubble/issues/26
 
-                    let pdu = data.read();
+                    let pdu = data.decode().ok_or(Error::InvalidValue)?;
                     info!("<- LL Control PDU: {:?}", pdu);
                     let response = match pdu {
                         // These PDUs are handled by the real-time code:
