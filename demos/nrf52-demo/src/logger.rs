@@ -16,7 +16,7 @@ use log::LevelFilter;
 
 type Logger = StampedLogger<StampSource<LogTimer>, BbqLogger<'static, BufferSize>>;
 
-type LogTimer = crate::hal::target::TIMER0;
+type LogTimer = crate::hal::pac::TIMER0;
 
 /// Stores the global logger used by the `log` crate.
 static mut LOGGER: Option<WriteLogger<Logger>> = None;

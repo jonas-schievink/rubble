@@ -20,7 +20,7 @@ use rubble::link::{ad_structure::AdStructure, MIN_PDU_BUF};
 use rubble_nrf5x::radio::{BleRadio, PacketBuffer};
 use rubble_nrf5x::utils::get_device_address;
 
-#[rtic::app(device = crate::hal::target, peripherals = true)]
+#[rtic::app(device = crate::hal::pac, peripherals = true)]
 const APP: () = {
     struct Resources {
         #[init([0; MIN_PDU_BUF])]
@@ -29,7 +29,7 @@ const APP: () = {
         ble_rx_buf: PacketBuffer,
         radio: BleRadio,
         beacon: Beacon,
-        beacon_timer: hal::target::TIMER1,
+        beacon_timer: hal::pac::TIMER1,
     }
 
     #[init(resources = [ble_tx_buf, ble_rx_buf])]

@@ -49,7 +49,7 @@ use bbqueue::Consumer;
 use core::fmt::Write;
 use core::sync::atomic::{compiler_fence, Ordering};
 use hal::uarte::{Baudrate, Parity, Uarte};
-use hal::{gpio::Level, target::UARTE0};
+use hal::{gpio::Level, pac::UARTE0};
 use rubble::l2cap::{BleChannelMap, L2CAPState};
 use rubble::link::queue::{PacketQueue, SimpleQueue};
 use rubble::link::{ad_structure::AdStructure, LinkLayer, Responder, MIN_PDU_BUF};
@@ -61,13 +61,13 @@ use rubble_nrf5x::{timer::BleTimer, utils::get_device_address};
 pub enum AppConfig {}
 
 impl Config for AppConfig {
-    type Timer = BleTimer<hal::target::TIMER0>;
+    type Timer = BleTimer<hal::pac::TIMER0>;
     type Transmitter = BleRadio;
     type ChannelMapper = BleChannelMap<BatteryServiceAttrs, NoSecurity>;
     type PacketQueue = &'static mut SimpleQueue;
 }
 
-#[rtic::app(device = crate::hal::target, peripherals = true)]
+#[rtic::app(device = crate::hal::pac, peripherals = true)]
 const APP: () = {
     struct Resources {
         #[init([0; MIN_PDU_BUF])]
