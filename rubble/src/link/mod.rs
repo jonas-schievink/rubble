@@ -382,6 +382,16 @@ impl<C: Config> LinkLayer<C> {
         }
     }
 
+    /// Updates the Link-Layer to stop advertising and forget connection status.
+    pub fn enter_standby(&mut self) -> Cmd {
+        self.state = State::Standby;
+        Cmd {
+            next_update: NextUpdate::Disable,
+            radio: RadioCmd::Off,
+            queued_work: false,
+        }
+    }
+
     /// Update the Link-Layer state after the timer expires.
     ///
     /// This should be called whenever the timer set by the last returned `Cmd` has expired.
