@@ -52,16 +52,16 @@ impl From<Uuid16> for Uuid32 {
     }
 }
 
-impl Into<Uuid128> for Uuid16 {
-    fn into(self) -> Uuid128 {
-        Uuid32::from(self).into()
+impl From<Uuid16> for Uuid128 {
+    fn from(uuid: Uuid16) -> Self {
+        Uuid32::from(uuid).into()
     }
 }
 
-impl Into<Uuid128> for Uuid32 {
-    fn into(self) -> Uuid128 {
+impl From<Uuid32> for Uuid128 {
+    fn from(uuid: Uuid32) -> Self {
         let mut buf = BASE_UUID;
-        buf[..4].copy_from_slice(&self.0.to_be_bytes());
+        buf[..4].copy_from_slice(&uuid.0.to_be_bytes());
         Uuid128(buf)
     }
 }
