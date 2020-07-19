@@ -7,7 +7,7 @@
 //! [gap]: https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
 
 use crate::link::CompanyId;
-use crate::uuid::{IsUuid, Uuid, Uuid16, Uuid32, UuidKind};
+use crate::uuid::{IsUuid, Uuid128, Uuid16, Uuid32, UuidKind};
 use crate::{bytes::*, Error};
 use bitflags::bitflags;
 
@@ -33,7 +33,7 @@ pub enum AdStructure<'a> {
 
     ServiceUuids16(ServiceUuids<'a, Uuid16>),
     ServiceUuids32(ServiceUuids<'a, Uuid32>),
-    ServiceUuids128(ServiceUuids<'a, Uuid>),
+    ServiceUuids128(ServiceUuids<'a, Uuid128>),
 
     /// Service data with 16-bit service UUID.
     ServiceData16 {

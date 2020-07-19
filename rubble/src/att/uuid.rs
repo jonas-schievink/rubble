@@ -7,14 +7,14 @@ use core::{cmp::PartialEq, fmt};
 #[derive(Copy, Clone, Eq)]
 pub enum AttUuid {
     Uuid16(Uuid16),
-    Uuid128(Uuid),
+    Uuid128(Uuid128),
 }
 
 impl FromBytes<'_> for AttUuid {
     fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         Ok(match bytes.bytes_left() {
             2 => AttUuid::Uuid16(Uuid16::from_bytes(bytes)?),
-            16 => AttUuid::Uuid128(<Uuid as FromBytes>::from_bytes(bytes)?),
+            16 => AttUuid::Uuid128(<Uuid128 as FromBytes>::from_bytes(bytes)?),
             _ => return Err(Error::InvalidLength),
         })
     }
@@ -37,7 +37,7 @@ impl PartialEq for AttUuid {
 
             // All other combinations need to convert to 128-bit UUIDs
             (AttUuid::Uuid128(a), b) | (b, AttUuid::Uuid128(a)) => {
-                let b: Uuid = (*b).into();
+                let b: Uuid128 = (*b).into();
                 *a == b
             }
         }
@@ -50,8 +50,8 @@ impl PartialEq<Uuid16> for AttUuid {
     }
 }
 
-impl PartialEq<Uuid> for AttUuid {
-    fn eq(&self, other: &Uuid) -> bool {
+impl PartialEq<Uuid128> for AttUuid {
+    fn eq(&self, other: &Uuid128) -> bool {
         self == &Self::from(*other)
     }
 }
@@ -68,14 +68,14 @@ impl From<Uuid32> for AttUuid {
     }
 }
 
-impl From<Uuid> for AttUuid {
-    fn from(uu: Uuid) -> Self {
+impl From<Uuid128> for AttUuid {
+    fn from(uu: Uuid128) -> Self {
         AttUuid::Uuid128(uu)
     }
 }
 
-impl Into<Uuid> for AttUuid {
-    fn into(self) -> Uuid {
+impl Into<Uuid128> for AttUuid {
+    fn into(self) -> Uuid128 {
         match self {
             AttUuid::Uuid16(u) => u.into(),
             AttUuid::Uuid128(u) => u,

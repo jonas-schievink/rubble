@@ -6,7 +6,7 @@
 pub mod characteristic;
 
 use crate::att::{AttUuid, Attribute, AttributeProvider, Handle, HandleRange};
-use crate::uuid::{Uuid, Uuid16};
+use crate::uuid::{Uuid128, Uuid16};
 use crate::{utils::HexSlice, Error};
 use core::{cmp, slice};
 
@@ -156,7 +156,7 @@ impl MidiServiceAttrs {
                 },
                 // Characteristic value (Empty Packet)
                 Attribute {
-                    att_type: AttUuid::Uuid128(Uuid::from_bytes([
+                    att_type: AttUuid::Uuid128(Uuid128::from_bytes([
                         0xF3, 0x6B, 0x10, 0x9D, 0x66, 0xF2, /*-*/
                         0xA9, 0xA1, /*-*/
                         0x12, 0x41, /*-*/
