@@ -50,6 +50,9 @@ pub enum AdStructure<'a> {
     /// Sets the shortened device name.
     ShortenedLocalName(&'a str),
 
+    /// Set manufacturer specific data
+    ManufacturerSpecificData(&'a [u8]),
+
     /// An unknown or unimplemented AD structure stored as raw bytes.
     Unknown {
         /// Type byte.
@@ -96,6 +99,10 @@ impl<'a> ToBytes for AdStructure<'a> {
             AdStructure::ShortenedLocalName(name) => {
                 buf.write_u8(Type::SHORTENED_LOCAL_NAME)?;
                 buf.write_slice(name.as_bytes())?;
+            }
+            AdStructure::ManufacturerSpecificData(data) => {
+                buf.write_u8(Type::MANUFACTURER_SPECIFIC_DATA)?;
+                buf.write_slice(data)?;
             }
             AdStructure::Unknown { ty, data } => {
                 buf.write_u8(*ty)?;
