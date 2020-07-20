@@ -51,7 +51,10 @@ pub enum AdStructure<'a> {
     ShortenedLocalName(&'a str),
 
     /// Set manufacturer specific data
-    ManufacturerSpecificData(&'a [u8]),
+    ManufacturerSpecificData {
+        company_identifier: u16,
+        payload: &'a [u8],
+    },
 
     /// An unknown or unimplemented AD structure stored as raw bytes.
     Unknown {
@@ -100,9 +103,13 @@ impl<'a> ToBytes for AdStructure<'a> {
                 buf.write_u8(Type::SHORTENED_LOCAL_NAME)?;
                 buf.write_slice(name.as_bytes())?;
             }
-            AdStructure::ManufacturerSpecificData(data) => {
+            AdStructure::ManufacturerSpecificData {
+                company_identifier,
+                payload,
+            } => {
                 buf.write_u8(Type::MANUFACTURER_SPECIFIC_DATA)?;
-                buf.write_slice(data)?;
+                buf.write_u16_le(*company_identifier)?;
+                buf.write_slice(payload)?;
             }
             AdStructure::Unknown { ty, data } => {
                 buf.write_u8(*ty)?;
