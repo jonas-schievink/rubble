@@ -72,8 +72,8 @@ const APP: () = {
         ctx.resources.beacon.broadcast(ctx.resources.radio);
 
         ctx.schedule
-            .update(ctx.scheduled + 1_066_666.cycles())
-            .ok(); // about 3 times per second
+            .update(ctx.scheduled + 10_666_666.cycles())
+            .ok(); // about 3 times per second as the nrf52 runs with 32 MHz
     }
 
     // Here we list unused interrupt vectors that can be used to dispatch software tasks
