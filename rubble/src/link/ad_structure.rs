@@ -6,6 +6,7 @@
 //!
 //! [gap]: https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
 
+use crate::link::CompanyId;
 use crate::uuid::{IsUuid, Uuid, Uuid16, Uuid32, UuidKind};
 use crate::{bytes::*, Error};
 use bitflags::bitflags;
@@ -52,7 +53,7 @@ pub enum AdStructure<'a> {
 
     /// Set manufacturer specific data
     ManufacturerSpecificData {
-        company_identifier: u16,
+        company_identifier: CompanyId,
         payload: &'a [u8],
     },
 
@@ -108,7 +109,7 @@ impl<'a> ToBytes for AdStructure<'a> {
                 payload,
             } => {
                 buf.write_u8(Type::MANUFACTURER_SPECIFIC_DATA)?;
-                buf.write_u16_le(*company_identifier)?;
+                buf.write_u16_le(company_identifier.as_u16())?;
                 buf.write_slice(payload)?;
             }
             AdStructure::Unknown { ty, data } => {
