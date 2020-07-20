@@ -6,6 +6,7 @@
 //!
 //! [gap]: https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
 
+use crate::link::CompanyId;
 use crate::uuid::{IsUuid, Uuid, Uuid16, Uuid32, UuidKind};
 use crate::{bytes::*, Error};
 use bitflags::bitflags;
@@ -49,6 +50,12 @@ pub enum AdStructure<'a> {
 
     /// Sets the shortened device name.
     ShortenedLocalName(&'a str),
+
+    /// Set manufacturer specific data
+    ManufacturerSpecificData {
+        company_identifier: CompanyId,
+        payload: &'a [u8],
+    },
 
     /// An unknown or unimplemented AD structure stored as raw bytes.
     Unknown {
@@ -96,6 +103,14 @@ impl<'a> ToBytes for AdStructure<'a> {
             AdStructure::ShortenedLocalName(name) => {
                 buf.write_u8(Type::SHORTENED_LOCAL_NAME)?;
                 buf.write_slice(name.as_bytes())?;
+            }
+            AdStructure::ManufacturerSpecificData {
+                company_identifier,
+                payload,
+            } => {
+                buf.write_u8(Type::MANUFACTURER_SPECIFIC_DATA)?;
+                buf.write_u16_le(company_identifier.as_u16())?;
+                buf.write_slice(payload)?;
             }
             AdStructure::Unknown { ty, data } => {
                 buf.write_u8(*ty)?;
