@@ -73,7 +73,7 @@ const APP: () = {
 
         ctx.schedule
             .update(ctx.scheduled + 10_666_666.cycles())
-            .ok(); // about 3 times per second as the nrf52 runs with 32 MHz
+            .ok(); // about 3 times per second as the external crystal of nrf52 runs at 32 MHz
     }
 
     // Here we list unused interrupt vectors that can be used to dispatch software tasks
