@@ -575,11 +575,7 @@ impl PduBuf {
         advertiser_addr: DeviceAddress,
         advertiser_data: &[AdStructure<'_>],
     ) -> Result<Self, Error> {
-        Self::adv(
-            PduType::AdvNonconnInd,
-            advertiser_addr,
-            &mut advertiser_data.iter(),
-        )
+        Self::nonconnectable_undirected(advertiser_addr, advertiser_data)
     }
 
     /// Creates an advertising PDU that makes this device "visible" for scanning
