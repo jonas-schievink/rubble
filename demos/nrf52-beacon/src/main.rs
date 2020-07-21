@@ -72,8 +72,8 @@ const APP: () = {
         ctx.resources.beacon.broadcast(ctx.resources.radio);
 
         ctx.schedule
-            .update(ctx.scheduled + 10_666_666.cycles())
-            .ok(); // about 3 times per second as the external crystal of nrf52 runs at 32 MHz
+            .update(ctx.scheduled + 21_333_333.cycles())
+            .ok(); // about 3 times per second as nrf52 runs at 64 MHz
     }
 
     // Here we list unused interrupt vectors that can be used to dispatch software tasks
