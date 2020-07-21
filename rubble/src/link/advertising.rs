@@ -570,18 +570,12 @@ impl PduBuf {
     /// Creates an advertising channel PDU suitable for building a simple
     /// beacon.
     ///
-    /// This is mostly equivalent to `PduBuf::nonconnectable_undirected`, but it
-    /// will automatically add a suitable `Flags` AD structure to the
-    /// advertising data (this flags is mandatory).
+    /// This is equivalent to `PduBuf::nonconnectable_undirected`.
     pub fn beacon(
         advertiser_addr: DeviceAddress,
         advertiser_data: &[AdStructure<'_>],
     ) -> Result<Self, Error> {
-        Self::adv(
-            PduType::AdvNonconnInd,
-            advertiser_addr,
-            &mut iter::once(&AdStructure::from(Flags::broadcast())).chain(advertiser_data),
-        )
+        Self::nonconnectable_undirected(advertiser_addr, advertiser_data)
     }
 
     /// Creates an advertising PDU that makes this device "visible" for scanning
