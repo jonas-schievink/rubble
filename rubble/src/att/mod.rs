@@ -77,7 +77,16 @@ pub trait AttributeProvider {
     ///
     /// If `handle` does not refer to a grouping attribute, returns `None`.
     ///
-    /// TODO: Human-readable docs that explain what grouping is
+    /// Groups themselves are collections of attributes. An attribute is in
+    /// exactly zero or one groups.
+    ///
+    /// For primary services and secondary services, the BLE specification gives
+    /// exact definitions of what's in the group. The group begins with the
+    /// "primary service" or "secondary service" attribute, is followed by
+    /// the various attributes contained within that service, and ends with the
+    /// last attribute contained within that service.
+    ///
+    /// TODO: document what the BLE spec has to say about grouping for characteristics.
     fn group_end(&self, handle: Handle) -> Option<&Attribute<'_>>;
 }
 
