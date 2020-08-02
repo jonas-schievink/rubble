@@ -157,3 +157,33 @@ impl IsUuid for Uuid32 {
 impl IsUuid for Uuid128 {
     const KIND: UuidKind = UuidKind::Uuid128;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fmt() {
+        // Check that all leading 0s are printed.
+        let uuid = Uuid128::from_bytes([
+            0x02, 0x3e, 0x45, 0x67, 0x08, 0x9b, 0x02, 0xd3, 0x04, 0x56, 0x00, 0x66, 0x14, 0x17,
+            0x40, 0x00,
+        ]);
+
+        assert_eq!(
+            format!("{:?}", uuid),
+            "023e4567-089b-02d3-0456-006614174000"
+        );
+    }
+
+    #[test]
+    fn convert() {
+        let uuid = 0xfd6f; // Apple Inc. / Exposure Notification Service
+        let uuid = Uuid128::from(Uuid16(uuid));
+
+        assert_eq!(
+            format!("{:?}", uuid),
+            "0000fd6f-0000-1000-8000-00805f9b34fb"
+        );
+    }
+}
