@@ -96,8 +96,8 @@
         <span class="macro-nonterminal">$</span><span class="macro-nonterminal">v</span>:<span class="ident">vis</span> <span class="kw">enum</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ty</span>) {
             $(
               $( <span class="attribute">#[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">variant_attr</span>:<span class="ident">meta</span>]</span> )<span class="op">*</span>
-              <span class="macro-nonterminal">$</span><span class="macro-nonterminal">variant</span>:<span class="ident">ident</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span> $(,)<span class="op">*</span>
-            ),<span class="op">*</span>
+              <span class="macro-nonterminal">$</span><span class="macro-nonterminal">variant</span>:<span class="ident">ident</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>
+            ),<span class="op">*</span> $(,)<span class="question-mark">?</span>
         }
     ) <span class="op">=</span><span class="op">&gt;</span> {
         $( <span class="attribute">#[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">enum_attr</span>]</span> )<span class="op">*</span>
