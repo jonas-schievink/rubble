@@ -11,7 +11,7 @@ env:
   RUSTFLAGS: --deny warnings
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +27,7 @@ jobs:
       run: rustup target add thumbv7em-none-eabi thumbv6m-none-eabi
 
     - name: Test
-      run: ci/test.sh
+      run: cargo test
     - name: Upload docs
       uses: peaceiris/actions-gh-pages@v3
       if: ${{ github.event_name == 'push' && github.ref == 'master' }}
