@@ -12,8 +12,8 @@ macro_rules! enum_with_unknown {
         $v:vis enum $name:ident($ty:ty) {
             $(
               $( #[$variant_attr:meta] )*
-              $variant:ident = $value:expr $(,)*
-            ),*
+              $variant:ident = $value:expr
+            ),* $(,)?
         }
     ) => {
         $( #[$enum_attr] )*
