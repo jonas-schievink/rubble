@@ -228,7 +228,7 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">characteristic</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">att</span>::{<span class="ident">AttUuid</span>, <span class="ident">Attribute</span>, <span class="ident">AttributeProvider</span>, <span class="ident">Handle</span>, <span class="ident">HandleRange</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">uuid</span>::{<span class="ident">Uuid</span>, <span class="ident">Uuid16</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">uuid</span>::{<span class="ident">Uuid128</span>, <span class="ident">Uuid16</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">utils</span>::<span class="ident">HexSlice</span>, <span class="ident">Error</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cmp</span>, <span class="ident">slice</span>};
 
@@ -378,7 +378,7 @@
                 },
                 <span class="comment">// Characteristic value (Empty Packet)</span>
                 <span class="ident">Attribute</span> {
-                    <span class="ident">att_type</span>: <span class="ident">AttUuid</span>::<span class="ident">Uuid128</span>(<span class="ident">Uuid</span>::<span class="ident">from_bytes</span>([
+                    <span class="ident">att_type</span>: <span class="ident">AttUuid</span>::<span class="ident">Uuid128</span>(<span class="ident">Uuid128</span>::<span class="ident">from_bytes</span>([
                         <span class="number">0xF3</span>, <span class="number">0x6B</span>, <span class="number">0x10</span>, <span class="number">0x9D</span>, <span class="number">0x66</span>, <span class="number">0xF2</span>, <span class="comment">/*-*/</span>
                         <span class="number">0xA9</span>, <span class="number">0xA1</span>, <span class="comment">/*-*/</span>
                         <span class="number">0x12</span>, <span class="number">0x41</span>, <span class="comment">/*-*/</span>
@@ -442,4 +442,4 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "rubble";</script><script src="../../../aliases.js"></script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "rubble";</script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>

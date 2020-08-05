@@ -137,6 +137,56 @@
 <span id="137">137</span>
 <span id="138">138</span>
 <span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! BLE UUIDs (16, 32 or 128 bits).</span>
 <span class="doccomment">//!</span>
@@ -155,12 +205,9 @@
 <span class="doccomment">//! `1234ABCD-0000-1000-8000-00805F9B34FB`.</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">Error</span>};
-<span class="kw">use</span> <span class="ident">byteorder</span>::{<span class="ident">BigEndian</span>, <span class="ident">ByteOrder</span>};
 <span class="kw">use</span> <span class="ident">core</span>::<span class="ident">fmt</span>;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">uuid</span>::<span class="ident">Uuid</span>;
-
-<span class="comment">// FIXME the uuid crate should offer a const fn `from_u128`</span>
+<span class="comment">// FIXME this could be more readable</span>
 <span class="kw">const</span> <span class="ident">BASE_UUID</span>: [<span class="ident">u8</span>; <span class="number">16</span>] <span class="op">=</span> [
     <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="comment">/*-*/</span> <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="comment">/*-*/</span> <span class="number">0x10</span>, <span class="number">00</span>, <span class="comment">/*-*/</span> <span class="number">0x80</span>, <span class="number">0x00</span>,
     <span class="comment">/*-*/</span> <span class="number">0x00</span>, <span class="number">0x80</span>, <span class="number">0x5F</span>, <span class="number">0x9B</span>, <span class="number">0x34</span>, <span class="number">0xFB</span>,
@@ -178,23 +225,34 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Uuid32</span>(<span class="kw">pub</span> <span class="ident">u32</span>);
 
+<span class="doccomment">/// A full 128-bit UUID.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Uuid128</span>([<span class="ident">u8</span>; <span class="number">16</span>]);
+
+<span class="kw">impl</span> <span class="ident">Uuid128</span> {
+    <span class="doccomment">/// Creates a 128-bit UUID from 16 raw bytes (encoded in big-endian).</span>
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: [<span class="ident">u8</span>; <span class="number">16</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span>(<span class="ident">bytes</span>)
+    }
+}
+
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Uuid16</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Uuid32</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">smol</span>: <span class="ident">Uuid16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">Uuid32</span>(<span class="ident">smol</span>.<span class="number">0</span>.<span class="ident">into</span>())
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">Uuid</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Uuid16</span> {
-    <span class="kw">fn</span> <span class="ident">into</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Uuid</span> {
-        <span class="ident">Uuid32</span>::<span class="ident">from</span>(<span class="self">self</span>).<span class="ident">into</span>()
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Uuid16</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">uuid</span>: <span class="ident">Uuid16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="ident">Uuid32</span>::<span class="ident">from</span>(<span class="ident">uuid</span>).<span class="ident">into</span>()
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">Uuid</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Uuid32</span> {
-    <span class="kw">fn</span> <span class="ident">into</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Uuid</span> {
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Uuid32</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">uuid</span>: <span class="ident">Uuid32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">BASE_UUID</span>;
-        <span class="ident">BigEndian</span>::<span class="ident">write_u32</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>, <span class="self">self</span>.<span class="number">0</span>);
-        <span class="ident">Uuid</span>::<span class="ident">from_bytes</span>(<span class="ident">buf</span>)
+        <span class="ident">buf</span>[..<span class="number">4</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">uuid</span>.<span class="number">0</span>.<span class="ident">to_be_bytes</span>());
+        <span class="ident">Uuid128</span>(<span class="ident">buf</span>)
     }
 }
 
@@ -210,9 +268,9 @@
     }
 }
 
-<span class="kw">impl</span> <span class="ident">ToBytes</span> <span class="kw">for</span> <span class="ident">Uuid</span> {
+<span class="kw">impl</span> <span class="ident">ToBytes</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
     <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">buffer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="ident">buffer</span>.<span class="ident">write_slice</span>(<span class="self">self</span>.<span class="ident">as_bytes</span>())
+        <span class="ident">buffer</span>.<span class="ident">write_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>)
     }
 }
 
@@ -230,10 +288,10 @@
     }
 }
 
-<span class="kw">impl</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Uuid</span> {
+<span class="kw">impl</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
     <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">read_array</span>()<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">Uuid</span>::<span class="ident">from_bytes</span>(<span class="ident">array</span>))
+        <span class="prelude-val">Ok</span>(<span class="ident">Uuid128</span>(<span class="ident">array</span>))
     }
 }
 
@@ -246,6 +304,18 @@
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Uuid32</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Uuid32({:08x})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>)
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="kw">let</span> [<span class="ident">_0</span>, <span class="ident">_1</span>, <span class="ident">_2</span>, <span class="ident">_3</span>, <span class="ident">_4</span>, <span class="ident">_5</span>, <span class="ident">_6</span>, <span class="ident">_7</span>, <span class="ident">_8</span>, <span class="ident">_9</span>, <span class="ident">_10</span>, <span class="ident">_11</span>, <span class="ident">_12</span>, <span class="ident">_13</span>, <span class="ident">_14</span>, <span class="ident">_15</span>] <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>;
+        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">u32</span>::<span class="ident">from_be_bytes</span>([<span class="ident">_0</span>, <span class="ident">_1</span>, <span class="ident">_2</span>, <span class="ident">_3</span>]);
+        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">u16</span>::<span class="ident">from_be_bytes</span>([<span class="ident">_4</span>, <span class="ident">_5</span>]);
+        <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="ident">u16</span>::<span class="ident">from_be_bytes</span>([<span class="ident">_6</span>, <span class="ident">_7</span>]);
+        <span class="kw">let</span> <span class="ident">d</span> <span class="op">=</span> <span class="ident">u16</span>::<span class="ident">from_be_bytes</span>([<span class="ident">_8</span>, <span class="ident">_9</span>]);
+        <span class="kw">let</span> <span class="ident">e</span> <span class="op">=</span> <span class="ident">u64</span>::<span class="ident">from_be_bytes</span>([<span class="number">0</span>, <span class="number">0</span>, <span class="ident">_10</span>, <span class="ident">_11</span>, <span class="ident">_12</span>, <span class="ident">_13</span>, <span class="ident">_14</span>, <span class="ident">_15</span>]);
+        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:08x}-{:04x}-{:04x}-{:04x}-{:012x}&quot;</span>, <span class="ident">a</span>, <span class="ident">b</span>, <span class="ident">c</span>, <span class="ident">d</span>, <span class="ident">e</span>)
     }
 }
 
@@ -274,8 +344,38 @@
     <span class="kw">const</span> <span class="ident">KIND</span>: <span class="ident">UuidKind</span> <span class="op">=</span> <span class="ident">UuidKind</span>::<span class="ident">Uuid32</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">IsUuid</span> <span class="kw">for</span> <span class="ident">Uuid</span> {
+<span class="kw">impl</span> <span class="ident">IsUuid</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
     <span class="kw">const</span> <span class="ident">KIND</span>: <span class="ident">UuidKind</span> <span class="op">=</span> <span class="ident">UuidKind</span>::<span class="ident">Uuid128</span>;
 }
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">mod</span> <span class="ident">tests</span> {
+    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">fmt</span>() {
+        <span class="comment">// Check that all leading 0s are printed.</span>
+        <span class="kw">let</span> <span class="ident">uuid</span> <span class="op">=</span> <span class="ident">Uuid128</span>::<span class="ident">from_bytes</span>([
+            <span class="number">0x02</span>, <span class="number">0x3e</span>, <span class="number">0x45</span>, <span class="number">0x67</span>, <span class="number">0x08</span>, <span class="number">0x9b</span>, <span class="number">0x02</span>, <span class="number">0xd3</span>, <span class="number">0x04</span>, <span class="number">0x56</span>, <span class="number">0x00</span>, <span class="number">0x66</span>, <span class="number">0x14</span>, <span class="number">0x17</span>,
+            <span class="number">0x40</span>, <span class="number">0x00</span>,
+        ]);
+
+        <span class="macro">assert_eq</span><span class="macro">!</span>(
+            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">uuid</span>),
+            <span class="string">&quot;023e4567-089b-02d3-0456-006614174000&quot;</span>
+        );
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">convert</span>() {
+        <span class="kw">let</span> <span class="ident">uuid</span> <span class="op">=</span> <span class="number">0xfd6f</span>; <span class="comment">// Apple Inc. / Exposure Notification Service</span>
+        <span class="kw">let</span> <span class="ident">uuid</span> <span class="op">=</span> <span class="ident">Uuid128</span>::<span class="ident">from</span>(<span class="ident">Uuid16</span>(<span class="ident">uuid</span>));
+
+        <span class="macro">assert_eq</span><span class="macro">!</span>(
+            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">uuid</span>),
+            <span class="string">&quot;0000fd6f-0000-1000-8000-00805f9b34fb&quot;</span>
+        );
+    }
+}
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "rubble";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "rubble";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

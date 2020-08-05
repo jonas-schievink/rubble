@@ -103,6 +103,15 @@
 <span id="103">103</span>
 <span id="104">104</span>
 <span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Implementation of the Attribute Protocol (ATT).</span>
 <span class="doccomment">//!</span>
@@ -183,7 +192,16 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// If `handle` does not refer to a grouping attribute, returns `None`.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// TODO: Human-readable docs that explain what grouping is</span>
+    <span class="doccomment">/// Groups themselves are collections of attributes. An attribute is in</span>
+    <span class="doccomment">/// exactly zero or one groups.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// For primary services and secondary services, the BLE specification gives</span>
+    <span class="doccomment">/// exact definitions of what&#39;s in the group. The group begins with the</span>
+    <span class="doccomment">/// &quot;primary service&quot; or &quot;secondary service&quot; attribute, is followed by</span>
+    <span class="doccomment">/// the various attributes contained within that service, and ends with the</span>
+    <span class="doccomment">/// last attribute contained within that service.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// TODO: document what the BLE spec has to say about grouping for characteristics.</span>
     <span class="kw">fn</span> <span class="ident">group_end</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">handle</span>: <span class="ident">Handle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Attribute</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 }
 
@@ -210,4 +228,4 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "rubble";</script><script src="../../../aliases.js"></script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "rubble";</script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
