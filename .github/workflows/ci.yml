@@ -17,20 +17,5 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-        components: rustfmt
-    - name: Install targets
-      run: rustup target add thumbv7em-none-eabi thumbv6m-none-eabi
-
-    - name: Test
-      run: cargo test
     - name: Upload docs
-      uses: peaceiris/actions-gh-pages@v3
-      if: ${{ github.event_name == 'push' && github.ref == 'master' }}
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./target/doc
+      run: echo ${{github.event_name}} ${{github.ref}}
