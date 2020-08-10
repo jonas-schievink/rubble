@@ -190,6 +190,21 @@ impl<T> Consume<T> {
             result,
         }
     }
+
+    /// Retrieves whether this consume represents consuming a packet or not.
+    pub fn consume(&self) -> bool {
+        self.consume
+    }
+
+    /// Retrieves a reference to the inner result.
+    pub fn result(&self) -> &Result<T, Error> {
+        &self.result
+    }
+
+    /// Unwraps this [`Consume`], retrieving the inner result.
+    pub fn into_result(self) -> Result<T, Error> {
+        self.result
+    }
 }
 
 /// A simple packet queue that can hold a single packet.
