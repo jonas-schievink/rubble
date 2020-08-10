@@ -52,6 +52,23 @@ pub struct Attribute<'a> {
     pub value: HexSlice<&'a [u8]>,
 }
 
+impl<'a> Attribute<'a> {
+    /// Creates a new attribute.
+    pub fn new(att_type: AttUuid, handle: Handle, value: &'a [u8]) -> Self {
+        assert_ne!(handle, Handle::NULL);
+        Attribute {
+            att_type,
+            handle,
+            value: HexSlice(value),
+        }
+    }
+
+    /// Retrieves the attribute's value as a slice.
+    pub fn value(&self) -> &'a [u8] {
+        self.value.as_ref()
+    }
+}
+
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
 pub trait AttributeProvider {
     /// Calls a closure `f` with every attribute whose handle is inside `range`, ascending.
