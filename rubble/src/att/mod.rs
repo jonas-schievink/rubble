@@ -55,6 +55,7 @@ pub struct Attribute<'a> {
 impl<'a> Attribute<'a> {
     /// Creates a new attribute.
     pub fn new(att_type: AttUuid, handle: Handle, value: &'a [u8]) -> Self {
+        assert_ne!(handle, Handle::NULL);
         Attribute {
             att_type,
             handle,
