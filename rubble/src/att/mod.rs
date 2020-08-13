@@ -94,6 +94,12 @@ impl<T: AttrValue> Attribute<T> {
     }
 }
 
+pub enum AttributeAccessPermissions {
+    Readable,
+    Writeable,
+    ReadableAndWritable,
+}
+
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
 pub trait AttributeProvider {
     /// Calls a closure `f` with every attribute whose handle is inside `range`, ascending.
@@ -130,6 +136,30 @@ pub trait AttributeProvider {
     ///
     /// TODO: document what the BLE spec has to say about grouping for characteristics.
     fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AttrValue>>;
+
+    /// Retrieves the permissions for the given attribute.
+    ///
+    /// These are used purely for access control within rubble, and won't be
+    /// communicated with clients. They should be coordinated beforehand as part
+    /// of a larger protocol.
+    ///
+    /// Defaults to read-only. If this is overwritten, `write_attribute` should
+    /// be overwritten.
+    fn attribute_access_permissions(&self, uuid: AttUuid) -> AttributeAccessPermissions {
+        AttributeAccessPermissions::Readable
+    }
+
+    /// Attempts to write data to the given attribute.
+    ///
+    /// This will only be called on UUIDs for which
+    /// `attribute_access_permissions` returns
+    /// [`AttributeAccessPermissions::Writeable`] or [`AttributeAccessPermission::ReadableAndWriteable`].
+    ///
+    /// By default, panics on all writes. This should be overwritten if
+    /// `attribute_access_permissions` is.
+    fn write_attribute(&mut self, uuid: AttUuid, data: &[u8]) -> Result<(), Error> {
+        unimplemented!("by default, no attributes should have write access permissions, and this should never be called");
+    }
 }
 
 /// An empty attribute set.
