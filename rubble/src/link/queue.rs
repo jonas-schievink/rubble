@@ -154,20 +154,20 @@ pub trait Consumer {
 /// Bundles a `T` along with information telling a queue whether to consume a packet.
 #[derive(Debug)]
 pub struct Consume<T> {
-    consume: bool,
+    should_consume: bool,
     result: Result<T, Error>,
 }
 
 impl<T> Consume<T> {
     /// Consume the currently processed packet iff `consume` is `true`, then return `result`.
     pub fn new(consume: bool, result: Result<T, Error>) -> Self {
-        Self { consume, result }
+        Self { should_consume: consume, result }
     }
 
     /// Consume the currently processed packet, then return `result`.
     pub fn always(result: Result<T, Error>) -> Self {
         Self {
-            consume: true,
+            should_consume: true,
             result,
         }
     }
@@ -177,7 +177,7 @@ impl<T> Consume<T> {
     /// The next call to the `Consumer::consume_*` methods will yield the same packet again.
     pub fn never(result: Result<T, Error>) -> Self {
         Self {
-            consume: false,
+            should_consume: false,
             result,
         }
     }
@@ -186,14 +186,14 @@ impl<T> Consume<T> {
     /// result.
     pub fn on_success(result: Result<T, Error>) -> Self {
         Self {
-            consume: result.is_ok(),
+            should_consume: result.is_ok(),
             result,
         }
     }
 
     /// Retrieves whether this consume represents consuming a packet or not.
-    pub fn consume(&self) -> bool {
-        self.consume
+    pub fn should_consume(&self) -> bool {
+        self.should_consume
     }
 
     /// Retrieves a reference to the inner result.
@@ -301,7 +301,7 @@ impl<'a> Consumer for SimpleConsumer<'a> {
             let raw_payload = bytes.read_slice(pl_len)?;
 
             let res = f(header, raw_payload);
-            if res.consume {
+            if res.should_consume {
                 self.inner.dequeue().unwrap(); // can't fail
             }
             res.result
