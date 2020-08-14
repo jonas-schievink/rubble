@@ -441,6 +441,24 @@
 <span id="441">441</span>
 <span id="442">442</span>
 <span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! An SPSC queue for data channel PDUs.</span>
 <span class="doccomment">//!</span>
@@ -598,20 +616,23 @@
 <span class="doccomment">/// Bundles a `T` along with information telling a queue whether to consume a packet.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Consume</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="ident">consume</span>: <span class="ident">bool</span>,
+    <span class="ident">should_consume</span>: <span class="ident">bool</span>,
     <span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Error</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Consume the currently processed packet iff `consume` is `true`, then return `result`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">consume</span>: <span class="ident">bool</span>, <span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Error</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span> { <span class="ident">consume</span>, <span class="ident">result</span> }
+        <span class="self">Self</span> {
+            <span class="ident">should_consume</span>: <span class="ident">consume</span>,
+            <span class="ident">result</span>,
+        }
     }
 
     <span class="doccomment">/// Consume the currently processed packet, then return `result`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">always</span>(<span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Error</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">consume</span>: <span class="bool-val">true</span>,
+            <span class="ident">should_consume</span>: <span class="bool-val">true</span>,
             <span class="ident">result</span>,
         }
     }
@@ -621,7 +642,7 @@
     <span class="doccomment">/// The next call to the `Consumer::consume_*` methods will yield the same packet again.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">never</span>(<span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Error</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">consume</span>: <span class="bool-val">false</span>,
+            <span class="ident">should_consume</span>: <span class="bool-val">false</span>,
             <span class="ident">result</span>,
         }
     }
@@ -630,9 +651,24 @@
     <span class="doccomment">/// result.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">on_success</span>(<span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Error</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">consume</span>: <span class="ident">result</span>.<span class="ident">is_ok</span>(),
+            <span class="ident">should_consume</span>: <span class="ident">result</span>.<span class="ident">is_ok</span>(),
             <span class="ident">result</span>,
         }
+    }
+
+    <span class="doccomment">/// Retrieves whether the packet should be removed from the queue.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">should_consume</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">should_consume</span>
+    }
+
+    <span class="doccomment">/// Retrieves a reference to the inner result.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">result</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">result</span>
+    }
+
+    <span class="doccomment">/// Unwraps this `consume`, retrieving the inner result.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_result</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">result</span>
     }
 }
 
@@ -730,7 +766,7 @@
             <span class="kw">let</span> <span class="ident">raw_payload</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">read_slice</span>(<span class="ident">pl_len</span>)<span class="question-mark">?</span>;
 
             <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">f</span>(<span class="ident">header</span>, <span class="ident">raw_payload</span>);
-            <span class="kw">if</span> <span class="ident">res</span>.<span class="ident">consume</span> {
+            <span class="kw">if</span> <span class="ident">res</span>.<span class="ident">should_consume</span> {
                 <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">dequeue</span>().<span class="ident">unwrap</span>(); <span class="comment">// can&#39;t fail</span>
             }
             <span class="ident">res</span>.<span class="ident">result</span>
