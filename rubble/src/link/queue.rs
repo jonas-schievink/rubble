@@ -191,7 +191,7 @@ impl<T> Consume<T> {
         }
     }
 
-    /// Retrieves whether this consume represents consuming a packet or not.
+    /// Retrieves whether the packet should be removed from the queue.
     pub fn should_consume(&self) -> bool {
         self.should_consume
     }
@@ -201,7 +201,7 @@ impl<T> Consume<T> {
         &self.result
     }
 
-    /// Unwraps this [`Consume`], retrieving the inner result.
+    /// Unwraps this `consume`, retrieving the inner result.
     pub fn into_result(self) -> Result<T, Error> {
         self.result
     }
