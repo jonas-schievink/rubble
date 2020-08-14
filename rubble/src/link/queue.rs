@@ -161,7 +161,10 @@ pub struct Consume<T> {
 impl<T> Consume<T> {
     /// Consume the currently processed packet iff `consume` is `true`, then return `result`.
     pub fn new(consume: bool, result: Result<T, Error>) -> Self {
-        Self { should_consume: consume, result }
+        Self {
+            should_consume: consume,
+            result,
+        }
     }
 
     /// Consume the currently processed packet, then return `result`.
