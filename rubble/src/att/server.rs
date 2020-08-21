@@ -213,19 +213,36 @@ impl<A: AttributeProvider> AttributeServer<A> {
                 Ok(())
             }
 
-            AttPdu::WriteReq { .. } => {
+            AttPdu::WriteReq { value, handle } => {
                 // FIXME: ATT Writes are not yet supported, but we pretend they work so that some
                 // applications that only need CCCD writes work (eg. BLE MIDI).
-                warn!("NYI: ATT Write Req");
+                if self.attrs.attribute_access_permissions(handle).can_write() {
+                    self.attrs.write_attribute(handle, value.as_ref());
 
-                responder
-                    .send_with(|writer| -> Result<(), Error> {
-                        writer.write_u8(Opcode::WriteRsp.into())?;
-                        Ok(())
-                    })
-                    .unwrap();
+                    responder
+                        .send_with(|writer| -> Result<(), Error> {
+                            writer.write_u8(Opcode::WriteRsp.into())?;
+                            Ok(())
+                        })
+                        .unwrap();
+                } else {
+                    responder
+                        .send_with(|writer| -> Result<(), Error> {
+                            AttPdu::ErrorRsp {
+                                opcode: Opcode::WriteReq,
+                                handle,
+                                error_code: ErrorCode::WriteNotPermitted,
+                            }
+                            .to_bytes(writer)?;
+                            Ok(())
+                        })
+                        .unwrap();
+                }
                 Ok(())
             }
+            AttPdu::WriteCommand { handle, value } => {}
+            AttPdu::PrepareWriteReq { handle, offset, value } => {}
+            AttPdu::ExecuteWriteReq { flags } => {}
 
             // Responses are always invalid here
             AttPdu::ErrorRsp { .. }
@@ -251,10 +268,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
             | AttPdu::FindByTypeValueReq { .. }
             | AttPdu::ReadBlobReq { .. }
             | AttPdu::ReadMultipleReq { .. }
-            | AttPdu::WriteCommand { .. }
             | AttPdu::SignedWriteCommand { .. }
-            | AttPdu::PrepareWriteReq { .. }
-            | AttPdu::ExecuteWriteReq { .. }
             | AttPdu::HandleValueConfirmation { .. } => {
                 if msg.opcode().is_command() {
                     // According to the spec, unknown Command PDUs should be ignored
