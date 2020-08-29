@@ -44,6 +44,76 @@ impl Uuid128 {
     pub const fn from_bytes(bytes: [u8; 16]) -> Self {
         Self(bytes)
     }
+
+    /// Parses a UUID string literal, panicking when the string is malformed.
+    ///
+    /// This is meant to be used in constant contexts.
+    pub const fn parse_static(s: &'static str) -> Self {
+        const fn parse_nibble(nibble: u8) -> u8 {
+            let hex_digit_out_of_range = 1;
+            match nibble {
+                b'0'..=b'9' => nibble - b'0',
+                b'a'..=b'f' => nibble - b'a' + 10,
+                _ => [0][hex_digit_out_of_range],
+            }
+        }
+
+        let expected_dash = 1;
+        let unexpected_trailing_data = 1;
+
+        // full UUID: 0000fd6f-0000-1000-8000-00805f9b34fb (36 chars/bytes)
+        // dashes at offsets 8, 13, 18, 23
+        let mut index = 0;
+        let mut bytes = [0; 16];
+
+        macro_rules! eat_byte {
+            ($s:ident[$i:ident..]) => {{
+                let hi = parse_nibble($s.as_bytes()[$i]);
+                $i += 1;
+                let lo = parse_nibble($s.as_bytes()[$i]);
+                $i += 1;
+                (hi << 4) | lo
+            }};
+        }
+
+        macro_rules! eat_dash {
+            ($s:ident[$i:ident..]) => {{
+                match $s.as_bytes()[$i] {
+                    b'-' => {}
+                    _ => [()][expected_dash],
+                }
+                $i += 1;
+            }};
+        }
+
+        bytes[0] = eat_byte!(s[index..]);
+        bytes[1] = eat_byte!(s[index..]);
+        bytes[2] = eat_byte!(s[index..]);
+        bytes[3] = eat_byte!(s[index..]);
+        eat_dash!(s[index..]);
+        bytes[4] = eat_byte!(s[index..]);
+        bytes[5] = eat_byte!(s[index..]);
+        eat_dash!(s[index..]);
+        bytes[6] = eat_byte!(s[index..]);
+        bytes[7] = eat_byte!(s[index..]);
+        eat_dash!(s[index..]);
+        bytes[8] = eat_byte!(s[index..]);
+        bytes[9] = eat_byte!(s[index..]);
+        eat_dash!(s[index..]);
+        bytes[10] = eat_byte!(s[index..]);
+        bytes[11] = eat_byte!(s[index..]);
+        bytes[12] = eat_byte!(s[index..]);
+        bytes[13] = eat_byte!(s[index..]);
+        bytes[14] = eat_byte!(s[index..]);
+        bytes[15] = eat_byte!(s[index..]);
+
+        // String must end here.
+        if s.len() > index {
+            [()][unexpected_trailing_data];
+        }
+
+        Uuid128(bytes)
+    }
 }
 
 impl From<Uuid16> for Uuid32 {
