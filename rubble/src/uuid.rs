@@ -256,4 +256,10 @@ mod tests {
             "0000fd6f-0000-1000-8000-00805f9b34fb"
         );
     }
+
+    #[test]
+    fn parse() {
+        let uuid = "0000fd6f-0000-1000-8000-00805f9b34fb";
+        assert_eq!(format!("{:?}", Uuid128::parse_static(uuid)), uuid);
+    }
 }
