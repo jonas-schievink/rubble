@@ -244,6 +244,11 @@ impl<A: AttributeProvider> BleChannelMap<A, NoSecurity> {
             sm: SecurityManager::no_security(),
         }
     }
+
+    /// Provides mutable access to the underlying `AttributeProvider`.
+    pub fn attribute_provider(&mut self) -> &mut A {
+        self.att.provider()
+    }
 }
 
 impl<A: AttributeProvider, S: SecurityLevel> ChannelMapper for BleChannelMap<A, S> {
@@ -366,6 +371,11 @@ impl<M: ChannelMapper> L2CAPState<M> {
     /// Gives this instance the ability to transmit packets.
     pub fn tx<'a, P: Producer>(&'a mut self, tx: &'a mut P) -> L2CAPStateTx<'a, M, P> {
         L2CAPStateTx { l2cap: self, tx }
+    }
+
+    /// Provides mutable access to the underlying `ChannelMapper`.
+    pub fn channel_mapper(&mut self) -> &mut M {
+        &mut self.mapper
     }
 }
 
