@@ -67,6 +67,11 @@ impl<'a> Attribute<'a> {
     pub fn value(&self) -> &'a [u8] {
         self.value.as_ref()
     }
+
+    /// Overrides the previously set attribute's value.
+    pub fn set_value(&mut self, value: &'a [u8]) {
+        self.value = HexSlice(value)
+    }
 }
 
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.

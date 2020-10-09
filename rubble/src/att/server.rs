@@ -32,6 +32,11 @@ impl<A: AttributeProvider> AttributeServer<A> {
         }
     }
 
+    /// Provides mutable access to the underlying `AttributeProvider`.
+    pub fn provider(&mut self) -> &mut A {
+        &mut self.attrs
+    }
+
     /// Returns the `ATT_MTU` value, the maximum size of an ATT PDU that can be processed and sent
     /// out by the server.
     fn att_mtu(&self) -> u8 {
