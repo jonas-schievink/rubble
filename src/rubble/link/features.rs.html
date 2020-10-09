@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/features.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>features.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/features.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>features.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
 <span id="2"> 2</span>
 <span id="3"> 3</span>
 <span id="4"> 4</span>
@@ -99,7 +100,7 @@
         <span class="doccomment">///</span>
         <span class="doccomment">/// Note that the Security Manager Protocol also needs to be implemented for this to be</span>
         <span class="doccomment">/// useful.</span>
-        <span class="kw">const</span> <span class="ident">LE_ENCRYPTION</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">0</span>);
+        <span class="kw">const</span> <span class="ident">LE_ENCRYPTION</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;&lt;</span> <span class="number">0</span>);
 
         <span class="doccomment">/// Connection parameters request procedure.</span>
         <span class="doccomment">///</span>
@@ -110,10 +111,10 @@
         <span class="doccomment">///</span>
         <span class="doccomment">/// This is a superset of `EXTENDED_REJECT_INDICATION`, which may also be set when this bit</span>
         <span class="doccomment">/// is set.</span>
-        <span class="kw">const</span> <span class="ident">CONN_PARAM_REQ</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">1</span>);
+        <span class="kw">const</span> <span class="ident">CONN_PARAM_REQ</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;&lt;</span> <span class="number">1</span>);
 
         <span class="doccomment">/// Support for the LL Control PDU `LL_REJECT_IND_EXT`.</span>
-        <span class="kw">const</span> <span class="ident">EXTENDED_REJECT_INDICATION</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">2</span>);
+        <span class="kw">const</span> <span class="ident">EXTENDED_REJECT_INDICATION</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;&lt;</span> <span class="number">2</span>);
 
         <span class="doccomment">/// Slave-initiated feature exchange.</span>
         <span class="doccomment">///</span>
@@ -121,7 +122,7 @@
         <span class="doccomment">/// * The following types of LL Control PDUs: `LL_SLAVE_FEATURE_REQ`, `LL_FEATURE_RSP`.</span>
         <span class="doccomment">///</span>
         <span class="doccomment">/// TODO: What&#39;s the use of this?</span>
-        <span class="kw">const</span> <span class="ident">SLAVE_FEATURE_EXCHANGE</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">3</span>);
+        <span class="kw">const</span> <span class="ident">SLAVE_FEATURE_EXCHANGE</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;&lt;</span> <span class="number">3</span>);
 
         <span class="doccomment">/// Low-Energy Link-Layer ping exchange.</span>
         <span class="doccomment">///</span>
@@ -133,38 +134,38 @@
         <span class="doccomment">/// If a Link-Layer is in idle state, it will transmit empty PDUs, which are never</span>
         <span class="doccomment">/// authenticated with a MIC. Supporting this feature allows configuring a timeout between</span>
         <span class="doccomment">/// authenticated packets, since dummy data can then be sent via `LL_PING_REQ`.</span>
-        <span class="kw">const</span> <span class="ident">LE_PING</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">4</span>);
+        <span class="kw">const</span> <span class="ident">LE_PING</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;&lt;</span> <span class="number">4</span>);
 
         <span class="doccomment">/// Link-Layer PDU length update (support for data channel PDUs with more than 31 Bytes).</span>
         <span class="doccomment">///</span>
         <span class="doccomment">/// Setting this bit means that the implementation must support the following:</span>
         <span class="doccomment">/// * The following types of LL Control PDUs: `LL_LENGTH_REQ`, `LL_LENGTH_RSP`</span>
         <span class="doccomment">/// * The *Data Length Update Procedure*</span>
-        <span class="kw">const</span> <span class="ident">LE_PACKET_LENGTH_EXTENSION</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">5</span>);
+        <span class="kw">const</span> <span class="ident">LE_PACKET_LENGTH_EXTENSION</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;&lt;</span> <span class="number">5</span>);
 
         <span class="doccomment">/// Support for untrackable randomized device addresses (LL Privacy).</span>
-        <span class="kw">const</span> <span class="ident">LL_PRIVACY</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">6</span>);
+        <span class="kw">const</span> <span class="ident">LL_PRIVACY</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;&lt;</span> <span class="number">6</span>);
 
         <span class="doccomment">/// Extended scan filter policies.</span>
-        <span class="kw">const</span> <span class="ident">EXT_SCANNER_FILTER_POLICIES</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">7</span>);
+        <span class="kw">const</span> <span class="ident">EXT_SCANNER_FILTER_POLICIES</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;&lt;</span> <span class="number">7</span>);
     }
 }
 
 <span class="kw">impl</span> <span class="ident">FeatureSet</span> {
     <span class="doccomment">/// Returns the feature set supported by Rubble.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">supported</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">supported</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">FeatureSet</span>::<span class="ident">empty</span>()
     }
 }
 
 <span class="kw">impl</span> <span class="ident">ToBytes</span> <span class="kw">for</span> <span class="ident">FeatureSet</span> {
-    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">writer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">writer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="ident">writer</span>.<span class="ident">write_u64_le</span>(<span class="self">self</span>.<span class="ident">bits</span>())
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">FeatureSet</span> {
-    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">raw</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">read_u64_le</span>()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">from_bits_truncate</span>(<span class="ident">raw</span>))
     }

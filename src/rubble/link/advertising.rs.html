@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/advertising.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>advertising.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/advertising.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>advertising.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -957,15 +958,15 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_header_and_payload</span>(
         <span class="ident">header</span>: <span class="ident">Header</span>,
         <span class="ident">payload</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="self">self</span>::<span class="ident">Pdu</span>::<span class="kw-2">*</span>;
 
-        <span class="kw">if</span> <span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()) <span class="op">!</span><span class="op">=</span> <span class="ident">payload</span>.<span class="ident">bytes_left</span>() {
+        <span class="kw">if</span> <span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()) <span class="op">!=</span> <span class="ident">payload</span>.<span class="ident">bytes_left</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InvalidLength</span>);
         }
 
         <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">header</span>.<span class="ident">type_</span>() {
-            <span class="ident">PduType</span>::<span class="ident">AdvInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ConnectableUndirected</span> {
+            <span class="ident">PduType</span>::<span class="ident">AdvInd</span> <span class="op">=&gt;</span> <span class="ident">ConnectableUndirected</span> {
                 <span class="ident">advertiser_addr</span>: {
                     <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">header</span>.<span class="ident">tx_add</span>() {
                         <span class="ident">AddressKind</span>::<span class="ident">Random</span>
@@ -976,7 +977,7 @@
                 },
                 <span class="ident">advertising_data</span>: <span class="ident">BytesOr</span>::<span class="ident">from_bytes</span>(<span class="ident">payload</span>)<span class="question-mark">?</span>,
             },
-            <span class="ident">PduType</span>::<span class="ident">AdvDirectInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ConnectableDirected</span> {
+            <span class="ident">PduType</span>::<span class="ident">AdvDirectInd</span> <span class="op">=&gt;</span> <span class="ident">ConnectableDirected</span> {
                 <span class="ident">advertiser_addr</span>: {
                     <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">header</span>.<span class="ident">tx_add</span>() {
                         <span class="ident">AddressKind</span>::<span class="ident">Random</span>
@@ -994,7 +995,7 @@
                     <span class="ident">DeviceAddress</span>::<span class="ident">new</span>(<span class="ident">payload</span>.<span class="ident">read_array</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">6</span>]<span class="op">&gt;</span>()<span class="question-mark">?</span>, <span class="ident">kind</span>)
                 },
             },
-            <span class="ident">PduType</span>::<span class="ident">AdvNonconnInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NonconnectableUndirected</span> {
+            <span class="ident">PduType</span>::<span class="ident">AdvNonconnInd</span> <span class="op">=&gt;</span> <span class="ident">NonconnectableUndirected</span> {
                 <span class="ident">advertiser_addr</span>: {
                     <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">header</span>.<span class="ident">tx_add</span>() {
                         <span class="ident">AddressKind</span>::<span class="ident">Random</span>
@@ -1005,7 +1006,7 @@
                 },
                 <span class="ident">advertising_data</span>: <span class="ident">BytesOr</span>::<span class="ident">from_bytes</span>(<span class="ident">payload</span>)<span class="question-mark">?</span>,
             },
-            <span class="ident">PduType</span>::<span class="ident">AdvScanInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ScannableUndirected</span> {
+            <span class="ident">PduType</span>::<span class="ident">AdvScanInd</span> <span class="op">=&gt;</span> <span class="ident">ScannableUndirected</span> {
                 <span class="ident">advertiser_addr</span>: {
                     <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">header</span>.<span class="ident">tx_add</span>() {
                         <span class="ident">AddressKind</span>::<span class="ident">Random</span>
@@ -1016,7 +1017,7 @@
                 },
                 <span class="ident">advertising_data</span>: <span class="ident">BytesOr</span>::<span class="ident">from_bytes</span>(<span class="ident">payload</span>)<span class="question-mark">?</span>,
             },
-            <span class="ident">PduType</span>::<span class="ident">ScanReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ScanRequest</span> {
+            <span class="ident">PduType</span>::<span class="ident">ScanReq</span> <span class="op">=&gt;</span> <span class="ident">ScanRequest</span> {
                 <span class="ident">scanner_addr</span>: {
                     <span class="comment">// Scanning device sends this PDU</span>
                     <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">header</span>.<span class="ident">tx_add</span>() {
@@ -1037,7 +1038,7 @@
                     <span class="ident">DeviceAddress</span>::<span class="ident">new</span>(<span class="ident">payload</span>.<span class="ident">read_array</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">6</span>]<span class="op">&gt;</span>()<span class="question-mark">?</span>, <span class="ident">kind</span>)
                 },
             },
-            <span class="ident">PduType</span>::<span class="ident">ScanRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ScanResponse</span> {
+            <span class="ident">PduType</span>::<span class="ident">ScanRsp</span> <span class="op">=&gt;</span> <span class="ident">ScanResponse</span> {
                 <span class="ident">advertiser_addr</span>: {
                     <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">header</span>.<span class="ident">tx_add</span>() {
                         <span class="ident">AddressKind</span>::<span class="ident">Random</span>
@@ -1048,7 +1049,7 @@
                 },
                 <span class="ident">scan_data</span>: <span class="ident">BytesOr</span>::<span class="ident">from_bytes</span>(<span class="ident">payload</span>)<span class="question-mark">?</span>,
             },
-            <span class="ident">PduType</span>::<span class="ident">ConnectReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ConnectRequest</span> {
+            <span class="ident">PduType</span>::<span class="ident">ConnectReq</span> <span class="op">=&gt;</span> <span class="ident">ConnectRequest</span> {
                 <span class="comment">// Initiator sends this PDU</span>
                 <span class="ident">initiator_addr</span>: {
                     <span class="comment">// Scanning device sends this PDU</span>
@@ -1072,12 +1073,12 @@
                 },
                 <span class="ident">lldata</span>: <span class="ident">ConnectRequestData</span>::<span class="ident">from_bytes</span>(<span class="ident">payload</span>)<span class="question-mark">?</span>,
             },
-            <span class="ident">PduType</span>::<span class="ident">Unknown</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InvalidValue</span>),
+            <span class="ident">PduType</span>::<span class="ident">Unknown</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InvalidValue</span>),
         })
     }
 
     <span class="doccomment">/// Returns the device address of the sender of this PDU.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sender</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">DeviceAddress</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sender</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">DeviceAddress</span> {
         <span class="kw">use</span> <span class="self">self</span>::<span class="ident">Pdu</span>::<span class="kw-2">*</span>;
 
         <span class="kw">match</span> <span class="self">self</span> {
@@ -1095,55 +1096,55 @@
             }
             <span class="op">|</span> <span class="ident">ScanResponse</span> {
                 <span class="ident">advertiser_addr</span>, ..
-            } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">advertiser_addr</span>,
+            } <span class="op">=&gt;</span> <span class="ident">advertiser_addr</span>,
 
-            <span class="ident">ScanRequest</span> { <span class="ident">scanner_addr</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">scanner_addr</span>,
+            <span class="ident">ScanRequest</span> { <span class="ident">scanner_addr</span>, .. } <span class="op">=&gt;</span> <span class="ident">scanner_addr</span>,
 
-            <span class="ident">ConnectRequest</span> { <span class="ident">initiator_addr</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">initiator_addr</span>,
+            <span class="ident">ConnectRequest</span> { <span class="ident">initiator_addr</span>, .. } <span class="op">=&gt;</span> <span class="ident">initiator_addr</span>,
         }
     }
 
     <span class="doccomment">/// Returns the intended receiver of this PDU.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This may be `None` if the PDU doesn&#39;t have a fixed receiver.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">receiver</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">DeviceAddress</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">receiver</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">DeviceAddress</span><span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="self">self</span>::<span class="ident">Pdu</span>::<span class="kw-2">*</span>;
 
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">ConnectableUndirected</span> { .. }
             <span class="op">|</span> <span class="ident">NonconnectableUndirected</span> { .. }
             <span class="op">|</span> <span class="ident">ScannableUndirected</span> { .. }
-            <span class="op">|</span> <span class="ident">ScanResponse</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+            <span class="op">|</span> <span class="ident">ScanResponse</span> { .. } <span class="op">=&gt;</span> <span class="prelude-val">None</span>,
 
-            <span class="ident">ConnectableDirected</span> { <span class="ident">initiator_addr</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">initiator_addr</span>),
+            <span class="ident">ConnectableDirected</span> { <span class="ident">initiator_addr</span>, .. } <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">initiator_addr</span>),
             <span class="ident">ScanRequest</span> {
                 <span class="ident">advertiser_addr</span>, ..
             }
             <span class="op">|</span> <span class="ident">ConnectRequest</span> {
                 <span class="ident">advertiser_addr</span>, ..
-            } <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">advertiser_addr</span>),
+            } <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">advertiser_addr</span>),
         }
     }
 
     <span class="doccomment">/// Returns the PDU type of `self`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PduType</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">PduType</span> {
         <span class="kw">use</span> <span class="self">self</span>::<span class="ident">Pdu</span>::<span class="kw-2">*</span>;
 
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">ConnectableUndirected</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PduType</span>::<span class="ident">AdvInd</span>,
-            <span class="ident">ConnectableDirected</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PduType</span>::<span class="ident">AdvDirectInd</span>,
-            <span class="ident">NonconnectableUndirected</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PduType</span>::<span class="ident">AdvNonconnInd</span>,
-            <span class="ident">ScannableUndirected</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PduType</span>::<span class="ident">AdvScanInd</span>,
-            <span class="ident">ScanRequest</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PduType</span>::<span class="ident">ScanReq</span>,
-            <span class="ident">ScanResponse</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PduType</span>::<span class="ident">ScanRsp</span>,
-            <span class="ident">ConnectRequest</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PduType</span>::<span class="ident">ConnectReq</span>,
+            <span class="ident">ConnectableUndirected</span> { .. } <span class="op">=&gt;</span> <span class="ident">PduType</span>::<span class="ident">AdvInd</span>,
+            <span class="ident">ConnectableDirected</span> { .. } <span class="op">=&gt;</span> <span class="ident">PduType</span>::<span class="ident">AdvDirectInd</span>,
+            <span class="ident">NonconnectableUndirected</span> { .. } <span class="op">=&gt;</span> <span class="ident">PduType</span>::<span class="ident">AdvNonconnInd</span>,
+            <span class="ident">ScannableUndirected</span> { .. } <span class="op">=&gt;</span> <span class="ident">PduType</span>::<span class="ident">AdvScanInd</span>,
+            <span class="ident">ScanRequest</span> { .. } <span class="op">=&gt;</span> <span class="ident">PduType</span>::<span class="ident">ScanReq</span>,
+            <span class="ident">ScanResponse</span> { .. } <span class="op">=&gt;</span> <span class="ident">PduType</span>::<span class="ident">ScanRsp</span>,
+            <span class="ident">ConnectRequest</span> { .. } <span class="op">=&gt;</span> <span class="ident">PduType</span>::<span class="ident">ConnectReq</span>,
         }
     }
 
     <span class="doccomment">/// Returns an iterator over all AD structures encoded in the PDU.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// If this PDU doesn&#39;t support attaching AD structures, this will return `None`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">advertising_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">advertising_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="self">self</span>::<span class="ident">Pdu</span>::<span class="kw-2">*</span>;
 
         <span class="kw">match</span> <span class="self">self</span> {
@@ -1155,16 +1156,16 @@
             }
             <span class="op">|</span> <span class="ident">ScannableUndirected</span> {
                 <span class="ident">advertising_data</span>, ..
-            } <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">advertising_data</span>.<span class="ident">iter</span>()),
-            <span class="ident">ScanResponse</span> { <span class="ident">scan_data</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">scan_data</span>.<span class="ident">iter</span>()),
-            <span class="ident">ScanRequest</span> { .. } <span class="op">|</span> <span class="ident">ConnectableDirected</span> { .. } <span class="op">|</span> <span class="ident">ConnectRequest</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+            } <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">advertising_data</span>.<span class="ident">iter</span>()),
+            <span class="ident">ScanResponse</span> { <span class="ident">scan_data</span>, .. } <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">scan_data</span>.<span class="ident">iter</span>()),
+            <span class="ident">ScanRequest</span> { .. } <span class="op">|</span> <span class="ident">ConnectableDirected</span> { .. } <span class="op">|</span> <span class="ident">ConnectRequest</span> { .. } <span class="op">=&gt;</span> <span class="prelude-val">None</span>,
         }
     }
 }
 
 <span class="doccomment">/// Decodes an advertising channel PDU (consisting of header and payload) from raw bytes.</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">header</span> <span class="op">=</span> <span class="ident">Header</span>::<span class="ident">from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
         <span class="self">Self</span>::<span class="ident">from_header_and_payload</span>(<span class="ident">header</span>, <span class="ident">bytes</span>)
     }
@@ -1195,42 +1196,42 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// The address is randomly generated by the initiator (the device sending the connection</span>
     <span class="doccomment">/// request) according to the requirements in the Bluetooth specification.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">access_address</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u32</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">access_address</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u32</span> {
         <span class="self">self</span>.<span class="ident">access_address</span>.<span class="number">0</span>
     }
 
     <span class="doccomment">/// Returns the initialization value for the CRC calculation.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The CRC *polynomial* is always the same.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">crc_init</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u32</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">crc_init</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u32</span> {
         <span class="self">self</span>.<span class="ident">crc_init</span>.<span class="number">0</span>
     }
 
     <span class="doccomment">/// Returns the channel map specified by the initiator.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">channel_map</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">ChannelMap</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">channel_map</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">ChannelMap</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">chm</span>
     }
 
     <span class="doccomment">/// Returns the channel hop distance.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This must be in range `5..=16`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">hop</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">hop</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
         <span class="self">self</span>.<span class="ident">hop</span>
     }
 
     <span class="doccomment">/// Returns the end of the transmit window from reception of the `CONNECT_REQ` containing</span>
     <span class="doccomment">/// `self`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">end_of_tx_window</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">end_of_tx_window</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="self">self</span>.<span class="ident">win_offset</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">win_size</span> <span class="op">+</span> <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">1250</span>)
     }
 
     <span class="doccomment">/// Returns the connection event interval in µs.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="self">self</span>.<span class="ident">interval</span>
     }
 
     <span class="doccomment">/// Returns the slave latency (as the number of connection events).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">slave_latency</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">slave_latency</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
         <span class="self">self</span>.<span class="ident">latency</span>
     }
 
@@ -1238,13 +1239,13 @@
     <span class="doccomment">/// connection.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// If no data packet is received for this duration, the connection should be considered lost.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">supervision_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">supervision_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="self">self</span>.<span class="ident">timeout</span>
     }
 }
 
 <span class="kw">impl</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ConnectRequestData</span> {
-    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">sca</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">access_address</span>: <span class="ident">Hex</span>(<span class="ident">bytes</span>.<span class="ident">read_u32_le</span>()<span class="question-mark">?</span>),
@@ -1266,21 +1267,21 @@
             <span class="ident">chm</span>: <span class="ident">ChannelMap</span>::<span class="ident">from_raw</span>(<span class="ident">bytes</span>.<span class="ident">read_array</span>()<span class="question-mark">?</span>),
             <span class="ident">hop</span>: {
                 <span class="kw">let</span> <span class="ident">hop_and_sca</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>;
-                <span class="ident">sca</span> <span class="op">=</span> (<span class="ident">hop_and_sca</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">5</span>) <span class="op">&amp;</span> <span class="number">0b111</span>;
+                <span class="ident">sca</span> <span class="op">=</span> (<span class="ident">hop_and_sca</span> <span class="op">&gt;&gt;</span> <span class="number">5</span>) <span class="op">&amp;</span> <span class="number">0b111</span>;
                 <span class="ident">hop_and_sca</span> <span class="op">&amp;</span> <span class="number">0b11111</span>
             },
             <span class="ident">sca</span>: {
                 <span class="kw">use</span> <span class="self">self</span>::<span class="ident">SleepClockAccuracy</span>::<span class="kw-2">*</span>;
                 <span class="kw">match</span> <span class="ident">sca</span> {
-                    <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Ppm251To500</span>,
-                    <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Ppm151To250</span>,
-                    <span class="number">2</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Ppm101To150</span>,
-                    <span class="number">3</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Ppm76To100</span>,
-                    <span class="number">4</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Ppm51To75</span>,
-                    <span class="number">5</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Ppm31To50</span>,
-                    <span class="number">6</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Ppm21To30</span>,
-                    <span class="number">7</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Ppm0To20</span>,
-                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(), <span class="comment">// only 3 bits</span>
+                    <span class="number">0</span> <span class="op">=&gt;</span> <span class="ident">Ppm251To500</span>,
+                    <span class="number">1</span> <span class="op">=&gt;</span> <span class="ident">Ppm151To250</span>,
+                    <span class="number">2</span> <span class="op">=&gt;</span> <span class="ident">Ppm101To150</span>,
+                    <span class="number">3</span> <span class="op">=&gt;</span> <span class="ident">Ppm76To100</span>,
+                    <span class="number">4</span> <span class="op">=&gt;</span> <span class="ident">Ppm51To75</span>,
+                    <span class="number">5</span> <span class="op">=&gt;</span> <span class="ident">Ppm31To50</span>,
+                    <span class="number">6</span> <span class="op">=&gt;</span> <span class="ident">Ppm21To30</span>,
+                    <span class="number">7</span> <span class="op">=&gt;</span> <span class="ident">Ppm0To20</span>,
+                    <span class="kw">_</span> <span class="op">=&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(), <span class="comment">// only 3 bits</span>
                 }
             },
         })
@@ -1320,8 +1321,8 @@
     <span class="kw">fn</span> <span class="ident">adv</span>(
         <span class="ident">ty</span>: <span class="ident">PduType</span>,
         <span class="ident">adv</span>: <span class="ident">DeviceAddress</span>,
-        <span class="ident">adv_data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">dyn</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="ident">adv_data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">dyn</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload</span> <span class="op">=</span> [<span class="number">0</span>; <span class="ident">MAX_PAYLOAD_SIZE</span>];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">ByteWriter</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">payload</span>[..]);
         <span class="ident">buf</span>.<span class="ident">write_slice</span>(<span class="ident">adv</span>.<span class="ident">raw</span>()).<span class="ident">unwrap</span>();
@@ -1351,7 +1352,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">connectable_undirected</span>(
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">advertiser_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">adv</span>(
             <span class="ident">PduType</span>::<span class="ident">AdvInd</span>,
             <span class="ident">advertiser_addr</span>,
@@ -1363,7 +1364,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">connectable_directed</span>(
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">initiator_addr</span>: <span class="ident">DeviceAddress</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">37</span>];
         <span class="ident">payload</span>[<span class="number">0</span>..<span class="number">6</span>].<span class="ident">copy_from_slice</span>(<span class="ident">advertiser_addr</span>.<span class="ident">raw</span>());
         <span class="ident">payload</span>[<span class="number">6</span>..<span class="number">12</span>].<span class="ident">copy_from_slice</span>(<span class="ident">initiator_addr</span>.<span class="ident">raw</span>());
@@ -1387,7 +1388,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">nonconnectable_undirected</span>(
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">advertiser_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">adv</span>(
             <span class="ident">PduType</span>::<span class="ident">AdvNonconnInd</span>,
             <span class="ident">advertiser_addr</span>,
@@ -1401,7 +1402,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">scannable_undirected</span>(
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">advertiser_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">adv</span>(
             <span class="ident">PduType</span>::<span class="ident">AdvScanInd</span>,
             <span class="ident">advertiser_addr</span>,
@@ -1416,7 +1417,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">beacon</span>(
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">advertiser_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">nonconnectable_undirected</span>(<span class="ident">advertiser_addr</span>, <span class="ident">advertiser_data</span>)
     }
 
@@ -1434,7 +1435,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">discoverable</span>(
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">advertiser_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="comment">// TODO what&#39;s the difference between &quot;general&quot; and &quot;limited&quot; discoverability?</span>
         <span class="self">Self</span>::<span class="ident">adv</span>(
             <span class="ident">PduType</span>::<span class="ident">AdvInd</span>,
@@ -1453,7 +1454,7 @@
     <span class="doccomment">///   the request).</span>
     <span class="doccomment">/// * `adv`: Device address of the advertising device that this scan request</span>
     <span class="doccomment">///   is directed towards.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">scan_request</span>(<span class="ident">_scanner</span>: <span class="ident">DeviceAddress</span>, <span class="ident">_adv</span>: <span class="ident">DeviceAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">scan_request</span>(<span class="ident">_scanner</span>: <span class="ident">DeviceAddress</span>, <span class="ident">_adv</span>: <span class="ident">DeviceAddress</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="macro">unimplemented</span><span class="macro">!</span>()
     }
 
@@ -1463,7 +1464,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">scan_response</span>(
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">scan_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload</span> <span class="op">=</span> [<span class="number">0</span>; <span class="ident">MAX_PAYLOAD_SIZE</span>];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">ByteWriter</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">payload</span>[..]);
         <span class="ident">buf</span>.<span class="ident">write_slice</span>(<span class="ident">advertiser_addr</span>.<span class="ident">raw</span>()).<span class="ident">unwrap</span>();
@@ -1483,18 +1484,18 @@
         })
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">header</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Header</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">header</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Header</span> {
         <span class="self">self</span>.<span class="ident">header</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">payload</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">payload</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] {
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">header</span>.<span class="ident">payload_length</span>() <span class="kw">as</span> <span class="ident">usize</span>;
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">payload_buf</span>[..<span class="ident">len</span>]
     }
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">PduBuf</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;({:?}, {:?})&quot;</span>, <span class="self">self</span>.<span class="ident">header</span>(), <span class="ident">HexSlice</span>(<span class="self">self</span>.<span class="ident">payload</span>()))
     }
 }
@@ -1524,11 +1525,11 @@
 
 <span class="kw">impl</span> <span class="ident">Header</span> {
     <span class="doccomment">/// Creates a new Advertising Channel PDU header specifying the Payload type `ty`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">ty</span>: <span class="ident">PduType</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">ty</span>: <span class="ident">PduType</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">Header</span>(<span class="ident">u16</span>::<span class="ident">from</span>(<span class="ident">u8</span>::<span class="ident">from</span>(<span class="ident">ty</span>)))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse</span>(<span class="ident">raw</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse</span>(<span class="ident">raw</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">bytes</span>: [<span class="ident">u8</span>; <span class="number">2</span>] <span class="op">=</span> <span class="ident">raw</span>[..<span class="number">2</span>].<span class="ident">try_into</span>().<span class="ident">expect</span>(<span class="string">&quot;raw has fewer than 2 bytes&quot;</span>);
         <span class="ident">Header</span>(<span class="ident">u16</span>::<span class="ident">from_le_bytes</span>(<span class="ident">bytes</span>))
     }
@@ -1536,28 +1537,28 @@
     <span class="doccomment">/// Returns the raw representation of the header.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The returned `u16` must be transmitted LSb first as the first 2 octets of the PDU.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_u16</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_u16</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
         <span class="self">self</span>.<span class="number">0</span>
     }
 
     <span class="doccomment">/// Sets all bits in the header that are set in `mask`.</span>
     <span class="kw">fn</span> <span class="ident">set_header_bits</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">mask</span>: <span class="ident">u16</span>) {
-        <span class="self">self</span>.<span class="number">0</span> <span class="op">|</span><span class="op">=</span> <span class="ident">mask</span>;
+        <span class="self">self</span>.<span class="number">0</span> <span class="op">|=</span> <span class="ident">mask</span>;
     }
 
     <span class="doccomment">/// Clears all bits in the header that are set in `mask`.</span>
     <span class="kw">fn</span> <span class="ident">clear_header_bits</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">mask</span>: <span class="ident">u16</span>) {
-        <span class="self">self</span>.<span class="number">0</span> <span class="kw-2">&amp;</span><span class="op">=</span> <span class="op">!</span><span class="ident">mask</span>;
+        <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;=</span> <span class="op">!</span><span class="ident">mask</span>;
     }
 
     <span class="doccomment">/// Returns the PDU type specified in the header.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">type_</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PduType</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">type_</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">PduType</span> {
         <span class="ident">PduType</span>::<span class="ident">from</span>((<span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0b00000000_00001111</span>) <span class="kw">as</span> <span class="ident">u8</span>)
     }
 
     <span class="doccomment">/// Returns the state of the `TxAdd` field.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">tx_add</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="ident">TXADD_MASK</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">tx_add</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="ident">TXADD_MASK</span> <span class="op">!=</span> <span class="number">0</span>
     }
 
     <span class="doccomment">/// Sets the `TxAdd` field&#39;s value.</span>
@@ -1570,8 +1571,8 @@
     }
 
     <span class="doccomment">/// Returns the state of the `RxAdd` field.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rx_add</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="ident">RXADD_MASK</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rx_add</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="ident">RXADD_MASK</span> <span class="op">!=</span> <span class="number">0</span>
     }
 
     <span class="doccomment">/// Sets the `RxAdd` field&#39;s value.</span>
@@ -1587,23 +1588,23 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// According to the spec, the length must be in range 6...37, but this isn&#39;t checked by this</span>
     <span class="doccomment">/// function.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">payload_length</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
-        ((<span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0b00111111_00000000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">8</span>) <span class="kw">as</span> <span class="ident">u8</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">payload_length</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
+        ((<span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0b00111111_00000000</span>) <span class="op">&gt;&gt;</span> <span class="number">8</span>) <span class="kw">as</span> <span class="ident">u8</span>
     }
 
     <span class="doccomment">/// Sets the payload length of this PDU.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The `length` must be in range 6...37, otherwise this function panics.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_payload_length</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">length</span>: <span class="ident">u8</span>) {
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="number">6</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">length</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">length</span> <span class="op">&lt;</span><span class="op">=</span> <span class="number">37</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="number">6</span> <span class="op">&lt;=</span> <span class="ident">length</span> <span class="op">&amp;&amp;</span> <span class="ident">length</span> <span class="op">&lt;=</span> <span class="number">37</span>);
 
         <span class="kw">let</span> <span class="ident">header</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="op">!</span><span class="number">0b00111111_00000000</span>;
-        <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">header</span> <span class="op">|</span> (<span class="ident">u16</span>::<span class="ident">from</span>(<span class="ident">length</span>) <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span>);
+        <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">header</span> <span class="op">|</span> (<span class="ident">u16</span>::<span class="ident">from</span>(<span class="ident">length</span>) <span class="op">&lt;&lt;</span> <span class="number">8</span>);
     }
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Header</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;Header&quot;</span>)
             .<span class="ident">field</span>(<span class="string">&quot;PDU Type&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">type_</span>())
             .<span class="ident">field</span>(<span class="string">&quot;TxAdd&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">tx_add</span>())
@@ -1614,14 +1615,14 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Header</span> {
-    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">raw</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">Header</span>(<span class="ident">raw</span>))
     }
 }
 
 <span class="kw">impl</span> <span class="ident">ToBytes</span> <span class="kw">for</span> <span class="ident">Header</span> {
-    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">writer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">writer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="ident">writer</span>.<span class="ident">write_u16_le</span>(<span class="self">self</span>.<span class="number">0</span>)
     }
 }
@@ -1664,20 +1665,20 @@
 
 <span class="kw">impl</span> <span class="ident">PduType</span> {
     <span class="doccomment">/// Returns whether this PDU type is a beacon advertisement.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_beacon</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="kw-2">*</span><span class="self">self</span> <span class="op">=</span><span class="op">=</span> <span class="ident">PduType</span>::<span class="ident">AdvNonconnInd</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_beacon</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="kw-2">*</span><span class="self">self</span> <span class="op">==</span> <span class="ident">PduType</span>::<span class="ident">AdvNonconnInd</span>
     }
 
     <span class="doccomment">/// Whether AD structures can follow the fixed data in a PDU of this type.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">allows_adv_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">allows_adv_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">PduType</span>::<span class="ident">AdvInd</span> <span class="op">|</span> <span class="ident">PduType</span>::<span class="ident">AdvNonconnInd</span> <span class="op">|</span> <span class="ident">PduType</span>::<span class="ident">AdvScanInd</span> <span class="op">|</span> <span class="ident">PduType</span>::<span class="ident">ScanRsp</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PduType</span>::<span class="ident">AdvInd</span> <span class="op">|</span> <span class="ident">PduType</span>::<span class="ident">AdvNonconnInd</span> <span class="op">|</span> <span class="ident">PduType</span>::<span class="ident">AdvScanInd</span> <span class="op">|</span> <span class="ident">PduType</span>::<span class="ident">ScanRsp</span> <span class="op">=&gt;</span> {
                 <span class="bool-val">true</span>
             }
             <span class="ident">PduType</span>::<span class="ident">AdvDirectInd</span>
             <span class="op">|</span> <span class="ident">PduType</span>::<span class="ident">ScanReq</span>
             <span class="op">|</span> <span class="ident">PduType</span>::<span class="ident">ConnectReq</span>
-            <span class="op">|</span> <span class="ident">PduType</span>::<span class="ident">Unknown</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
+            <span class="op">|</span> <span class="ident">PduType</span>::<span class="ident">Unknown</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="bool-val">false</span>,
         }
     }
 }

@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/llcp.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>llcp.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/llcp.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>llcp.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -500,7 +501,7 @@
     <span class="doccomment">/// The returned structure will use conservative (maximally permissive) default values that will</span>
     <span class="doccomment">/// not usually result in a change in connection parameters, so users of this function likely</span>
     <span class="doccomment">/// want to call a setter afterwards.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">interval_min</span>: <span class="number">6</span>,    <span class="comment">// 7.5ms</span>
             <span class="ident">interval_max</span>: <span class="number">3200</span>, <span class="comment">// 4s</span>
@@ -528,7 +529,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This will panic if `min &gt; max`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_conn_interval</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">min</span>: <span class="ident">Duration</span>, <span class="ident">max</span>: <span class="ident">Duration</span>) {
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">min</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">max</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">min</span> <span class="op">&lt;=</span> <span class="ident">max</span>);
 
         <span class="comment">// Convert and round to units of 1.25 ms.</span>
         <span class="kw">let</span> <span class="ident">max</span> <span class="op">=</span> <span class="ident">max</span>.<span class="ident">as_micros</span>() <span class="op">/</span> <span class="number">1_250</span>;
@@ -537,34 +538,34 @@
         <span class="comment">// Clamp to valid range of 6..=3200</span>
         <span class="kw">let</span> <span class="ident">min</span> <span class="op">=</span> <span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">min</span>, <span class="number">6</span>), <span class="number">3200</span>);
         <span class="kw">let</span> <span class="ident">max</span> <span class="op">=</span> <span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">max</span>, <span class="number">6</span>), <span class="number">3200</span>);
-        <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">min</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">max</span>);
+        <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">min</span> <span class="op">&lt;=</span> <span class="ident">max</span>);
         <span class="self">self</span>.<span class="ident">interval_min</span> <span class="op">=</span> <span class="ident">min</span> <span class="kw">as</span> <span class="ident">u16</span>;
         <span class="self">self</span>.<span class="ident">interval_max</span> <span class="op">=</span> <span class="ident">max</span> <span class="kw">as</span> <span class="ident">u16</span>;
     }
 
     <span class="doccomment">/// Returns the minimum requested connection interval.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">min_conn_interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">min_conn_interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">interval_min</span>) <span class="op">*</span> <span class="number">1_250</span>)
     }
 
     <span class="doccomment">/// Returns the maximum requested connection interval.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">max_conn_interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">max_conn_interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">interval_max</span>) <span class="op">*</span> <span class="number">1_250</span>)
     }
 
     <span class="doccomment">/// Returns the slave latency in number of connection events.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">slave_latency</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">slave_latency</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
         <span class="self">self</span>.<span class="ident">slave_latency</span>
     }
 
     <span class="doccomment">/// Returns the supervision timeout.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">supervision_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">supervision_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="self">self</span>.<span class="ident">supervision_timeout</span> <span class="op">*</span> <span class="number">10</span>)
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ConnectionParamRequest</span> {
-    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">interval_min</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
             <span class="ident">interval_max</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
@@ -585,7 +586,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">ToBytes</span> <span class="kw">for</span> <span class="ident">ConnectionParamRequest</span> {
-    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">writer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">writer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="ident">writer</span>.<span class="ident">write_u16_le</span>(<span class="self">self</span>.<span class="ident">interval_min</span>)<span class="question-mark">?</span>;
         <span class="ident">writer</span>.<span class="ident">write_u16_le</span>(<span class="self">self</span>.<span class="ident">interval_max</span>)<span class="question-mark">?</span>;
         <span class="ident">writer</span>.<span class="ident">write_u16_le</span>(<span class="self">self</span>.<span class="ident">slave_latency</span>)<span class="question-mark">?</span>;
@@ -613,32 +614,32 @@
 
 <span class="kw">impl</span> <span class="ident">ConnectionUpdateData</span> {
     <span class="doccomment">/// Returns the size of the transmit window for the first PDU of the connection.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">win_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">win_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">win_size</span>) <span class="op">*</span> <span class="number">1_250</span>)
     }
 
     <span class="doccomment">/// Returns the offset of the transmit window, as a duration since the `instant`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">win_offset</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">win_offset</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">win_offset</span>) <span class="op">*</span> <span class="number">1_250</span>)
     }
 
     <span class="doccomment">/// Returns the duration between connection events.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">interval</span>) <span class="op">*</span> <span class="number">1_250</span>)
     }
 
     <span class="doccomment">/// Returns the slave latency.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">latency</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">latency</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
         <span class="self">self</span>.<span class="ident">latency</span>
     }
 
     <span class="doccomment">/// Returns the connection supervision timeout (`connSupervisionTimeout`).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">timeout</span>) <span class="op">*</span> <span class="number">10_000</span>)
     }
 
     <span class="doccomment">/// Returns the instant at which these changes should take effect.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">instant</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">instant</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
         <span class="self">self</span>.<span class="ident">instant</span>
     }
 }
@@ -713,49 +714,49 @@
 
 <span class="kw">impl</span> <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Returns the opcode of this LL Control PDU.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">opcode</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">opcode</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">ControlOpcode</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionUpdateReq</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ChannelMapReq</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">TerminateInd</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">UnknownRsp</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">FeatureReq</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">FeatureRsp</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">VersionInd</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamReq</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionParamReq</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamRsp</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionParamRsp</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> { <span class="ident">opcode</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">opcode</span>,
+            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span> { .. } <span class="op">=&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionUpdateReq</span>,
+            <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> { .. } <span class="op">=&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ChannelMapReq</span>,
+            <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> { .. } <span class="op">=&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">TerminateInd</span>,
+            <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> { .. } <span class="op">=&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">UnknownRsp</span>,
+            <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { .. } <span class="op">=&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">FeatureReq</span>,
+            <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> { .. } <span class="op">=&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">FeatureRsp</span>,
+            <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> { .. } <span class="op">=&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">VersionInd</span>,
+            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamReq</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionParamReq</span>,
+            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamRsp</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionParamRsp</span>,
+            <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> { <span class="ident">opcode</span>, .. } <span class="op">=&gt;</span> <span class="kw-2">*</span><span class="ident">opcode</span>,
         }
     }
 
     <span class="doccomment">/// Returns the encoded size of this LLCPDU, including the opcode byte.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encoded_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encoded_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
         <span class="kw">use</span> <span class="self">self</span>::<span class="ident">ControlOpcode</span>::<span class="kw-2">*</span>;
 
         <span class="number">1</span> <span class="op">+</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">opcode</span>() {
-            <span class="ident">ConnectionUpdateReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span>,
-            <span class="ident">ChannelMapReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">5</span> <span class="op">+</span> <span class="number">2</span>,
-            <span class="ident">TerminateInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1</span>,
-            <span class="ident">EncReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">8</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">8</span> <span class="op">+</span> <span class="number">4</span>,
-            <span class="ident">EncRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">8</span> <span class="op">+</span> <span class="number">4</span>,
-            <span class="ident">StartEncReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
-            <span class="ident">StartEncRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
-            <span class="ident">UnknownRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1</span>,
-            <span class="ident">FeatureReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">8</span>,
-            <span class="ident">FeatureRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">8</span>,
-            <span class="ident">PauseEncReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
-            <span class="ident">PauseEncRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
-            <span class="ident">VersionInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span>,
-            <span class="ident">RejectInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1</span>,
-            <span class="ident">SlaveFeatureReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">8</span>,
-            <span class="ident">ConnectionParamReq</span> <span class="op">|</span> <span class="ident">ConnectionParamRsp</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ConnectionUpdateReq</span> <span class="op">=&gt;</span> <span class="number">1</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span>,
+            <span class="ident">ChannelMapReq</span> <span class="op">=&gt;</span> <span class="number">5</span> <span class="op">+</span> <span class="number">2</span>,
+            <span class="ident">TerminateInd</span> <span class="op">=&gt;</span> <span class="number">1</span>,
+            <span class="ident">EncReq</span> <span class="op">=&gt;</span> <span class="number">8</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">8</span> <span class="op">+</span> <span class="number">4</span>,
+            <span class="ident">EncRsp</span> <span class="op">=&gt;</span> <span class="number">8</span> <span class="op">+</span> <span class="number">4</span>,
+            <span class="ident">StartEncReq</span> <span class="op">=&gt;</span> <span class="number">0</span>,
+            <span class="ident">StartEncRsp</span> <span class="op">=&gt;</span> <span class="number">0</span>,
+            <span class="ident">UnknownRsp</span> <span class="op">=&gt;</span> <span class="number">1</span>,
+            <span class="ident">FeatureReq</span> <span class="op">=&gt;</span> <span class="number">8</span>,
+            <span class="ident">FeatureRsp</span> <span class="op">=&gt;</span> <span class="number">8</span>,
+            <span class="ident">PauseEncReq</span> <span class="op">=&gt;</span> <span class="number">0</span>,
+            <span class="ident">PauseEncRsp</span> <span class="op">=&gt;</span> <span class="number">0</span>,
+            <span class="ident">VersionInd</span> <span class="op">=&gt;</span> <span class="number">1</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span>,
+            <span class="ident">RejectInd</span> <span class="op">=&gt;</span> <span class="number">1</span>,
+            <span class="ident">SlaveFeatureReq</span> <span class="op">=&gt;</span> <span class="number">8</span>,
+            <span class="ident">ConnectionParamReq</span> <span class="op">|</span> <span class="ident">ConnectionParamRsp</span> <span class="op">=&gt;</span> {
                 <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">1</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span>
             }
-            <span class="ident">RejectIndExt</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1</span> <span class="op">+</span> <span class="number">1</span>,
-            <span class="ident">PingReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
-            <span class="ident">PingRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
-            <span class="ident">LengthReq</span> <span class="op">|</span> <span class="ident">LengthRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span>,
-            <span class="ident">Unknown</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">RejectIndExt</span> <span class="op">=&gt;</span> <span class="number">1</span> <span class="op">+</span> <span class="number">1</span>,
+            <span class="ident">PingReq</span> <span class="op">=&gt;</span> <span class="number">0</span>,
+            <span class="ident">PingRsp</span> <span class="op">=&gt;</span> <span class="number">0</span>,
+            <span class="ident">LengthReq</span> <span class="op">|</span> <span class="ident">LengthRsp</span> <span class="op">=&gt;</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span>,
+            <span class="ident">Unknown</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> {
                     <span class="ident">ctr_data</span>,
                     <span class="ident">opcode</span>: <span class="kw">_</span>,
@@ -771,10 +772,10 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">opcode</span> <span class="op">=</span> <span class="ident">ControlOpcode</span>::<span class="ident">from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>);
         <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">opcode</span> {
-            <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionUpdateReq</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionUpdateReq</span> <span class="op">=&gt;</span> {
                 <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span>(<span class="ident">ConnectionUpdateData</span> {
                     <span class="ident">win_size</span>: <span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>,
                     <span class="ident">win_offset</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
@@ -784,28 +785,28 @@
                     <span class="ident">instant</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
                 })
             }
-            <span class="ident">ControlOpcode</span>::<span class="ident">ChannelMapReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> {
+            <span class="ident">ControlOpcode</span>::<span class="ident">ChannelMapReq</span> <span class="op">=&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> {
                 <span class="ident">map</span>: <span class="ident">ChannelMap</span>::<span class="ident">from_raw</span>(<span class="ident">bytes</span>.<span class="ident">read_array</span>()<span class="question-mark">?</span>),
                 <span class="ident">instant</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
             },
-            <span class="ident">ControlOpcode</span>::<span class="ident">TerminateInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> {
+            <span class="ident">ControlOpcode</span>::<span class="ident">TerminateInd</span> <span class="op">=&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> {
                 <span class="ident">error_code</span>: <span class="ident">Hex</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
             },
-            <span class="ident">ControlOpcode</span>::<span class="ident">UnknownRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> {
+            <span class="ident">ControlOpcode</span>::<span class="ident">UnknownRsp</span> <span class="op">=&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> {
                 <span class="ident">unknown_type</span>: <span class="ident">ControlOpcode</span>::<span class="ident">from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
             },
-            <span class="ident">ControlOpcode</span>::<span class="ident">FeatureReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> {
+            <span class="ident">ControlOpcode</span>::<span class="ident">FeatureReq</span> <span class="op">=&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> {
                 <span class="ident">features_master</span>: <span class="ident">FeatureSet</span>::<span class="ident">from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>,
             },
-            <span class="ident">ControlOpcode</span>::<span class="ident">FeatureRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> {
+            <span class="ident">ControlOpcode</span>::<span class="ident">FeatureRsp</span> <span class="op">=&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> {
                 <span class="ident">features_used</span>: <span class="ident">FeatureSet</span>::<span class="ident">from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>,
             },
-            <span class="ident">ControlOpcode</span>::<span class="ident">VersionInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> {
+            <span class="ident">ControlOpcode</span>::<span class="ident">VersionInd</span> <span class="op">=&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> {
                 <span class="ident">vers_nr</span>: <span class="ident">VersionNumber</span>::<span class="ident">from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
                 <span class="ident">comp_id</span>: <span class="ident">CompanyId</span>::<span class="ident">from_raw</span>(<span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>),
                 <span class="ident">sub_vers_nr</span>: <span class="ident">Hex</span>(<span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>),
             },
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> {
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> {
                 <span class="ident">opcode</span>,
                 <span class="ident">ctr_data</span>: <span class="ident">bytes</span>.<span class="ident">read_rest</span>(),
             },
@@ -814,10 +815,10 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ToBytes</span> <span class="kw">for</span> <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">buffer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">buffer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="self">self</span>.<span class="ident">opcode</span>().<span class="ident">into</span>())<span class="question-mark">?</span>;
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span>(<span class="ident">data</span>) <span class="op">=&gt;</span> {
                 <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="ident">data</span>.<span class="ident">win_size</span>)<span class="question-mark">?</span>;
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">data</span>.<span class="ident">win_offset</span>)<span class="question-mark">?</span>;
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">data</span>.<span class="ident">interval</span>)<span class="question-mark">?</span>;
@@ -826,35 +827,35 @@
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">data</span>.<span class="ident">instant</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> { <span class="ident">map</span>, <span class="ident">instant</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> { <span class="ident">map</span>, <span class="ident">instant</span> } <span class="op">=&gt;</span> {
                 <span class="ident">buffer</span>.<span class="ident">write_slice</span>(<span class="kw-2">&amp;</span><span class="ident">map</span>.<span class="ident">to_raw</span>())<span class="question-mark">?</span>;
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="kw-2">*</span><span class="ident">instant</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> { <span class="ident">error_code</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> { <span class="ident">error_code</span> } <span class="op">=&gt;</span> {
                 <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="ident">error_code</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> { <span class="ident">unknown_type</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> { <span class="ident">unknown_type</span> } <span class="op">=&gt;</span> {
                 <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="ident">u8</span>::<span class="ident">from</span>(<span class="kw-2">*</span><span class="ident">unknown_type</span>))<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { <span class="ident">features_master</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">features_master</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
-            <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> { <span class="ident">features_used</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">features_used</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
+            <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { <span class="ident">features_master</span> } <span class="op">=&gt;</span> <span class="ident">features_master</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
+            <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> { <span class="ident">features_used</span> } <span class="op">=&gt;</span> <span class="ident">features_used</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
             <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> {
                 <span class="ident">vers_nr</span>,
                 <span class="ident">comp_id</span>,
                 <span class="ident">sub_vers_nr</span>,
-            } <span class="op">=</span><span class="op">&gt;</span> {
+            } <span class="op">=&gt;</span> {
                 <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="ident">u8</span>::<span class="ident">from</span>(<span class="kw-2">*</span><span class="ident">vers_nr</span>))<span class="question-mark">?</span>;
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">comp_id</span>.<span class="ident">as_u16</span>())<span class="question-mark">?</span>;
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">sub_vers_nr</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamReq</span>(<span class="ident">data</span>) <span class="op">|</span> <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamRsp</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamReq</span>(<span class="ident">data</span>) <span class="op">|</span> <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamRsp</span>(<span class="ident">data</span>) <span class="op">=&gt;</span> {
                 <span class="ident">data</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>)
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> { <span class="ident">ctr_data</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> { <span class="ident">ctr_data</span>, .. } <span class="op">=&gt;</span> {
                 <span class="ident">buffer</span>.<span class="ident">write_slice</span>(<span class="ident">ctr_data</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
@@ -911,7 +912,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">update_req_set_conn_interval</span>() {
-        <span class="kw">fn</span> <span class="ident">set</span>(<span class="ident">min</span>: <span class="ident">Duration</span>, <span class="ident">max</span>: <span class="ident">Duration</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Duration</span>, <span class="ident">Duration</span>) {
+        <span class="kw">fn</span> <span class="ident">set</span>(<span class="ident">min</span>: <span class="ident">Duration</span>, <span class="ident">max</span>: <span class="ident">Duration</span>) <span class="op">-&gt;</span> (<span class="ident">Duration</span>, <span class="ident">Duration</span>) {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">req</span> <span class="op">=</span> <span class="ident">ConnectionParamRequest</span>::<span class="ident">new</span>();
             <span class="ident">req</span>.<span class="ident">set_conn_interval</span>(<span class="ident">min</span>, <span class="ident">max</span>);
 
