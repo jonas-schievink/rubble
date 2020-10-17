@@ -49,6 +49,9 @@ pub struct Connection<C: Config> {
     tx: ConfConsumer<C>,
     rx: ConfProducer<C>,
 
+    /// Whether we have already sent 'LL_VERSION_IND' (LL Control PDU).
+    sent_version_ind: bool,
+
     /// LLCP connection update data received in a previous LL Control PDU.
     ///
     /// Contains the *instant* at which it should be applied to the Link Layer state.
@@ -93,6 +96,8 @@ impl<C: Config> Connection<C> {
 
             tx,
             rx,
+
+            sent_version_ind: false,
             update_data: None,
 
             _p: PhantomData,
@@ -194,6 +199,9 @@ impl<C: Config> Connection<C> {
                         }
                         Err(LlcpError::NoSpace) => {
                             // Do not acknowledge the PDU
+                        }
+                        Err(LlcpError::VersionIndSent) => {
+                            error!("Received 'LL_VERSION_IND' (LL Control PDU) more than once");
                         }
                     }
                 } else {
@@ -438,6 +446,12 @@ impl<C: Config> Connection<C> {
                 // FIXME this should correlate with the Cargo package version
                 let sub_vers_nr = 0x0000;
 
+                if self.sent_version_ind {
+                    // Shouldn't send Control PDU *LL_VERSION_IND* more than once.
+                    return Err(LlcpError::VersionIndSent);
+                }
+                self.sent_version_ind = true;
+
                 ControlPdu::VersionInd {
                     vers_nr: BLUETOOTH_VERSION,
                     comp_id: CompanyId::from_raw(comp_id),
@@ -532,6 +546,9 @@ enum LlcpError {
 
     /// Consider the connection lost due to a critical error or timeout.
     ConnectionLost,
+
+    /// Already sent Control PDU *LL_VERSION_IND* (indicates invalid behavior by the other device).
+    VersionIndSent,
 }
 
 /// A Link-Layer state update that may be applied with a delay.
