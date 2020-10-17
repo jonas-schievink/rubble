@@ -563,6 +563,23 @@
 <span id="562">562</span>
 <span id="563">563</span>
 <span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Link-Layer connection management and LLCP implementation.</span>
 
@@ -615,6 +632,9 @@
     <span class="ident">tx</span>: <span class="ident">ConfConsumer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
     <span class="ident">rx</span>: <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 
+    <span class="doccomment">/// Whether we have already sent &#39;LL_VERSION_IND&#39; (LL Control PDU).</span>
+    <span class="ident">sent_version_ind</span>: <span class="ident">bool</span>,
+
     <span class="doccomment">/// LLCP connection update data received in a previous LL Control PDU.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Contains the *instant* at which it should be applied to the Link Layer state.</span>
@@ -659,6 +679,8 @@
 
             <span class="ident">tx</span>,
             <span class="ident">rx</span>,
+
+            <span class="ident">sent_version_ind</span>: <span class="bool-val">false</span>,
             <span class="ident">update_data</span>: <span class="prelude-val">None</span>,
 
             <span class="ident">_p</span>: <span class="ident">PhantomData</span>,
@@ -760,6 +782,9 @@
                         }
                         <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">NoSpace</span>) <span class="op">=&gt;</span> {
                             <span class="comment">// Do not acknowledge the PDU</span>
+                        }
+                        <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">VersionIndSent</span>) <span class="op">=&gt;</span> {
+                            <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Received &#39;LL_VERSION_IND&#39; (LL Control PDU) more than once&quot;</span>);
                         }
                     }
                 } <span class="kw">else</span> {
@@ -1004,6 +1029,12 @@
                 <span class="comment">// FIXME this should correlate with the Cargo package version</span>
                 <span class="kw">let</span> <span class="ident">sub_vers_nr</span> <span class="op">=</span> <span class="number">0x0000</span>;
 
+                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">sent_version_ind</span> {
+                    <span class="comment">// Shouldn&#39;t send Control PDU *LL_VERSION_IND* more than once.</span>
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">VersionIndSent</span>);
+                }
+                <span class="self">self</span>.<span class="ident">sent_version_ind</span> <span class="op">=</span> <span class="bool-val">true</span>;
+
                 <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> {
                     <span class="ident">vers_nr</span>: <span class="ident">BLUETOOTH_VERSION</span>,
                     <span class="ident">comp_id</span>: <span class="ident">CompanyId</span>::<span class="ident">from_raw</span>(<span class="ident">comp_id</span>),
@@ -1098,6 +1129,9 @@
 
     <span class="doccomment">/// Consider the connection lost due to a critical error or timeout.</span>
     <span class="ident">ConnectionLost</span>,
+
+    <span class="doccomment">/// Already sent Control PDU *LL_VERSION_IND* (indicates invalid behavior by the other device).</span>
+    <span class="ident">VersionIndSent</span>,
 }
 
 <span class="doccomment">/// A Link-Layer state update that may be applied with a delay.</span>
