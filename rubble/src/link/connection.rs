@@ -197,8 +197,11 @@ impl<C: Config> Connection<C> {
                         Err(LlcpError::ConnectionLost) => {
                             return Err(());
                         }
-                        Err(LlcpError::NoSpace) | Err(LlcpError::VersionIndSent) => {
+                        Err(LlcpError::NoSpace) => {
                             // Do not acknowledge the PDU
+                        }
+                        Err(LlcpError::VersionIndSent) => {
+                            error!("Received 'LL_VERSION_IND' (LL Control PDU) more than once");
                         }
                     }
                 } else {
@@ -544,7 +547,7 @@ enum LlcpError {
     /// Consider the connection lost due to a critical error or timeout.
     ConnectionLost,
 
-    /// Shouldn't send Control PDU *LL_VERSION_IND* more than once.
+    /// Already sent Control PDU *LL_VERSION_IND* (indicates invalid behavior by the other device).
     VersionIndSent,
 }
 
