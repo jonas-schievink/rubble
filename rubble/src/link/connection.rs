@@ -349,13 +349,34 @@ impl<C: Config> Connection<C> {
             })
         } else {
             // Master did not transmit the first packet during this transmit window.
+            // Connection is not yet established. (4.5 Connection State)
 
-            // TODO: Move the transmit window forward by the `connInterval`.
-            // (do we also need to hop channels here?)
-
+            let last_channel = self.channel;
+            self.hop_channel();
             self.conn_event_count += Wrapping(1);
-            trace!("missed transmit window");
-            Err(())
+            trace!(
+                "DATA({}->{}): missed conn event #{}",
+                last_channel.index(),
+                self.channel.index(),
+                self.conn_event_count.0,
+            );
+
+            // TODO: return Err(()) when supervision timer exceeds 6 * connInterval.
+            //       (4.5.2 Supervision timeout)
+
+            return Ok(Cmd {
+                next_update: NextUpdate::At(
+                    // Move the transmit window forward by the `connInterval`.
+                    timer.now() + self.connection_interval(),
+                ),
+                radio: RadioCmd::ListenData {
+                    channel: self.channel,
+                    access_address: self.access_address,
+                    crc_init: self.crc_init,
+                    timeout: true,
+                },
+                queued_work: false,
+            });
         }
     }
 
