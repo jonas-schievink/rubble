@@ -840,6 +840,9 @@
 <span id="839">839</span>
 <span id="840">840</span>
 <span id="841">841</span>
+<span id="842">842</span>
+<span id="843">843</span>
+<span id="844">844</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Advertising channel operations.</span>
 <span class="doccomment">//!</span>
@@ -1222,7 +1225,10 @@
     <span class="doccomment">/// Returns the end of the transmit window from reception of the `CONNECT_REQ` containing</span>
     <span class="doccomment">/// `self`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">end_of_tx_window</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
-        <span class="self">self</span>.<span class="ident">win_offset</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">win_size</span> <span class="op">+</span> <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">1250</span>)
+        <span class="comment">// We only handle `CONNECT_IND`, so transmitWindowDelay is 1.25 ms</span>
+        <span class="kw">let</span> <span class="ident">transmit_window_delay</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">1250</span>);
+
+        <span class="self">self</span>.<span class="ident">win_offset</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">win_size</span> <span class="op">+</span> <span class="ident">transmit_window_delay</span>
     }
 
     <span class="doccomment">/// Returns the connection event interval in µs.</span>
