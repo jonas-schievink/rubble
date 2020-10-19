@@ -379,7 +379,10 @@ impl ConnectRequestData {
     /// Returns the end of the transmit window from reception of the `CONNECT_REQ` containing
     /// `self`.
     pub fn end_of_tx_window(&self) -> Duration {
-        self.win_offset + self.win_size + Duration::from_micros(1250)
+        // We only handle `CONNECT_IND`, so transmitWindowDelay is 1.25 ms
+        let transmit_window_delay = Duration::from_micros(1250);
+
+        self.win_offset + self.win_size + transmit_window_delay
     }
 
     /// Returns the connection event interval in µs.
