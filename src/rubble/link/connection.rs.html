@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/connection.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>connection.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/connection.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>connection.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
                 <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -563,23 +565,6 @@
 <span id="562">562</span>
 <span id="563">563</span>
 <span id="564">564</span>
-<span id="565">565</span>
-<span id="566">566</span>
-<span id="567">567</span>
-<span id="568">568</span>
-<span id="569">569</span>
-<span id="570">570</span>
-<span id="571">571</span>
-<span id="572">572</span>
-<span id="573">573</span>
-<span id="574">574</span>
-<span id="575">575</span>
-<span id="576">576</span>
-<span id="577">577</span>
-<span id="578">578</span>
-<span id="579">579</span>
-<span id="580">580</span>
-<span id="581">581</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Link-Layer connection management and LLCP implementation.</span>
 
@@ -632,9 +617,6 @@
     <span class="ident">tx</span>: <span class="ident">ConfConsumer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
     <span class="ident">rx</span>: <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 
-    <span class="doccomment">/// Whether we have already sent &#39;LL_VERSION_IND&#39; (LL Control PDU).</span>
-    <span class="ident">sent_version_ind</span>: <span class="ident">bool</span>,
-
     <span class="doccomment">/// LLCP connection update data received in a previous LL Control PDU.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Contains the *instant* at which it should be applied to the Link Layer state.</span>
@@ -660,7 +642,7 @@
         <span class="ident">rx_end</span>: <span class="ident">Instant</span>,
         <span class="ident">tx</span>: <span class="ident">ConfConsumer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
         <span class="ident">rx</span>: <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-    ) <span class="op">-&gt;</span> (<span class="self">Self</span>, <span class="ident">Cmd</span>) {
+    ) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span>, <span class="ident">Cmd</span>) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">this</span> <span class="op">=</span> <span class="self">Self</span> {
             <span class="ident">access_address</span>: <span class="ident">lldata</span>.<span class="ident">access_address</span>(),
             <span class="ident">crc_init</span>: <span class="ident">lldata</span>.<span class="ident">crc_init</span>(),
@@ -679,8 +661,6 @@
 
             <span class="ident">tx</span>,
             <span class="ident">rx</span>,
-
-            <span class="ident">sent_version_ind</span>: <span class="bool-val">false</span>,
             <span class="ident">update_data</span>: <span class="prelude-val">None</span>,
 
             <span class="ident">_p</span>: <span class="ident">PhantomData</span>,
@@ -715,23 +695,23 @@
         <span class="ident">header</span>: <span class="ident">data</span>::<span class="ident">Header</span>,
         <span class="ident">payload</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
         <span class="ident">crc_ok</span>: <span class="ident">bool</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Cmd</span>, ()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Cmd</span>, ()<span class="op">&gt;</span> {
         <span class="comment">// If the sequence number of the packet is the same as our next expected sequence number,</span>
         <span class="comment">// the packet contains new data that we should try to process. However, if the CRC is bad,</span>
         <span class="comment">// we&#39;ll never try to process the data and instead request a retransmission.</span>
-        <span class="kw">let</span> <span class="ident">is_new</span> <span class="op">=</span> <span class="ident">header</span>.<span class="ident">sn</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">&amp;&amp;</span> <span class="ident">crc_ok</span>;
+        <span class="kw">let</span> <span class="ident">is_new</span> <span class="op">=</span> <span class="ident">header</span>.<span class="ident">sn</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">&amp;&amp;</span> <span class="ident">crc_ok</span>;
 
         <span class="comment">// If the packet&#39;s &quot;NESN&quot; is equal to our last sent sequence number + 1, the other side has</span>
         <span class="comment">// acknowledged our last packet (and is now expecting one with an incremented seq. num.).</span>
         <span class="comment">// However, if the CRC is bad, the bit might be flipped, so we cannot assume that the packet</span>
         <span class="comment">// was acknowledged and thus always retransmit.</span>
-        <span class="kw">let</span> <span class="ident">acknowledged</span> <span class="op">=</span> <span class="ident">header</span>.<span class="ident">nesn</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">transmit_seq_num</span> <span class="op">+</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span> <span class="op">&amp;&amp;</span> <span class="ident">crc_ok</span>;
+        <span class="kw">let</span> <span class="ident">acknowledged</span> <span class="op">=</span> <span class="ident">header</span>.<span class="ident">nesn</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">transmit_seq_num</span> <span class="op">+</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span> <span class="op">&amp;&amp;</span> <span class="ident">crc_ok</span>;
 
-        <span class="kw">let</span> <span class="ident">is_empty</span> <span class="op">=</span> <span class="ident">header</span>.<span class="ident">llid</span>() <span class="op">==</span> <span class="ident">Llid</span>::<span class="ident">DataCont</span> <span class="op">&amp;&amp;</span> <span class="ident">payload</span>.<span class="ident">is_empty</span>();
+        <span class="kw">let</span> <span class="ident">is_empty</span> <span class="op">=</span> <span class="ident">header</span>.<span class="ident">llid</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">Llid</span>::<span class="ident">DataCont</span> <span class="op">&amp;&amp;</span> <span class="ident">payload</span>.<span class="ident">is_empty</span>();
 
         <span class="kw">if</span> <span class="ident">acknowledged</span> {
             <span class="self">self</span>.<span class="ident">received_packet</span> <span class="op">=</span> <span class="bool-val">true</span>;
-            <span class="self">self</span>.<span class="ident">transmit_seq_num</span> <span class="op">+=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
+            <span class="self">self</span>.<span class="ident">transmit_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
         }
 
         <span class="comment">// Whether we&#39;ve already sent a response packet.</span>
@@ -742,8 +722,8 @@
         <span class="kw">if</span> <span class="ident">is_new</span> {
             <span class="kw">if</span> <span class="ident">is_empty</span> {
                 <span class="comment">// Always acknowledge empty packets, no need to process them</span>
-                <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">header</span>.<span class="ident">llid</span>() <span class="op">==</span> <span class="ident">Llid</span>::<span class="ident">Control</span> {
+                <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
+            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">header</span>.<span class="ident">llid</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">Llid</span>::<span class="ident">Control</span> {
                 <span class="comment">// LLCP message, try to process it immediately. Certain LLCPDUs might be put in the</span>
                 <span class="comment">// channel instead and answered by the non-real-time part.</span>
 
@@ -754,8 +734,8 @@
                     <span class="comment">// back the LLCP response.</span>
 
                     <span class="kw">match</span> <span class="self">self</span>.<span class="ident">process_control_pdu</span>(<span class="ident">pdu</span>, <span class="ident">acknowledged</span>) {
-                        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">response</span>)) <span class="op">=&gt;</span> {
-                            <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
+                        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">response</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+                            <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
 
                             <span class="kw">let</span> <span class="ident">rsp</span> <span class="op">=</span> <span class="ident">Pdu</span>::<span class="ident">from</span>(<span class="kw-2">&amp;</span><span class="ident">response</span>);
                             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload_writer</span> <span class="op">=</span> <span class="ident">ByteWriter</span>::<span class="ident">new</span>(<span class="ident">tx</span>.<span class="ident">tx_payload_buf</span>());
@@ -771,20 +751,17 @@
                             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;LLCP&lt;- {:?}&quot;</span>, <span class="ident">pdu</span>);
                             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;LLCP-&gt; {:?}&quot;</span>, <span class="ident">response</span>);
                         }
-                        <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) <span class="op">=&gt;</span> {
-                            <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
+                        <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                            <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
 
                             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;LLCP&lt;- {:?}&quot;</span>, <span class="ident">pdu</span>);
                             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;LLCP-&gt; (no response)&quot;</span>);
                         }
-                        <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">ConnectionLost</span>) <span class="op">=&gt;</span> {
+                        <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">ConnectionLost</span>) <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="kw">return</span> <span class="prelude-val">Err</span>(());
                         }
-                        <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">NoSpace</span>) <span class="op">=&gt;</span> {
+                        <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">NoSpace</span>) <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="comment">// Do not acknowledge the PDU</span>
-                        }
-                        <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">VersionIndSent</span>) <span class="op">=&gt;</span> {
-                            <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Received &#39;LL_VERSION_IND&#39; (LL Control PDU) more than once&quot;</span>);
                         }
                     }
                 } <span class="kw">else</span> {
@@ -803,7 +780,7 @@
 
                 <span class="kw">if</span> <span class="ident">result</span>.<span class="ident">is_ok</span>() {
                     <span class="comment">// Acknowledge the packet</span>
-                    <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
+                    <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
                     <span class="ident">queued_work</span> <span class="op">=</span> <span class="bool-val">true</span>;
                 } <span class="kw">else</span> {
                     <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;NACK (no space in rx buffer)&quot;</span>);
@@ -821,8 +798,8 @@
                     <span class="ident">payload_writer</span>.<span class="ident">write_slice</span>(<span class="ident">pl</span>).<span class="ident">expect</span>(<span class="string">&quot;TX buf out of space&quot;</span>);
                     <span class="ident">Consume</span>::<span class="ident">always</span>(<span class="prelude-val">Ok</span>(<span class="ident">header</span>))
                 }) {
-                    <span class="prelude-val">Ok</span>(<span class="ident">h</span>) <span class="op">=&gt;</span> <span class="ident">h</span>,
-                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">Header</span>::<span class="ident">new</span>(<span class="ident">Llid</span>::<span class="ident">DataCont</span>),
+                    <span class="prelude-val">Ok</span>(<span class="ident">h</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">h</span>,
+                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Header</span>::<span class="ident">new</span>(<span class="ident">Llid</span>::<span class="ident">DataCont</span>),
                 };
 
                 <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">header</span>, <span class="ident">tx</span>);
@@ -857,10 +834,10 @@
         <span class="comment">// FIXME: Don&#39;t hop if one of the MD bits is set to true (also don&#39;t log then)</span>
         {
             <span class="comment">// Connection event closes</span>
-            <span class="self">self</span>.<span class="ident">conn_event_count</span> <span class="op">+=</span> <span class="ident">Wrapping</span>(<span class="number">1</span>);
+            <span class="self">self</span>.<span class="ident">conn_event_count</span> <span class="op">+</span><span class="op">=</span> <span class="ident">Wrapping</span>(<span class="number">1</span>);
 
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">update</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">update_data</span>.<span class="ident">take</span>() {
-                <span class="kw">if</span> <span class="ident">update</span>.<span class="ident">instant</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">conn_event_count</span>.<span class="number">0</span> {
+                <span class="kw">if</span> <span class="ident">update</span>.<span class="ident">instant</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">conn_event_count</span>.<span class="number">0</span> {
                     <span class="comment">// Next conn event will the the first one with these parameters.</span>
                     <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">apply_llcp_update</span>(<span class="ident">update</span>, <span class="ident">rx_end</span>);
                     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;LLCP patch applied: {:?} -&gt; {:?}&quot;</span>, <span class="ident">update</span>, <span class="ident">result</span>);
@@ -906,13 +883,13 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns `Err(())` when the connection is closed or lost. In that case, the Link-Layer will</span>
     <span class="doccomment">/// return to standby state.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">timer_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">timer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">C</span>::<span class="ident">Timer</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Cmd</span>, ()<span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">timer_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">timer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">C</span>::<span class="ident">Timer</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Cmd</span>, ()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">received_packet</span> {
             <span class="comment">// No packet from master, skip this connection event and listen on the next channel</span>
 
             <span class="kw">let</span> <span class="ident">last_channel</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">channel</span>;
             <span class="self">self</span>.<span class="ident">hop_channel</span>();
-            <span class="self">self</span>.<span class="ident">conn_event_count</span> <span class="op">+=</span> <span class="ident">Wrapping</span>(<span class="number">1</span>);
+            <span class="self">self</span>.<span class="ident">conn_event_count</span> <span class="op">+</span><span class="op">=</span> <span class="ident">Wrapping</span>(<span class="number">1</span>);
             <span class="macro">trace</span><span class="macro">!</span>(
                 <span class="string">&quot;DATA({}-&gt;{}): missed conn event #{}&quot;</span>,
                 <span class="ident">last_channel</span>.<span class="ident">index</span>(),
@@ -936,13 +913,13 @@
             <span class="comment">// TODO: Move the transmit window forward by the `connInterval`.</span>
             <span class="comment">// (do we also need to hop channels here?)</span>
 
-            <span class="self">self</span>.<span class="ident">conn_event_count</span> <span class="op">+=</span> <span class="ident">Wrapping</span>(<span class="number">1</span>);
+            <span class="self">self</span>.<span class="ident">conn_event_count</span> <span class="op">+</span><span class="op">=</span> <span class="ident">Wrapping</span>(<span class="number">1</span>);
             <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;missed transmit window&quot;</span>);
             <span class="prelude-val">Err</span>(())
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">conn_event_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">fn</span> <span class="ident">conn_event_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
         <span class="comment">// Time out ~500µs after the anchor point of the next conn event.</span>
         <span class="self">self</span>.<span class="ident">conn_interval</span> <span class="op">+</span> <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">500</span>)
     }
@@ -951,7 +928,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Note that this *has to* change to `false` eventually, even if there&#39;s more data to be sent,</span>
     <span class="doccomment">/// because the connection event must close at least `T_IFS` before the next one occurs.</span>
-    <span class="kw">fn</span> <span class="ident">has_more_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">has_more_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="bool-val">false</span>
     }
 
@@ -1003,37 +980,31 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">pdu</span>: <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">can_respond</span>: <span class="ident">bool</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;&gt;</span>, <span class="ident">LlcpError</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">LlcpError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">pdu</span> {
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span>(<span class="ident">data</span>) <span class="op">=&gt;</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">prepare_llcp_update</span>(<span class="ident">LlcpUpdate</span>::<span class="ident">ConnUpdate</span>(<span class="ident">data</span>))<span class="question-mark">?</span>;
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> { <span class="ident">map</span>, <span class="ident">instant</span> } <span class="op">=&gt;</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> { <span class="ident">map</span>, <span class="ident">instant</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">prepare_llcp_update</span>(<span class="ident">LlcpUpdate</span>::<span class="ident">ChannelMap</span> { <span class="ident">map</span>, <span class="ident">instant</span> })<span class="question-mark">?</span>;
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> { <span class="ident">error_code</span> } <span class="op">=&gt;</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> { <span class="ident">error_code</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">info</span><span class="macro">!</span>(
                     <span class="string">&quot;closing connection due to termination request: code {:?}&quot;</span>,
                     <span class="ident">error_code</span>
                 );
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">ConnectionLost</span>);
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { <span class="ident">features_master</span> } <span class="op">=&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { <span class="ident">features_master</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> {
                 <span class="ident">features_used</span>: <span class="ident">features_master</span> <span class="op">&amp;</span> <span class="ident">FeatureSet</span>::<span class="ident">supported</span>(),
             },
-            <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> { .. } <span class="op">=&gt;</span> {
+            <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="comment">// FIXME this should be something real, and defined somewhere else</span>
                 <span class="kw">let</span> <span class="ident">comp_id</span> <span class="op">=</span> <span class="number">0xFFFF</span>;
                 <span class="comment">// FIXME this should correlate with the Cargo package version</span>
                 <span class="kw">let</span> <span class="ident">sub_vers_nr</span> <span class="op">=</span> <span class="number">0x0000</span>;
-
-                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">sent_version_ind</span> {
-                    <span class="comment">// Shouldn&#39;t send Control PDU *LL_VERSION_IND* more than once.</span>
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">VersionIndSent</span>);
-                }
-                <span class="self">self</span>.<span class="ident">sent_version_ind</span> <span class="op">=</span> <span class="bool-val">true</span>;
 
                 <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> {
                     <span class="ident">vers_nr</span>: <span class="ident">BLUETOOTH_VERSION</span>,
@@ -1041,7 +1012,7 @@
                     <span class="ident">sub_vers_nr</span>: <span class="ident">Hex</span>(<span class="ident">sub_vers_nr</span>),
                 }
             }
-            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> {
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> {
                 <span class="ident">unknown_type</span>: <span class="ident">pdu</span>.<span class="ident">opcode</span>(),
             },
         };
@@ -1056,7 +1027,7 @@
 
     <span class="doccomment">/// Stores `update` in the link layer state so that it will be applied once its *instant* is</span>
     <span class="doccomment">/// reached.</span>
-    <span class="kw">fn</span> <span class="ident">prepare_llcp_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">update</span>: <span class="ident">LlcpUpdate</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">LlcpError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">prepare_llcp_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">update</span>: <span class="ident">LlcpUpdate</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">LlcpError</span><span class="op">&gt;</span> {
         <span class="comment">// TODO: check that instant is &lt;32767 in the future</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">data</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">update_data</span> {
             <span class="macro">error</span><span class="macro">!</span>(
@@ -1074,9 +1045,9 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns a `Cmd` when the usual Link Layer `Cmd` should be overridden. In that case, this</span>
     <span class="doccomment">/// method must also perform channel hopping.</span>
-    <span class="kw">fn</span> <span class="ident">apply_llcp_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">update</span>: <span class="ident">LlcpUpdate</span>, <span class="ident">rx_end</span>: <span class="ident">Instant</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Cmd</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">apply_llcp_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">update</span>: <span class="ident">LlcpUpdate</span>, <span class="ident">rx_end</span>: <span class="ident">Instant</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Cmd</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="ident">update</span> {
-            <span class="ident">LlcpUpdate</span>::<span class="ident">ConnUpdate</span>(<span class="ident">data</span>) <span class="op">=&gt;</span> {
+            <span class="ident">LlcpUpdate</span>::<span class="ident">ConnUpdate</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">old_conn_interval</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">conn_interval</span>;
                 <span class="self">self</span>.<span class="ident">conn_interval</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">interval</span>();
 
@@ -1098,7 +1069,7 @@
                     <span class="ident">queued_work</span>: <span class="bool-val">false</span>,
                 })
             }
-            <span class="ident">LlcpUpdate</span>::<span class="ident">ChannelMap</span> { <span class="ident">map</span>, .. } <span class="op">=&gt;</span> {
+            <span class="ident">LlcpUpdate</span>::<span class="ident">ChannelMap</span> { <span class="ident">map</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">channel_map</span> <span class="op">=</span> <span class="ident">map</span>;
                 <span class="prelude-val">None</span>
             }
@@ -1117,7 +1088,7 @@
     <span class="doccomment">/// The Peripheral can request the Central to change the interval by sending an L2CAP signaling</span>
     <span class="doccomment">/// message, or by using the Link Layer control procedure for requesting new connection</span>
     <span class="doccomment">/// parameters.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">connection_interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">connection_interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
         <span class="self">self</span>.<span class="ident">conn_interval</span>
     }
 }
@@ -1129,9 +1100,6 @@
 
     <span class="doccomment">/// Consider the connection lost due to a critical error or timeout.</span>
     <span class="ident">ConnectionLost</span>,
-
-    <span class="doccomment">/// Already sent Control PDU *LL_VERSION_IND* (indicates invalid behavior by the other device).</span>
-    <span class="ident">VersionIndSent</span>,
 }
 
 <span class="doccomment">/// A Link-Layer state update that may be applied with a delay.</span>
@@ -1155,10 +1123,10 @@
 
 <span class="kw">impl</span> <span class="ident">LlcpUpdate</span> {
     <span class="doccomment">/// Returns the connection event number at which this update should be applied.</span>
-    <span class="kw">fn</span> <span class="ident">instant</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
+    <span class="kw">fn</span> <span class="ident">instant</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">LlcpUpdate</span>::<span class="ident">ConnUpdate</span>(<span class="ident">data</span>) <span class="op">=&gt;</span> <span class="ident">data</span>.<span class="ident">instant</span>(),
-            <span class="ident">LlcpUpdate</span>::<span class="ident">ChannelMap</span> { <span class="ident">instant</span>, .. } <span class="op">=&gt;</span> <span class="kw-2">*</span><span class="ident">instant</span>,
+            <span class="ident">LlcpUpdate</span>::<span class="ident">ConnUpdate</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">data</span>.<span class="ident">instant</span>(),
+            <span class="ident">LlcpUpdate</span>::<span class="ident">ChannelMap</span> { <span class="ident">instant</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">instant</span>,
         }
     }
 }

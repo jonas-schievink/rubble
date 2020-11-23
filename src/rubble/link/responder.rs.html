@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/responder.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>responder.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/responder.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>responder.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
                 <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -120,7 +122,7 @@
 <span class="doccomment">/// LLCPDUs are handled directly by the real-time code.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Responder</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
     <span class="ident">tx</span>: <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-    <span class="ident">rx</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ConfConsumer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;&gt;</span>,
+    <span class="ident">rx</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ConfConsumer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">l2cap</span>: <span class="ident">L2CAPState</span><span class="op">&lt;</span><span class="ident">C</span>::<span class="ident">ChannelMapper</span><span class="op">&gt;</span>,
 }
 
@@ -130,7 +132,7 @@
         <span class="ident">tx</span>: <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
         <span class="ident">rx</span>: <span class="ident">ConfConsumer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
         <span class="ident">l2cap</span>: <span class="ident">L2CAPState</span><span class="op">&lt;</span><span class="ident">C</span>::<span class="ident">ChannelMapper</span><span class="op">&gt;</span>,
-    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">tx</span>,
             <span class="ident">rx</span>: <span class="prelude-val">Some</span>(<span class="ident">rx</span>),
@@ -142,17 +144,17 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// If this returns `true`, `process` may be called to process incoming packets and send</span>
     <span class="doccomment">/// outgoing ones.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">has_work</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">has_work</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">with_rx</span>(<span class="op">|</span><span class="ident">rx</span>, <span class="kw">_</span><span class="op">|</span> <span class="ident">rx</span>.<span class="ident">has_data</span>())
     }
 
     <span class="doccomment">/// Processes a single incoming packet in the packet queue.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns `Error::Eof` if there are no incoming packets in the RX queue.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">process_one</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">process_one</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">with_rx</span>(<span class="op">|</span><span class="ident">rx</span>, <span class="ident">this</span><span class="op">|</span> {
             <span class="ident">rx</span>.<span class="ident">consume_pdu_with</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">pdu</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">pdu</span> {
-                <span class="ident">Pdu</span>::<span class="ident">Control</span> { <span class="ident">data</span> } <span class="op">=&gt;</span> {
+                <span class="ident">Pdu</span>::<span class="ident">Control</span> { <span class="ident">data</span> } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="comment">// Also see:</span>
                     <span class="comment">// https://github.com/jonas-schievink/rubble/issues/26</span>
 
@@ -160,10 +162,10 @@
                     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;&lt;- LL Control PDU: {:?}&quot;</span>, <span class="ident">pdu</span>);
                     <span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">pdu</span> {
                         <span class="comment">// These PDUs are handled by the real-time code:</span>
-                        <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { .. } <span class="op">|</span> <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> { .. } <span class="op">=&gt;</span> {
+                        <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { .. } <span class="op">|</span> <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;LLCPDU not handled by LL&quot;</span>);
                         }
-                        <span class="kw">_</span> <span class="op">=&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> {
+                        <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> {
                             <span class="ident">unknown_type</span>: <span class="ident">pdu</span>.<span class="ident">opcode</span>(),
                         },
                     };
@@ -178,11 +180,11 @@
                         },
                     ))
                 }
-                <span class="ident">Pdu</span>::<span class="ident">DataStart</span> { <span class="ident">message</span> } <span class="op">=&gt;</span> {
+                <span class="ident">Pdu</span>::<span class="ident">DataStart</span> { <span class="ident">message</span> } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;L2start: {:?}&quot;</span>, <span class="ident">HexSlice</span>(<span class="ident">message</span>));
                     <span class="ident">this</span>.<span class="ident">l2cap</span>().<span class="ident">process_start</span>(<span class="ident">message</span>)
                 }
-                <span class="ident">Pdu</span>::<span class="ident">DataCont</span> { <span class="ident">message</span> } <span class="op">=&gt;</span> {
+                <span class="ident">Pdu</span>::<span class="ident">DataCont</span> { <span class="ident">message</span> } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;L2cont {:?}&quot;</span>, <span class="ident">HexSlice</span>(<span class="ident">message</span>));
                     <span class="ident">this</span>.<span class="ident">l2cap</span>().<span class="ident">process_cont</span>(<span class="ident">message</span>)
                 }
@@ -191,7 +193,7 @@
     }
 
     <span class="doccomment">/// Obtains access to the L2CAP instance.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">l2cap</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">L2CAPStateTx</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">C</span>::<span class="ident">ChannelMapper</span>, <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">l2cap</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">L2CAPStateTx</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">C</span>::<span class="ident">ChannelMapper</span>, <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">l2cap</span>.<span class="ident">tx</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">tx</span>)
     }
 
@@ -199,7 +201,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This can possibly be removed after *RFC 2229 (Closures Capture Disjoint Fields)* is</span>
     <span class="doccomment">/// implemented in stable Rust.</span>
-    <span class="kw">fn</span> <span class="ident">with_rx</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ConfConsumer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span>) <span class="op">-&gt;</span> <span class="ident">R</span>) <span class="op">-&gt;</span> <span class="ident">R</span> {
+    <span class="kw">fn</span> <span class="ident">with_rx</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ConfConsumer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">R</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rx</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">rx</span>.<span class="ident">take</span>().<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">f</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rx</span>, <span class="self">self</span>);
         <span class="self">self</span>.<span class="ident">rx</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">rx</span>);

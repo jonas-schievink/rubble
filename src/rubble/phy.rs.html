@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/phy.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>phy.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/phy.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>phy.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -165,13 +167,13 @@
 <span class="doccomment">//! indices, so only those are implemented here.</span>
 
 <span class="doccomment">/// Returns the center frequency in MHz corresponding to an RF channel.</span>
-<span class="kw">fn</span> <span class="ident">rf_channel_freq</span>(<span class="ident">rf_channel</span>: <span class="ident">u8</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
+<span class="kw">fn</span> <span class="ident">rf_channel_freq</span>(<span class="ident">rf_channel</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
     <span class="number">2402</span> <span class="op">+</span> <span class="ident">u16</span>::<span class="ident">from</span>(<span class="ident">rf_channel</span>) <span class="op">*</span> <span class="number">2</span>
 }
 
 <span class="doccomment">/// Returns the data whitening IV for a channel index (not RF channel).</span>
-<span class="kw">fn</span> <span class="ident">whitening_iv</span>(<span class="ident">channel_idx</span>: <span class="ident">u8</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
-    <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">channel_idx</span> <span class="op">&lt;=</span> <span class="number">39</span>);
+<span class="kw">fn</span> <span class="ident">whitening_iv</span>(<span class="ident">channel_idx</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
+    <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">channel_idx</span> <span class="op">&lt;</span><span class="op">=</span> <span class="number">39</span>);
     <span class="number">0b01000000</span> <span class="op">|</span> <span class="ident">channel_idx</span>
 }
 
@@ -181,12 +183,12 @@
 
 <span class="kw">impl</span> <span class="ident">AdvertisingChannel</span> {
     <span class="doccomment">/// Returns the first (lowest-numbered) advertising channel.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">first</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">first</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">AdvertisingChannel</span>(<span class="number">37</span>)
     }
 
     <span class="doccomment">/// Returns an iterator that yields all 3 advertising channels in ascending order.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">iter_all</span>() <span class="op">-&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">iter_all</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="self">Self</span><span class="op">&gt;</span> {
         [
             <span class="ident">AdvertisingChannel</span>(<span class="number">37</span>),
             <span class="ident">AdvertisingChannel</span>(<span class="number">38</span>),
@@ -197,8 +199,8 @@
     }
 
     <span class="doccomment">/// Returns the next advertising channel, or the first one if `self` is the last channel.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">cycle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span> <span class="op">==</span> <span class="number">39</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">cycle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span><span class="op">=</span> <span class="number">39</span> {
             <span class="ident">AdvertisingChannel</span>(<span class="number">37</span>)
         } <span class="kw">else</span> {
             <span class="ident">AdvertisingChannel</span>(<span class="self">self</span>.<span class="number">0</span> <span class="op">+</span> <span class="number">1</span>)
@@ -208,24 +210,24 @@
     <span class="doccomment">/// Returns the channel index.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Channels 37, 38 and 39 are used for advertising.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">channel</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">channel</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
         <span class="self">self</span>.<span class="number">0</span>
     }
 
     <span class="doccomment">/// Returns the physical RF channel corresponding to this advertising channel index.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// RF channels 0, 12 and 39 are used for advertising.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rf_channel</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rf_channel</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="number">0</span> {
-            <span class="number">37</span> <span class="op">=&gt;</span> <span class="number">0</span>,
-            <span class="number">38</span> <span class="op">=&gt;</span> <span class="number">12</span>,
-            <span class="number">39</span> <span class="op">=&gt;</span> <span class="number">39</span>,
-            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
+            <span class="number">37</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
+            <span class="number">38</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">12</span>,
+            <span class="number">39</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">39</span>,
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
         }
     }
 
     <span class="doccomment">/// Returns the center frequency of this channel in MHz.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
         <span class="ident">rf_channel_freq</span>(<span class="self">self</span>.<span class="ident">rf_channel</span>())
     }
 
@@ -237,7 +239,7 @@
     <span class="doccomment">/// The polynomial is always `x^7 + x^4 + 1`.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Whitening is applied to PDU and CRC.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">whitening_iv</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">whitening_iv</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
         <span class="ident">whitening_iv</span>(<span class="self">self</span>.<span class="number">0</span>)
     }
 }
@@ -254,31 +256,31 @@
     <span class="doccomment">/// # Panics</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This will panic if `index` is not a valid data channel index. Valid indices are 0..=36.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">index</span>: <span class="ident">u8</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">index</span> <span class="op">&lt;=</span> <span class="number">36</span>);
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">index</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">index</span> <span class="op">&lt;</span><span class="op">=</span> <span class="number">36</span>);
         <span class="ident">DataChannel</span>(<span class="ident">index</span>)
     }
 
     <span class="doccomment">/// Returns the data channel index.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The returned value is always in range 0..=36.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">index</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">index</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
         <span class="self">self</span>.<span class="number">0</span>
     }
 
     <span class="doccomment">/// Returns the RF channel corresponding to this data channel index.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// RF channels 1-11 and 13-38 are used for data transmission.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rf_channel</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rf_channel</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="number">0</span> {
-            <span class="ident">ch</span> @ <span class="number">0</span>..<span class="op">=</span><span class="number">10</span> <span class="op">=&gt;</span> <span class="ident">ch</span> <span class="op">+</span> <span class="number">1</span>,
-            <span class="ident">ch</span> @ <span class="number">11</span>..<span class="op">=</span><span class="number">36</span> <span class="op">=&gt;</span> <span class="ident">ch</span> <span class="op">+</span> <span class="number">2</span>,
-            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
+            <span class="ident">ch</span> @ <span class="number">0</span>..<span class="op">=</span><span class="number">10</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ch</span> <span class="op">+</span> <span class="number">1</span>,
+            <span class="ident">ch</span> @ <span class="number">11</span>..<span class="op">=</span><span class="number">36</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ch</span> <span class="op">+</span> <span class="number">2</span>,
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
         }
     }
 
     <span class="doccomment">/// Returns the center frequency of this channel in MHz.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
         <span class="ident">rf_channel_freq</span>(<span class="self">self</span>.<span class="ident">rf_channel</span>())
     }
 
@@ -290,7 +292,7 @@
     <span class="doccomment">/// The polynomial is always `x^7 + x^4 + 1`.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Whitening is applied to PDU and CRC.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">whitening_iv</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">whitening_iv</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
         <span class="ident">whitening_iv</span>(<span class="self">self</span>.<span class="number">0</span>)
     }
 }

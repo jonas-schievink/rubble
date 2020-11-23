@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble-nrf5x/src/radio.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>radio.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../rubble_nrf5x/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble-nrf5x/src/radio.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>radio.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../rubble_nrf5x/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -617,7 +619,7 @@
         <span class="ident">ficr</span>: <span class="kw-2">&amp;</span><span class="ident">pac</span>::<span class="ident">FICR</span>,
         <span class="ident">tx_buf</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw-2">mut</span> <span class="ident">PacketBuffer</span>,
         <span class="ident">rx_buf</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw-2">mut</span> <span class="ident">PacketBuffer</span>,
-    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">radio</span>.<span class="ident">state</span>.<span class="ident">read</span>().<span class="ident">state</span>().<span class="ident">is_disabled</span>());
 
         <span class="comment">// The nRF51 requires manually setting the trim values.</span>
@@ -655,7 +657,7 @@
         <span class="ident">radio</span>.<span class="ident">txpower</span>.<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">txpower</span>().<span class="ident">pos4d_bm</span>());
 
         <span class="kw">let</span> <span class="ident">max_payload</span> <span class="op">=</span> <span class="ident">rx_buf</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">2</span>;
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">max_payload</span> <span class="op">&lt;=</span> <span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">u8</span>::<span class="ident">max_value</span>()));
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">max_payload</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">u8</span>::<span class="ident">max_value</span>()));
 
         <span class="kw">unsafe</span> {
             <span class="ident">radio</span>.<span class="ident">pcnf1</span>.<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> {
@@ -696,10 +698,10 @@
             <span class="comment">// of the Access Address. Shift address up to fix this.</span>
             <span class="ident">radio</span>
                 .<span class="ident">base0</span>
-                .<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">bits</span>(<span class="ident">advertising</span>::<span class="ident">ACCESS_ADDRESS</span> <span class="op">&lt;&lt;</span> <span class="number">8</span>));
+                .<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">bits</span>(<span class="ident">advertising</span>::<span class="ident">ACCESS_ADDRESS</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span>));
             <span class="ident">radio</span>
                 .<span class="ident">prefix0</span>
-                .<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">ap0</span>().<span class="ident">bits</span>((<span class="ident">advertising</span>::<span class="ident">ACCESS_ADDRESS</span> <span class="op">&gt;&gt;</span> <span class="number">24</span>) <span class="kw">as</span> <span class="ident">u8</span>));
+                .<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">ap0</span>().<span class="ident">bits</span>((<span class="ident">advertising</span>::<span class="ident">ACCESS_ADDRESS</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">24</span>) <span class="kw">as</span> <span class="ident">u8</span>));
         }
 
         <span class="comment">// FIXME: No TIFS hardware support for now. Revisit when precise semantics are clear.</span>
@@ -733,7 +735,7 @@
     }
 
     <span class="doccomment">/// Returns the current radio state.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">STATE_R</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">STATE_R</span> {
         <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">state</span>.<span class="ident">read</span>().<span class="ident">state</span>()
     }
 
@@ -743,7 +745,7 @@
         <span class="comment">// event, since we shouldn&#39;t be transmitting anyway</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RadioCmd</span>::<span class="ident">ListenData</span> { <span class="ident">timeout</span>, .. } <span class="op">=</span> <span class="ident">cmd</span> {
             <span class="kw">if</span> <span class="op">!</span><span class="ident">timeout</span> {
-                <span class="kw">while</span> <span class="self">self</span>.<span class="ident">state</span>().<span class="ident">is_tx</span>() <span class="op">||</span> <span class="self">self</span>.<span class="ident">state</span>().<span class="ident">is_tx_ru</span>() {}
+                <span class="kw">while</span> <span class="self">self</span>.<span class="ident">state</span>().<span class="ident">is_tx</span>() <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">state</span>().<span class="ident">is_tx_ru</span>() {}
             }
         }
         <span class="comment">// &quot;Subsequent reads and writes cannot be moved ahead of preceding reads.&quot;</span>
@@ -757,13 +759,13 @@
         <span class="comment">// Disable radio</span>
         <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">tasks_disable</span>.<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="kw">unsafe</span> { <span class="ident">w</span>.<span class="ident">bits</span>(<span class="number">1</span>) });
         <span class="comment">// Then wait until disable event is triggered</span>
-        <span class="kw">while</span> <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">events_disabled</span>.<span class="ident">read</span>().<span class="ident">bits</span>() <span class="op">==</span> <span class="number">0</span> {}
+        <span class="kw">while</span> <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">events_disabled</span>.<span class="ident">read</span>().<span class="ident">bits</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {}
         <span class="comment">// And acknowledge it</span>
         <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">events_disabled</span>.<span class="ident">reset</span>();
 
         <span class="kw">match</span> <span class="ident">cmd</span> {
-            <span class="ident">RadioCmd</span>::<span class="ident">Off</span> <span class="op">=&gt;</span> {}
-            <span class="ident">RadioCmd</span>::<span class="ident">ListenAdvertising</span> { <span class="ident">channel</span> } <span class="op">=&gt;</span> {
+            <span class="ident">RadioCmd</span>::<span class="ident">Off</span> <span class="op">=</span><span class="op">&gt;</span> {}
+            <span class="ident">RadioCmd</span>::<span class="ident">ListenAdvertising</span> { <span class="ident">channel</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">prepare_txrx_advertising</span>(<span class="ident">channel</span>);
 
                 <span class="kw">let</span> <span class="ident">rx_buf</span> <span class="op">=</span> (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">rx_buf</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>()) <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw">_</span> <span class="kw">as</span> <span class="ident">u32</span>;
@@ -791,7 +793,7 @@
                 <span class="ident">access_address</span>,
                 <span class="ident">crc_init</span>,
                 ..
-            } <span class="op">=&gt;</span> {
+            } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">prepare_txrx_data</span>(<span class="ident">channel</span>, <span class="ident">access_address</span>, <span class="ident">crc_init</span>);
 
                 <span class="comment">// Enforce T_IFS in hardware.</span>
@@ -833,12 +835,12 @@
     <span class="doccomment">/// Automatically reconfigures the radio according to the `RadioCmd` returned by the BLE stack.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns when the `update` method should be called the next time.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">recv_interrupt</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">Transmitter</span> <span class="op">=</span> <span class="self">Self</span><span class="op">&gt;&gt;</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">recv_interrupt</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">Transmitter</span> <span class="op">=</span> <span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">timestamp</span>: <span class="ident">Instant</span>,
         <span class="ident">ll</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">LinkLayer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Cmd</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">events_disabled</span>.<span class="ident">read</span>().<span class="ident">bits</span>() <span class="op">==</span> <span class="number">0</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Cmd</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">events_disabled</span>.<span class="ident">read</span>().<span class="ident">bits</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="kw">return</span> <span class="prelude-val">None</span>;
         }
 
@@ -906,7 +908,7 @@
                 <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">tasks_disable</span>.<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">bits</span>(<span class="number">1</span>));
 
                 <span class="comment">// Then wait until disable event is triggered</span>
-                <span class="kw">while</span> <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">events_disabled</span>.<span class="ident">read</span>().<span class="ident">bits</span>() <span class="op">==</span> <span class="number">0</span> {}
+                <span class="kw">while</span> <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">events_disabled</span>.<span class="ident">read</span>().<span class="ident">bits</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {}
             }
         }
 
@@ -949,10 +951,10 @@
                 .<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">frequency</span>().<span class="ident">bits</span>((<span class="ident">channel</span>.<span class="ident">freq</span>() <span class="op">-</span> <span class="number">2400</span>) <span class="kw">as</span> <span class="ident">u8</span>));
 
             <span class="comment">// Address #1 is our data channel access address</span>
-            <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">base1</span>.<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">bits</span>(<span class="ident">access_address</span> <span class="op">&lt;&lt;</span> <span class="number">8</span>));
+            <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">base1</span>.<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">bits</span>(<span class="ident">access_address</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span>));
             <span class="self">self</span>.<span class="ident">radio</span>
                 .<span class="ident">prefix0</span>
-                .<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">ap1</span>().<span class="ident">bits</span>((<span class="ident">access_address</span> <span class="op">&gt;&gt;</span> <span class="number">24</span>) <span class="kw">as</span> <span class="ident">u8</span>));
+                .<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">ap1</span>().<span class="ident">bits</span>((<span class="ident">access_address</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">24</span>) <span class="kw">as</span> <span class="ident">u8</span>));
         }
     }
 
@@ -981,7 +983,7 @@
             <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">tasks_txen</span>.<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">bits</span>(<span class="number">1</span>));
 
             <span class="comment">// Then wait until disable event is triggered</span>
-            <span class="kw">while</span> <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">events_disabled</span>.<span class="ident">read</span>().<span class="ident">bits</span>() <span class="op">==</span> <span class="number">0</span> {}
+            <span class="kw">while</span> <span class="self">self</span>.<span class="ident">radio</span>.<span class="ident">events_disabled</span>.<span class="ident">read</span>().<span class="ident">bits</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {}
 
             <span class="comment">// &quot;Subsequent reads and writes cannot be moved ahead of preceding reads.&quot;</span>
             <span class="ident">compiler_fence</span>(<span class="ident">Ordering</span>::<span class="ident">Acquire</span>);
@@ -992,7 +994,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Transmitter</span> <span class="kw">for</span> <span class="ident">BleRadio</span> {
-    <span class="kw">fn</span> <span class="ident">tx_payload_buf</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">u8</span>] {
+    <span class="kw">fn</span> <span class="ident">tx_payload_buf</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">u8</span>] {
         <span class="comment">// Wait for any ongoing transmissions</span>
         <span class="kw">while</span> <span class="self">self</span>.<span class="ident">state</span>().<span class="ident">is_tx</span>() {}
         <span class="comment">// &quot;Subsequent reads and writes cannot be moved ahead of preceding reads.&quot;</span>

@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/data.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>data.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `rubble/src/link/data.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>data.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
                 <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -340,14 +342,14 @@
 <span class="kw">impl</span> <span class="ident">Header</span> {
     <span class="doccomment">/// Creates a header with the given LLID field and all other fields set to 0 (including the</span>
     <span class="doccomment">/// payload length).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">llid</span>: <span class="ident">Llid</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">llid</span>: <span class="ident">Llid</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">Header</span>(<span class="ident">llid</span> <span class="kw">as</span> <span class="ident">u16</span>)
     }
 
     <span class="doccomment">/// Parses a header from raw bytes.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Panics when `raw` contains less than 2 Bytes.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse</span>(<span class="ident">raw</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse</span>(<span class="ident">raw</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">bytes</span>: [<span class="ident">u8</span>; <span class="number">2</span>] <span class="op">=</span> <span class="ident">raw</span>[..<span class="number">2</span>].<span class="ident">try_into</span>().<span class="ident">expect</span>(<span class="string">&quot;raw has fewer than 2 bytes&quot;</span>);
         <span class="ident">Header</span>(<span class="ident">u16</span>::<span class="ident">from_le_bytes</span>(<span class="ident">bytes</span>))
     }
@@ -355,38 +357,38 @@
     <span class="doccomment">/// Returns the raw representation of the header.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The returned `u16` must be transmitted LSB and LSb first as the first 2 octets of the PDU.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_u16</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_u16</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
         <span class="self">self</span>.<span class="number">0</span>
     }
 
     <span class="doccomment">/// Returns the length of the payload in octets as specified in the `Length` field.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">payload_length</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u8</span> {
-        ((<span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0b11111111_00000000</span>) <span class="op">&gt;&gt;</span> <span class="number">8</span>) <span class="kw">as</span> <span class="ident">u8</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">payload_length</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
+        ((<span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0b11111111_00000000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">8</span>) <span class="kw">as</span> <span class="ident">u8</span>
     }
 
     <span class="doccomment">/// Sets the payload length field to `len`.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Note that BLE &lt;4.2 is restricted to 5-bit payload lengths.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_payload_length</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">len</span>: <span class="ident">u8</span>) {
-        <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> (<span class="ident">u16</span>::<span class="ident">from</span>(<span class="ident">len</span>) <span class="op">&lt;&lt;</span> <span class="number">8</span>) <span class="op">|</span> (<span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0x00ff</span>);
+        <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> (<span class="ident">u16</span>::<span class="ident">from</span>(<span class="ident">len</span>) <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span>) <span class="op">|</span> (<span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0x00ff</span>);
     }
 
     <span class="doccomment">/// Returns the `LLID` field (PDU type).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">llid</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Llid</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">llid</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Llid</span> {
         <span class="kw">let</span> <span class="ident">bits</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0b11</span>;
         <span class="kw">match</span> <span class="ident">bits</span> {
-            <span class="number">0b00</span> <span class="op">=&gt;</span> <span class="ident">Llid</span>::<span class="ident">Reserved</span>,
-            <span class="number">0b01</span> <span class="op">=&gt;</span> <span class="ident">Llid</span>::<span class="ident">DataCont</span>,
-            <span class="number">0b10</span> <span class="op">=&gt;</span> <span class="ident">Llid</span>::<span class="ident">DataStart</span>,
-            <span class="number">0b11</span> <span class="op">=&gt;</span> <span class="ident">Llid</span>::<span class="ident">Control</span>,
-            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
+            <span class="number">0b00</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Llid</span>::<span class="ident">Reserved</span>,
+            <span class="number">0b01</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Llid</span>::<span class="ident">DataCont</span>,
+            <span class="number">0b10</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Llid</span>::<span class="ident">DataStart</span>,
+            <span class="number">0b11</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Llid</span>::<span class="ident">Control</span>,
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
         }
     }
 
     <span class="doccomment">/// Returns the value of the `NESN` field (Next Expected Sequence Number).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">nesn</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">SeqNum</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">nesn</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SeqNum</span> {
         <span class="kw">let</span> <span class="ident">bit</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0b0100</span>;
-        <span class="kw">if</span> <span class="ident">bit</span> <span class="op">==</span> <span class="number">0</span> {
+        <span class="kw">if</span> <span class="ident">bit</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="ident">SeqNum</span>::<span class="ident">ZERO</span>
         } <span class="kw">else</span> {
             <span class="ident">SeqNum</span>::<span class="ident">ONE</span>
@@ -395,17 +397,17 @@
 
     <span class="doccomment">/// Sets the value of the `NESN` field.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_nesn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">nesn</span>: <span class="ident">SeqNum</span>) {
-        <span class="kw">if</span> <span class="ident">nesn</span> <span class="op">==</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span> {
-            <span class="self">self</span>.<span class="number">0</span> <span class="op">|=</span> <span class="number">0b0100</span>;
+        <span class="kw">if</span> <span class="ident">nesn</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span> {
+            <span class="self">self</span>.<span class="number">0</span> <span class="op">|</span><span class="op">=</span> <span class="number">0b0100</span>;
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;=</span> <span class="op">!</span><span class="number">0b0100</span>;
         }
     }
 
     <span class="doccomment">/// Returns the value of the `SN` field (Sequence Number).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sn</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">SeqNum</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sn</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SeqNum</span> {
         <span class="kw">let</span> <span class="ident">bit</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0b1000</span>;
-        <span class="kw">if</span> <span class="ident">bit</span> <span class="op">==</span> <span class="number">0</span> {
+        <span class="kw">if</span> <span class="ident">bit</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="ident">SeqNum</span>::<span class="ident">ZERO</span>
         } <span class="kw">else</span> {
             <span class="ident">SeqNum</span>::<span class="ident">ONE</span>
@@ -414,23 +416,23 @@
 
     <span class="doccomment">/// Sets the value of the `SN` field.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_sn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">sn</span>: <span class="ident">SeqNum</span>) {
-        <span class="kw">if</span> <span class="ident">sn</span> <span class="op">==</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span> {
-            <span class="self">self</span>.<span class="number">0</span> <span class="op">|=</span> <span class="number">0b1000</span>;
+        <span class="kw">if</span> <span class="ident">sn</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span> {
+            <span class="self">self</span>.<span class="number">0</span> <span class="op">|</span><span class="op">=</span> <span class="number">0b1000</span>;
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;=</span> <span class="op">!</span><span class="number">0b1000</span>;
         }
     }
 
     <span class="doccomment">/// Returns whether the `MD` field is set (More Data).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">md</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">md</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="ident">bit</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;</span> <span class="number">0b10000</span>;
-        <span class="ident">bit</span> <span class="op">!=</span> <span class="number">0</span>
+        <span class="ident">bit</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>
     }
 
     <span class="doccomment">/// Sets the value of the `MD` field.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_md</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">md</span>: <span class="ident">bool</span>) {
         <span class="kw">if</span> <span class="ident">md</span> {
-            <span class="self">self</span>.<span class="number">0</span> <span class="op">|=</span> <span class="number">0b10000</span>;
+            <span class="self">self</span>.<span class="number">0</span> <span class="op">|</span><span class="op">=</span> <span class="number">0b10000</span>;
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="number">0</span> <span class="op">&amp;=</span> <span class="op">!</span><span class="number">0b10000</span>;
         }
@@ -438,7 +440,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Header</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;Header&quot;</span>)
             .<span class="ident">field</span>(<span class="string">&quot;LLID&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">llid</span>())
             .<span class="ident">field</span>(<span class="string">&quot;NESN&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">nesn</span>())
@@ -450,14 +452,14 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Header</span> {
-    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">raw</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">Header</span>(<span class="ident">raw</span>))
     }
 }
 
 <span class="kw">impl</span> <span class="ident">ToBytes</span> <span class="kw">for</span> <span class="ident">Header</span> {
-    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">writer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">writer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="ident">writer</span>.<span class="ident">write_u16_le</span>(<span class="self">self</span>.<span class="ident">to_u16</span>())
     }
 }
@@ -488,49 +490,49 @@
     <span class="ident">DataStart</span> { <span class="ident">message</span>: <span class="ident">L</span> },
 
     <span class="doccomment">/// LL Control PDU for controlling the Link-Layer connection.</span>
-    <span class="ident">Control</span> { <span class="ident">data</span>: <span class="ident">BytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;&gt;</span> },
+    <span class="ident">Control</span> { <span class="ident">data</span>: <span class="ident">BytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span> },
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>]<span class="op">&gt;</span> {
     <span class="doccomment">/// Creates an empty PDU that carries no message.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This PDU can be sent whenever there&#39;s no actual data to be transferred.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">empty</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">empty</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">Pdu</span>::<span class="ident">DataCont</span> { <span class="ident">message</span>: <span class="kw-2">&amp;</span>[] }
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">L</span><span class="op">&gt;</span> <span class="ident">Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">L</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Returns the `LLID` field to use for this PDU.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">llid</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Llid</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">llid</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Llid</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Pdu</span>::<span class="ident">DataCont</span> { .. } <span class="op">=&gt;</span> <span class="ident">Llid</span>::<span class="ident">DataCont</span>,
-            <span class="ident">Pdu</span>::<span class="ident">DataStart</span> { .. } <span class="op">=&gt;</span> <span class="ident">Llid</span>::<span class="ident">DataStart</span>,
-            <span class="ident">Pdu</span>::<span class="ident">Control</span> { .. } <span class="op">=&gt;</span> <span class="ident">Llid</span>::<span class="ident">Control</span>,
+            <span class="ident">Pdu</span>::<span class="ident">DataCont</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Llid</span>::<span class="ident">DataCont</span>,
+            <span class="ident">Pdu</span>::<span class="ident">DataStart</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Llid</span>::<span class="ident">DataStart</span>,
+            <span class="ident">Pdu</span>::<span class="ident">Control</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Llid</span>::<span class="ident">Control</span>,
         }
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">L</span>: <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="op">+</span> <span class="question-mark">?</span><span class="ident">Sized</span><span class="op">&gt;</span> <span class="ident">Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">L</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Parses a PDU from a `Header` and raw payload.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse</span>(<span class="ident">header</span>: <span class="ident">Header</span>, <span class="ident">payload</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>]) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse</span>(<span class="ident">header</span>: <span class="ident">Header</span>, <span class="ident">payload</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="ident">header</span>.<span class="ident">llid</span>() {
-            <span class="ident">Llid</span>::<span class="ident">DataCont</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Pdu</span>::<span class="ident">DataCont</span> {
+            <span class="ident">Llid</span>::<span class="ident">DataCont</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Pdu</span>::<span class="ident">DataCont</span> {
                 <span class="ident">message</span>: <span class="ident">L</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span>::<span class="ident">new</span>(<span class="ident">payload</span>))<span class="question-mark">?</span>,
             }),
-            <span class="ident">Llid</span>::<span class="ident">DataStart</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Pdu</span>::<span class="ident">DataStart</span> {
+            <span class="ident">Llid</span>::<span class="ident">DataStart</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Pdu</span>::<span class="ident">DataStart</span> {
                 <span class="ident">message</span>: <span class="ident">L</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span>::<span class="ident">new</span>(<span class="ident">payload</span>))<span class="question-mark">?</span>,
             }),
-            <span class="ident">Llid</span>::<span class="ident">Control</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Pdu</span>::<span class="ident">Control</span> {
+            <span class="ident">Llid</span>::<span class="ident">Control</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Pdu</span>::<span class="ident">Control</span> {
                 <span class="ident">data</span>: <span class="ident">BytesOr</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span>::<span class="ident">new</span>(<span class="ident">payload</span>))<span class="question-mark">?</span>,
             }),
-            <span class="ident">Llid</span>::<span class="ident">Reserved</span> <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InvalidValue</span>),
+            <span class="ident">Llid</span>::<span class="ident">Reserved</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InvalidValue</span>),
         }
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;&gt;</span> <span class="kw">for</span> <span class="ident">Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>]<span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">c</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>]<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">c</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">Pdu</span>::<span class="ident">Control</span> { <span class="ident">data</span>: <span class="ident">c</span>.<span class="ident">into</span>() }
     }
 }
@@ -539,10 +541,10 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// The PDU header must be constructed using Link-Layer state (and `Pdu::llid`).</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">L</span>: <span class="ident">ToBytes</span><span class="op">&gt;</span> <span class="ident">ToBytes</span> <span class="kw">for</span> <span class="ident">Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">L</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">buffer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">buffer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Pdu</span>::<span class="ident">DataCont</span> { <span class="ident">message</span> } <span class="op">|</span> <span class="ident">Pdu</span>::<span class="ident">DataStart</span> { <span class="ident">message</span> } <span class="op">=&gt;</span> <span class="ident">message</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
-            <span class="ident">Pdu</span>::<span class="ident">Control</span> { <span class="ident">data</span> } <span class="op">=&gt;</span> <span class="ident">data</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
+            <span class="ident">Pdu</span>::<span class="ident">DataCont</span> { <span class="ident">message</span> } <span class="op">|</span> <span class="ident">Pdu</span>::<span class="ident">DataStart</span> { <span class="ident">message</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">message</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
+            <span class="ident">Pdu</span>::<span class="ident">Control</span> { <span class="ident">data</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">data</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
         }
     }
 }
