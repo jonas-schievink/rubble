@@ -20,7 +20,7 @@ cortex-m-rt = "0.6.11"
 panic-halt = "0.2.0"
 
 nrf52810-hal = { version = "0.11", features = ["rt"], optional = true }
-nrf52832-hal = { version = "0.11", features = ["rt"], optional = true }
+nrf52832-hal = { version = "0.12", features = ["rt"], optional = true }
 nrf52840-hal = { version = "0.12", features = ["rt"], optional = true }
 
 # Disable documentation to avoid spurious rustdoc warnings
