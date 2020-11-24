@@ -12,6 +12,6 @@ publish = false
 
 [dependencies]
 rubble = { path = "../../rubble", default-features = false }
-cortex-m = "0.6.1"
+cortex-m = "0.7.0"
 log = "0.4.8"
 bbqueue = "0.4.1"
