@@ -35,7 +35,7 @@ mod server;
 mod uuid;
 
 use self::{handle::*, pdus::*};
-use crate::{utils::HexSlice, Error};
+pub use crate::{utils::HexSlice, Error};
 
 pub use self::handle::{Handle, HandleRange};
 pub use self::server::{AttributeServer, AttributeServerTx};
