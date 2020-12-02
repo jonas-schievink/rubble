@@ -232,7 +232,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">att</span>::{<span class="ident">AttUuid</span>, <span class="ident">Attribute</span>, <span class="ident">AttributeProvider</span>, <span class="ident">Handle</span>, <span class="ident">HandleRange</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">uuid</span>::{<span class="ident">Uuid128</span>, <span class="ident">Uuid16</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">utils</span>::<span class="ident">HexSlice</span>, <span class="ident">Error</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Error</span>;
 <span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cmp</span>, <span class="ident">slice</span>};
 
 <span class="doccomment">/// A demo `AttributeProvider` that will enumerate as a *Battery Service*.</span>
@@ -244,26 +244,26 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">attributes</span>: [
-                <span class="ident">Attribute</span> {
-                    <span class="ident">att_type</span>: <span class="ident">Uuid16</span>(<span class="number">0x2800</span>).<span class="ident">into</span>(), <span class="comment">// &quot;Primary Service&quot;</span>
-                    <span class="ident">handle</span>: <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0001</span>),
-                    <span class="ident">value</span>: <span class="ident">HexSlice</span>(<span class="kw-2">&amp;</span>[<span class="number">0x0F</span>, <span class="number">0x18</span>]), <span class="comment">// &quot;Battery Service&quot; = 0x180F</span>
-                },
-                <span class="ident">Attribute</span> {
-                    <span class="ident">att_type</span>: <span class="ident">Uuid16</span>(<span class="number">0x2803</span>).<span class="ident">into</span>(), <span class="comment">// &quot;Characteristic&quot;</span>
-                    <span class="ident">handle</span>: <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0002</span>),
-                    <span class="ident">value</span>: <span class="ident">HexSlice</span>(<span class="kw-2">&amp;</span>[
+                <span class="ident">Attribute</span>::<span class="ident">new</span>(
+                    <span class="ident">Uuid16</span>(<span class="number">0x2800</span>).<span class="ident">into</span>(), <span class="comment">// &quot;Primary Service&quot;</span>
+                    <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0001</span>),
+                    <span class="kw-2">&amp;</span>[<span class="number">0x0F</span>, <span class="number">0x18</span>], <span class="comment">// &quot;Battery Service&quot; = 0x180F</span>
+                ),
+                <span class="ident">Attribute</span>::<span class="ident">new</span>(
+                    <span class="ident">Uuid16</span>(<span class="number">0x2803</span>).<span class="ident">into</span>(), <span class="comment">// &quot;Characteristic&quot;</span>
+                    <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0002</span>),
+                    <span class="kw-2">&amp;</span>[
                         <span class="number">0x02</span>, <span class="comment">// 1 byte properties: READ = 0x02</span>
                         <span class="number">0x03</span>, <span class="number">0x00</span>, <span class="comment">// 2 bytes handle = 0x0003</span>
                         <span class="number">0x19</span>, <span class="number">0x2A</span>, <span class="comment">// 2 bytes UUID = 0x2A19 (Battery Level)</span>
-                    ]),
-                },
+                    ],
+                ),
                 <span class="comment">// Characteristic value (Battery Level)</span>
-                <span class="ident">Attribute</span> {
-                    <span class="ident">att_type</span>: <span class="ident">AttUuid</span>::<span class="ident">Uuid16</span>(<span class="ident">Uuid16</span>(<span class="number">0x2A19</span>)), <span class="comment">// &quot;Battery Level&quot;</span>
-                    <span class="ident">handle</span>: <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0003</span>),
-                    <span class="ident">value</span>: <span class="ident">HexSlice</span>(<span class="kw-2">&amp;</span>[<span class="number">48u8</span>]),
-                },
+                <span class="ident">Attribute</span>::<span class="ident">new</span>(
+                    <span class="ident">AttUuid</span>::<span class="ident">Uuid16</span>(<span class="ident">Uuid16</span>(<span class="number">0x2A19</span>)), <span class="comment">// &quot;Battery Level&quot;</span>
+                    <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0003</span>),
+                    <span class="kw-2">&amp;</span>[<span class="number">48u8</span>],
+                ),
             ],
         }
     }
@@ -342,21 +342,21 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">attributes</span>: [
-                <span class="ident">Attribute</span> {
-                    <span class="ident">att_type</span>: <span class="ident">Uuid16</span>(<span class="number">0x2800</span>).<span class="ident">into</span>(), <span class="comment">// &quot;Primary Service&quot;</span>
-                    <span class="ident">handle</span>: <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0001</span>),
-                    <span class="ident">value</span>: <span class="ident">HexSlice</span>(<span class="kw-2">&amp;</span>[
+                <span class="ident">Attribute</span>::<span class="ident">new</span>(
+                    <span class="ident">Uuid16</span>(<span class="number">0x2800</span>).<span class="ident">into</span>(), <span class="comment">// &quot;Primary Service&quot;</span>
+                    <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0001</span>),
+                    <span class="kw-2">&amp;</span>[
                         <span class="number">0x00</span>, <span class="number">0xC7</span>, <span class="number">0xC4</span>, <span class="number">0x4E</span>, <span class="number">0xE3</span>, <span class="number">0x6C</span>, <span class="comment">/* - */</span>
                         <span class="number">0x51</span>, <span class="number">0xA7</span>, <span class="comment">/* - */</span>
                         <span class="number">0x33</span>, <span class="number">0x4B</span>, <span class="comment">/* - */</span>
                         <span class="number">0xE8</span>, <span class="number">0xED</span>, <span class="comment">/* - */</span>
                         <span class="number">0x5A</span>, <span class="number">0x0E</span>, <span class="number">0xB8</span>, <span class="number">0x03</span>,
-                    ]), <span class="comment">// &quot;Midi Service&quot;</span>
-                },
-                <span class="ident">Attribute</span> {
-                    <span class="ident">att_type</span>: <span class="ident">Uuid16</span>(<span class="number">0x2803</span>).<span class="ident">into</span>(), <span class="comment">// &quot;Characteristic&quot;</span>
-                    <span class="ident">handle</span>: <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0002</span>),
-                    <span class="ident">value</span>: <span class="ident">HexSlice</span>(<span class="kw-2">&amp;</span>[
+                    ], <span class="comment">// &quot;Midi Service&quot;</span>
+                ),
+                <span class="ident">Attribute</span>::<span class="ident">new</span>(
+                    <span class="ident">Uuid16</span>(<span class="number">0x2803</span>).<span class="ident">into</span>(), <span class="comment">// &quot;Characteristic&quot;</span>
+                    <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0002</span>),
+                    <span class="kw-2">&amp;</span>[
                         <span class="number">0x02</span> <span class="op">|</span> <span class="number">0x08</span> <span class="op">|</span> <span class="number">0x04</span> <span class="op">|</span> <span class="number">0x10</span>, <span class="comment">// 1 byte properties: READ = 0x02, WRITE_REQ = 0x08, WRITE_CMD = 0x04, NOTIFICATION = 0x10</span>
                         <span class="number">0x03</span>,
                         <span class="number">0x00</span>, <span class="comment">// 2 bytes handle = 0x0003</span>
@@ -377,26 +377,26 @@
                         <span class="number">0xE5</span>,
                         <span class="number">0x72</span>,
                         <span class="number">0x77</span>,
-                    ]),
-                },
+                    ],
+                ),
                 <span class="comment">// Characteristic value (Empty Packet)</span>
-                <span class="ident">Attribute</span> {
-                    <span class="ident">att_type</span>: <span class="ident">AttUuid</span>::<span class="ident">Uuid128</span>(<span class="ident">Uuid128</span>::<span class="ident">from_bytes</span>([
+                <span class="ident">Attribute</span>::<span class="ident">new</span>(
+                    <span class="ident">AttUuid</span>::<span class="ident">Uuid128</span>(<span class="ident">Uuid128</span>::<span class="ident">from_bytes</span>([
                         <span class="number">0xF3</span>, <span class="number">0x6B</span>, <span class="number">0x10</span>, <span class="number">0x9D</span>, <span class="number">0x66</span>, <span class="number">0xF2</span>, <span class="comment">/*-*/</span>
                         <span class="number">0xA9</span>, <span class="number">0xA1</span>, <span class="comment">/*-*/</span>
                         <span class="number">0x12</span>, <span class="number">0x41</span>, <span class="comment">/*-*/</span>
                         <span class="number">0x68</span>, <span class="number">0x38</span>, <span class="comment">/*-*/</span>
                         <span class="number">0xDB</span>, <span class="number">0xE5</span>, <span class="number">0x72</span>, <span class="number">0x77</span>,
                     ])),
-                    <span class="ident">handle</span>: <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0003</span>),
-                    <span class="ident">value</span>: <span class="ident">HexSlice</span>(<span class="kw-2">&amp;</span>[]),
-                },
+                    <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0003</span>),
+                    <span class="kw-2">&amp;</span>[],
+                ),
                 <span class="comment">// CCCD</span>
-                <span class="ident">Attribute</span> {
-                    <span class="ident">att_type</span>: <span class="ident">AttUuid</span>::<span class="ident">Uuid16</span>(<span class="ident">Uuid16</span>(<span class="number">0x2902</span>)),
-                    <span class="ident">handle</span>: <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0004</span>),
-                    <span class="ident">value</span>: <span class="ident">HexSlice</span>(<span class="kw-2">&amp;</span>[<span class="number">0x00</span>, <span class="number">0x00</span>]),
-                },
+                <span class="ident">Attribute</span>::<span class="ident">new</span>(
+                    <span class="ident">AttUuid</span>::<span class="ident">Uuid16</span>(<span class="ident">Uuid16</span>(<span class="number">0x2902</span>)),
+                    <span class="ident">Handle</span>::<span class="ident">from_raw</span>(<span class="number">0x0004</span>),
+                    <span class="kw-2">&amp;</span>[<span class="number">0x00</span>, <span class="number">0x00</span>],
+                ),
             ],
         }
     }
