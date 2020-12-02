@@ -7,7 +7,7 @@ pub mod characteristic;
 
 use crate::att::{AttUuid, Attribute, AttributeProvider, Handle, HandleRange};
 use crate::uuid::{Uuid128, Uuid16};
-use crate::{utils::HexSlice, Error};
+use crate::Error;
 use core::{cmp, slice};
 
 /// A demo `AttributeProvider` that will enumerate as a *Battery Service*.
@@ -19,26 +19,26 @@ impl BatteryServiceAttrs {
     pub fn new() -> Self {
         Self {
             attributes: [
-                Attribute {
-                    att_type: Uuid16(0x2800).into(), // "Primary Service"
-                    handle: Handle::from_raw(0x0001),
-                    value: HexSlice(&[0x0F, 0x18]), // "Battery Service" = 0x180F
-                },
-                Attribute {
-                    att_type: Uuid16(0x2803).into(), // "Characteristic"
-                    handle: Handle::from_raw(0x0002),
-                    value: HexSlice(&[
+                Attribute::new(
+                    Uuid16(0x2800).into(), // "Primary Service"
+                    Handle::from_raw(0x0001),
+                    &[0x0F, 0x18], // "Battery Service" = 0x180F
+                ),
+                Attribute::new(
+                    Uuid16(0x2803).into(), // "Characteristic"
+                    Handle::from_raw(0x0002),
+                    &[
                         0x02, // 1 byte properties: READ = 0x02
                         0x03, 0x00, // 2 bytes handle = 0x0003
                         0x19, 0x2A, // 2 bytes UUID = 0x2A19 (Battery Level)
-                    ]),
-                },
+                    ],
+                ),
                 // Characteristic value (Battery Level)
-                Attribute {
-                    att_type: AttUuid::Uuid16(Uuid16(0x2A19)), // "Battery Level"
-                    handle: Handle::from_raw(0x0003),
-                    value: HexSlice(&[48u8]),
-                },
+                Attribute::new(
+                    AttUuid::Uuid16(Uuid16(0x2A19)), // "Battery Level"
+                    Handle::from_raw(0x0003),
+                    &[48u8],
+                ),
             ],
         }
     }
@@ -117,21 +117,21 @@ impl MidiServiceAttrs {
     pub fn new() -> Self {
         Self {
             attributes: [
-                Attribute {
-                    att_type: Uuid16(0x2800).into(), // "Primary Service"
-                    handle: Handle::from_raw(0x0001),
-                    value: HexSlice(&[
+                Attribute::new(
+                    Uuid16(0x2800).into(), // "Primary Service"
+                    Handle::from_raw(0x0001),
+                    &[
                         0x00, 0xC7, 0xC4, 0x4E, 0xE3, 0x6C, /* - */
                         0x51, 0xA7, /* - */
                         0x33, 0x4B, /* - */
                         0xE8, 0xED, /* - */
                         0x5A, 0x0E, 0xB8, 0x03,
-                    ]), // "Midi Service"
-                },
-                Attribute {
-                    att_type: Uuid16(0x2803).into(), // "Characteristic"
-                    handle: Handle::from_raw(0x0002),
-                    value: HexSlice(&[
+                    ], // "Midi Service"
+                ),
+                Attribute::new(
+                    Uuid16(0x2803).into(), // "Characteristic"
+                    Handle::from_raw(0x0002),
+                    &[
                         0x02 | 0x08 | 0x04 | 0x10, // 1 byte properties: READ = 0x02, WRITE_REQ = 0x08, WRITE_CMD = 0x04, NOTIFICATION = 0x10
                         0x03,
                         0x00, // 2 bytes handle = 0x0003
@@ -152,26 +152,26 @@ impl MidiServiceAttrs {
                         0xE5,
                         0x72,
                         0x77,
-                    ]),
-                },
+                    ],
+                ),
                 // Characteristic value (Empty Packet)
-                Attribute {
-                    att_type: AttUuid::Uuid128(Uuid128::from_bytes([
+                Attribute::new(
+                    AttUuid::Uuid128(Uuid128::from_bytes([
                         0xF3, 0x6B, 0x10, 0x9D, 0x66, 0xF2, /*-*/
                         0xA9, 0xA1, /*-*/
                         0x12, 0x41, /*-*/
                         0x68, 0x38, /*-*/
                         0xDB, 0xE5, 0x72, 0x77,
                     ])),
-                    handle: Handle::from_raw(0x0003),
-                    value: HexSlice(&[]),
-                },
+                    Handle::from_raw(0x0003),
+                    &[],
+                ),
                 // CCCD
-                Attribute {
-                    att_type: AttUuid::Uuid16(Uuid16(0x2902)),
-                    handle: Handle::from_raw(0x0004),
-                    value: HexSlice(&[0x00, 0x00]),
-                },
+                Attribute::new(
+                    AttUuid::Uuid16(Uuid16(0x2902)),
+                    Handle::from_raw(0x0004),
+                    &[0x00, 0x00],
+                ),
             ],
         }
     }
