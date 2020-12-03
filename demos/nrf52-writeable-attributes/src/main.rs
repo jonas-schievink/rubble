@@ -36,7 +36,6 @@ use rubble_nrf5x::{
 pub struct LedBlinkAttrs<'a> {
     // State and resources to be modified/queried when packets are received
     led_pin: Pin<Output<PushPull>>,
-    led_state: &'a mut [u8; 1],
     // Attributes exposed to clients
     attributes: [Attribute<'a>; 3],
 }
@@ -82,7 +81,6 @@ impl<'a> LedBlinkAttrs<'a> {
     fn new(led_pin: Pin<Output<PushPull>>, led_state: &'a mut [u8; 1]) -> Self {
         Self {
             led_pin,
-            led_state,
             attributes: [
                 Attribute::new(
                     PRIMARY_SERVICE_UUID16.into(),
@@ -125,7 +123,6 @@ impl<'a> AttributeProvider for LedBlinkAttrs<'a> {
                 rprintln!("Received data: {:#?}", data);
                 // If we receive a 1, activate the LED; otherwise deactivate it
                 // Assumes LED is active low
-                self.led_state.copy_from_slice(&data[0..1]);
                 if data[0] == 1 {
                     rprintln!("Setting LED high");
                     self.led_pin.set_low().unwrap();
@@ -133,7 +130,7 @@ impl<'a> AttributeProvider for LedBlinkAttrs<'a> {
                     rprintln!("Setting LED low");
                     self.led_pin.set_high().unwrap();
                 }
-                self.attributes[2].value.0.copy_from_slice(self.led_state);
+                self.attributes[2].set_value(data);
                 Ok(())
             }
             _ => panic!("Attempted to write an unwriteable attribute"),
@@ -196,9 +193,6 @@ impl Config for AppConfig {
 #[rtic::app(device = crate::hal::pac, peripherals = true)]
 const APP: () = {
     struct Resources {
-        // State managed by RTIC
-        #[init([0; 1])]
-        led_state: [u8; 1],
         // BLE boilerplate
         #[init([0; MIN_PDU_BUF])]
         ble_tx_buf: PacketBuffer,

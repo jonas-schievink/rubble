@@ -44,7 +44,7 @@ impl BatteryServiceAttrs {
     }
 }
 
-impl AttributeProvider for BatteryServiceAttrs {
+impl AttributeProvider<'_> for BatteryServiceAttrs {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
@@ -154,7 +154,7 @@ impl MidiServiceAttrs {
     }
 }
 
-impl AttributeProvider for MidiServiceAttrs {
+impl AttributeProvider<'_> for MidiServiceAttrs {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
