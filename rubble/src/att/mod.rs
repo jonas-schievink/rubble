@@ -101,14 +101,14 @@ pub enum AttributeAccessPermissions {
 }
 
 impl AttributeAccessPermissions {
-    fn can_read(&self) -> bool {
+    fn is_readable(&self) -> bool {
         match self {
             AttributeAccessPermissions::Readable
             | AttributeAccessPermissions::ReadableAndWritable => true,
             AttributeAccessPermissions::Writeable => false,
         }
     }
-    fn can_write(&self) -> bool {
+    fn is_writeable(&self) -> bool {
         match self {
             AttributeAccessPermissions::Writeable
             | AttributeAccessPermissions::ReadableAndWritable => true,
@@ -162,7 +162,7 @@ pub trait AttributeProvider {
     ///
     /// Defaults to read-only. If this is overwritten, `write_attribute` should
     /// be overwritten.
-    fn attribute_access_permissions(&self, handle: Handle) -> AttributeAccessPermissions {
+    fn attr_access_permissions(&self, _handle: Handle) -> AttributeAccessPermissions {
         AttributeAccessPermissions::Readable
     }
 
@@ -174,7 +174,7 @@ pub trait AttributeProvider {
     ///
     /// By default, panics on all writes. This should be overwritten if
     /// `attribute_access_permissions` is.
-    fn write_attribute(&mut self, handle: Handle, data: &[u8]) -> Result<(), Error> {
+    fn write_attr(&mut self, _handle: Handle, _data: &[u8]) -> Result<(), Error> {
         unimplemented!("by default, no attributes should have write access permissions, and this should never be called");
     }
 }
