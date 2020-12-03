@@ -9,7 +9,6 @@ use nrf52832_hal as hal;
 // use nrf52840_hal as hal;
 
 use core::cmp;
-use cortex_m::interrupt::Mutex;
 use hal::gpio::{Level, Output, Pin, PushPull};
 use hal::prelude::OutputPin;
 use rtt_target::{rprintln, rtt_init_print};
@@ -33,11 +32,12 @@ use rubble_nrf5x::{
     utils::get_device_address,
 };
 
-pub struct LedBlinkAttrs {
+pub struct LedBlinkAttrs<'a> {
     // State and resources to be modified/queried when packets are received
     led_pin: Pin<Output<PushPull>>,
+    led_state: &'a [u8; 1],
     // Attributes exposed to clients
-    attributes: [Attribute<'static>; 3],
+    attributes: [Attribute<'a>; 3],
 }
 
 const PRIMARY_SERVICE_UUID16: Uuid16 = Uuid16(0x2800);
@@ -77,10 +77,11 @@ const LED_CHAR_DECL_VALUE: [u8; 19] = [
     0x32,
 ];
 
-impl LedBlinkAttrs {
-    fn new(led_pin: Pin<Output<PushPull>>, led_state: &Mutex<[u8; 1]>) -> Self {
+impl<'a> LedBlinkAttrs<'a> {
+    fn new(led_pin: Pin<Output<PushPull>>, led_state: &'a [u8; 1]) -> Self {
         Self {
             led_pin,
+            led_state,
             attributes: [
                 Attribute::new(
                     PRIMARY_SERVICE_UUID16.into(),
@@ -96,14 +97,14 @@ impl LedBlinkAttrs {
                 Attribute::new(
                     Uuid128::from_bytes(LED_STATE_CHAR_UUID128).into(),
                     Handle::from_raw(0x0003),
-                    led_state,
+                    &[0],
                 ),
             ],
         }
     }
 }
 
-impl AttributeProvider for LedBlinkAttrs {
+impl<'a> AttributeProvider for LedBlinkAttrs<'a> {
     /// Retrieves the permissions for attribute with the given handle.
     fn attr_access_permissions(&self, handle: Handle) -> AttributeAccessPermissions {
         match handle.as_u16() {
@@ -117,7 +118,6 @@ impl AttributeProvider for LedBlinkAttrs {
     fn write_attr(&mut self, handle: Handle, data: &[u8]) -> Result<(), Error> {
         match handle.as_u16() {
             0x0003 => {
-                self.attributes[2].value.0[0..1].copy_from_slice(&data[0..1]);
                 // If we receive a 1, activate the LED; otherwise deactivate it
                 // Assumes LED is active low
                 if data[0] == 1 {
@@ -127,6 +127,11 @@ impl AttributeProvider for LedBlinkAttrs {
                     rprintln!("Setting LED low");
                     self.led_pin.set_high().unwrap();
                 }
+                self.attributes[2] = Attribute::new(
+                    Uuid128::from_bytes(LED_STATE_CHAR_UUID128).into(),
+                    Handle::from_raw(0x0003),
+                    self.led_state,
+                );
                 Ok(())
             }
             _ => panic!("Attempted to write an unwriteable attribute"),
@@ -182,16 +187,16 @@ pub enum AppConfig {}
 impl Config for AppConfig {
     type Timer = BleTimer<hal::pac::TIMER0>;
     type Transmitter = BleRadio;
-    type ChannelMapper = BleChannelMap<LedBlinkAttrs, NoSecurity>;
+    type ChannelMapper = BleChannelMap<LedBlinkAttrs<'static>, NoSecurity>;
     type PacketQueue = &'static mut SimpleQueue;
 }
 
 #[rtic::app(device = crate::hal::pac, peripherals = true)]
 const APP: () = {
     struct Resources {
-        // Program state, backed by RTIC
-        #[init(Mutex::new([0]))]
-        led_state: Mutex<[u8; 1]>,
+        // State managed by RTIC
+        #[init([0; 1])]
+        led_state: [u8; 1],
         // BLE boilerplate
         #[init([0; MIN_PDU_BUF])]
         ble_tx_buf: PacketBuffer,
