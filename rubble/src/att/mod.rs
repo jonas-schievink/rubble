@@ -117,6 +117,12 @@ impl AttributeAccessPermissions {
     }
 }
 
+impl Default for AttributeAccessPermissions {
+    fn default() -> Self {
+        AttributeAccessPermissions::Readable
+    }
+}
+
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
 pub trait AttributeProvider {
     /// Calls a closure `f` with every attribute whose handle is inside `range`, ascending.
@@ -160,19 +166,20 @@ pub trait AttributeProvider {
     /// communicated with clients. They should be coordinated beforehand as part
     /// of a larger protocol.
     ///
-    /// Defaults to read-only. If this is overwritten, `write_attribute` should
-    /// be overwritten.
+    /// Defaults to read-only. If this is overwritten and some attributes are made writeable,
+    /// `write_attribute` must be implemented as well.
     fn attr_access_permissions(&self, _handle: Handle) -> AttributeAccessPermissions {
         AttributeAccessPermissions::Readable
     }
 
     /// Attempts to write data to the given attribute.
     ///
-    /// This will only be called on UUIDs for which
+    /// This will only be called on handles for which
     /// `attribute_access_permissions` returns
-    /// [`AttributeAccessPermissions::Writeable`] or [`AttributeAccessPermission::ReadableAndWriteable`].
+    /// [`AttributeAccessPermissions::Writeable`]
+    /// or [`AttributeAccessPermission::ReadableAndWriteable`].
     ///
-    /// By default, panics on all writes. This should be overwritten if
+    /// By default, panics on all writes. This must be overwritten if
     /// `attribute_access_permissions` is.
     fn write_attr(&mut self, _handle: Handle, _data: &[u8]) -> Result<(), Error> {
         unimplemented!("by default, no attributes should have write access permissions, and this should never be called");
