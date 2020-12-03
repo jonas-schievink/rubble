@@ -9,6 +9,7 @@ use nrf52832_hal as hal;
 // use nrf52840_hal as hal;
 
 use core::cmp;
+use core::sync::atomic::{compiler_fence, Ordering};
 use hal::gpio::{Level, Output, Pin, PushPull};
 use hal::prelude::OutputPin;
 use rtt_target::{rprintln, rtt_init_print};
@@ -35,7 +36,7 @@ use rubble_nrf5x::{
 pub struct LedBlinkAttrs<'a> {
     // State and resources to be modified/queried when packets are received
     led_pin: Pin<Output<PushPull>>,
-    led_state: &'a [u8; 1],
+    led_state: &'a mut [u8; 1],
     // Attributes exposed to clients
     attributes: [Attribute<'a>; 3],
 }
@@ -78,7 +79,7 @@ const LED_CHAR_DECL_VALUE: [u8; 19] = [
 ];
 
 impl<'a> LedBlinkAttrs<'a> {
-    fn new(led_pin: Pin<Output<PushPull>>, led_state: &'a [u8; 1]) -> Self {
+    fn new(led_pin: Pin<Output<PushPull>>, led_state: &'a mut [u8; 1]) -> Self {
         Self {
             led_pin,
             led_state,
@@ -118,8 +119,13 @@ impl<'a> AttributeProvider for LedBlinkAttrs<'a> {
     fn write_attr(&mut self, handle: Handle, data: &[u8]) -> Result<(), Error> {
         match handle.as_u16() {
             0x0003 => {
+                if data.is_empty() {
+                    return Err(Error::InvalidLength);
+                }
+                rprintln!("Received data: {:#?}", data);
                 // If we receive a 1, activate the LED; otherwise deactivate it
                 // Assumes LED is active low
+                self.led_state.copy_from_slice(&data[0..1]);
                 if data[0] == 1 {
                     rprintln!("Setting LED high");
                     self.led_pin.set_low().unwrap();
@@ -127,11 +133,7 @@ impl<'a> AttributeProvider for LedBlinkAttrs<'a> {
                     rprintln!("Setting LED low");
                     self.led_pin.set_high().unwrap();
                 }
-                self.attributes[2] = Attribute::new(
-                    Uuid128::from_bytes(LED_STATE_CHAR_UUID128).into(),
-                    Handle::from_raw(0x0003),
-                    self.led_state,
-                );
+                self.attributes[2].value.0.copy_from_slice(self.led_state);
                 Ok(())
             }
             _ => panic!("Attempted to write an unwriteable attribute"),
@@ -214,6 +216,7 @@ const APP: () = {
     #[init(resources = [led_state, ble_tx_buf, ble_rx_buf, tx_queue, rx_queue])]
     fn init(ctx: init::Context) -> init::LateResources {
         rtt_init_print!();
+        rprintln!("RTT initialized");
         // On reset, the internal high frequency clock is already used, but we
         // also need to switch to the external HF oscillator. This is needed
         // for Bluetooth to work.
@@ -252,7 +255,7 @@ const APP: () = {
         // Send advertisement and set up regular interrupt
         let next_update = ble_ll
             .start_advertise(
-                Duration::from_millis(200),
+                Duration::from_millis(1000),
                 &[AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS")],
                 &mut radio,
                 tx_cons,
@@ -261,6 +264,7 @@ const APP: () = {
             .unwrap();
 
         ble_ll.timer().configure_interrupt(next_update);
+        rprintln!("begin advertising");
 
         init::LateResources {
             radio,
@@ -312,8 +316,10 @@ const APP: () = {
     }
 
     #[idle]
-    fn idle(ctx: idle::Context) -> ! {
-        unimplemented!()
+    fn idle(_ctx: idle::Context) -> ! {
+        loop {
+            compiler_fence(Ordering::SeqCst);
+        }
     }
 
     #[task(resources = [ble_r], priority = 2)]
