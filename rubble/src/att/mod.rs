@@ -35,47 +35,69 @@ mod server;
 mod uuid;
 
 use self::{handle::*, pdus::*};
-use crate::{utils::HexSlice, Error};
+use crate::Error;
 
 pub use self::handle::{Handle, HandleRange};
 pub use self::server::{AttributeServer, AttributeServerTx};
 pub use self::uuid::AttUuid;
 
+/// An attribute value that can be represented as a byte slice.
+pub trait AttrValue {
+    fn as_slice(&self) -> &[u8];
+}
+
+impl AttrValue for &[u8] {
+    fn as_slice(&self) -> &[u8] {
+        self
+    }
+}
+
+impl AttrValue for () {
+    fn as_slice(&self) -> &[u8] {
+        &[]
+    }
+}
+
 /// An ATT server attribute
-pub struct Attribute<'a> {
+pub struct Attribute<T>
+where
+    T: AttrValue,
+{
     /// The type of the attribute as a UUID16, EG "Primary Service" or "Anaerobic Heart Rate Lower Limit"
     pub att_type: AttUuid,
     /// Unique server-side identifer for attribute
     pub handle: Handle,
     /// Attribute values can be any fixed length or variable length octet array, which if too large
     /// can be sent across multiple PDUs
-    pub value: HexSlice<&'a [u8]>,
+    pub value: T,
 }
 
-impl<'a> Attribute<'a> {
+impl<T: AttrValue> Attribute<T> {
     /// Creates a new attribute.
-    pub fn new(att_type: AttUuid, handle: Handle, value: &'a [u8]) -> Self {
+    pub fn new(att_type: AttUuid, handle: Handle, value: T) -> Self {
         assert_ne!(handle, Handle::NULL);
         Attribute {
             att_type,
             handle,
-            value: HexSlice(value),
+            value: value,
         }
     }
 
     /// Retrieves the attribute's value as a slice.
-    pub fn value(&self) -> &'a [u8] {
-        self.value.as_ref()
+    pub fn value(&self) -> &[u8] {
+        self.value.as_slice()
     }
 
     /// Overrides the previously set attribute's value.
-    pub fn set_value(&mut self, value: &'a [u8]) {
-        self.value = HexSlice(value)
+    pub fn set_value(&mut self, value: T) {
+        self.value = value;
     }
 }
 
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
 pub trait AttributeProvider {
+    type ValueType: AttrValue;
+
     /// Calls a closure `f` with every attribute whose handle is inside `range`, ascending.
     ///
     /// If `f` returns an error, this function will stop calling `f` and propagate the error
@@ -87,7 +109,7 @@ pub trait AttributeProvider {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
-        f: impl FnMut(&Self, Attribute<'_>) -> Result<(), Error>,
+        f: impl FnMut(&Self, &Attribute<Self::ValueType>) -> Result<(), Error>,
     ) -> Result<(), Error>;
 
     /// Returns whether `uuid` is a valid grouping attribute type that can be used in *Read By
@@ -109,7 +131,7 @@ pub trait AttributeProvider {
     /// last attribute contained within that service.
     ///
     /// TODO: document what the BLE spec has to say about grouping for characteristics.
-    fn group_end(&self, handle: Handle) -> Option<&Attribute<'_>>;
+    fn group_end(&self, handle: Handle) -> Option<&Attribute<Self::ValueType>>;
 }
 
 /// An empty attribute set.
@@ -118,10 +140,11 @@ pub trait AttributeProvider {
 pub struct NoAttributes;
 
 impl AttributeProvider for NoAttributes {
+    type ValueType = ();
     fn for_attrs_in_range(
         &mut self,
         _range: HandleRange,
-        _f: impl FnMut(&Self, Attribute<'_>) -> Result<(), Error>,
+        _f: impl FnMut(&Self, &Attribute<Self::ValueType>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         Ok(())
     }
@@ -130,7 +153,7 @@ impl AttributeProvider for NoAttributes {
         false
     }
 
-    fn group_end(&self, _handle: Handle) -> Option<&Attribute<'_>> {
+    fn group_end(&self, _handle: Handle) -> Option<&Attribute<Self::ValueType>> {
         None
     }
 }
