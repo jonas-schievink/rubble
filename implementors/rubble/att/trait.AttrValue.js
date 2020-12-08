@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["rubble"] = [{"text":"impl&lt;'a&gt; Iterator for Attributes&lt;'a&gt;","synthetic":false,"types":[]}];
+implementors["rubble"] = [];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
