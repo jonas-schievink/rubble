@@ -5,14 +5,14 @@
 
 pub mod characteristic;
 
-use crate::att::{AttUuid, Attribute, AttributeProvider, Handle, HandleRange};
+use crate::att::{AttUuid, AttrValue, Attribute, AttributeProvider, Handle, HandleRange};
 use crate::uuid::{Uuid128, Uuid16};
 use crate::Error;
-use core::{cmp, slice};
+use core::cmp;
 
 /// A demo `AttributeProvider` that will enumerate as a *Battery Service*.
 pub struct BatteryServiceAttrs {
-    attributes: [Attribute<'static>; 3],
+    attributes: [Attribute<&'static [u8]>; 3],
 }
 
 impl BatteryServiceAttrs {
@@ -48,7 +48,7 @@ impl AttributeProvider for BatteryServiceAttrs {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
-        mut f: impl FnMut(&Self, Attribute<'_>) -> Result<(), Error>,
+        mut f: impl FnMut(&Self, &Attribute<dyn AttrValue>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         let count = self.attributes.len();
         let start = usize::from(range.start().as_u16() - 1); // handles start at 1, not 0
@@ -62,14 +62,7 @@ impl AttributeProvider for BatteryServiceAttrs {
         };
 
         for attr in attrs {
-            f(
-                self,
-                Attribute {
-                    att_type: attr.att_type,
-                    handle: attr.handle,
-                    value: attr.value,
-                },
-            )?;
+            f(self, attr)?;
         }
         Ok(())
     }
@@ -78,7 +71,7 @@ impl AttributeProvider for BatteryServiceAttrs {
         uuid == Uuid16(0x2800) // FIXME not characteristics?
     }
 
-    fn group_end(&self, handle: Handle) -> Option<&Attribute<'_>> {
+    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AttrValue>> {
         match handle.as_u16() {
             0x0001 => Some(&self.attributes[2]),
             0x0002 => Some(&self.attributes[2]),
@@ -87,27 +80,11 @@ impl AttributeProvider for BatteryServiceAttrs {
     }
 }
 
-pub struct Attributes<'a> {
-    to_yield: slice::Iter<'a, Attribute<'a>>,
-}
-
-impl<'a> Iterator for Attributes<'a> {
-    type Item = Attribute<'a>;
-
-    fn next(&mut self) -> Option<Attribute<'a>> {
-        self.to_yield.next().map(|attr| Attribute {
-            att_type: attr.att_type,
-            handle: attr.handle,
-            value: attr.value,
-        })
-    }
-}
-
 /// A demo `AttributeProvider` that will enumerate as a *Midi Service*.
 ///
 /// Also refer to https://www.midi.org/specifications-old/item/bluetooth-le-midi
 pub struct MidiServiceAttrs {
-    attributes: [Attribute<'static>; 4],
+    attributes: [Attribute<&'static [u8]>; 4],
 }
 
 // MIDI Service (UUID: 03B80E5A-EDE8-4B33-A751-6CE34EC4C700)
@@ -181,7 +158,7 @@ impl AttributeProvider for MidiServiceAttrs {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
-        mut f: impl FnMut(&Self, Attribute<'_>) -> Result<(), Error>,
+        mut f: impl FnMut(&Self, &Attribute<dyn AttrValue>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         let count = self.attributes.len();
         let start = usize::from(range.start().as_u16() - 1); // handles start at 1, not 0
@@ -195,14 +172,7 @@ impl AttributeProvider for MidiServiceAttrs {
         };
 
         for attr in attrs {
-            f(
-                self,
-                Attribute {
-                    att_type: attr.att_type,
-                    handle: attr.handle,
-                    value: attr.value,
-                },
-            )?;
+            f(self, attr)?;
         }
         Ok(())
     }
@@ -211,7 +181,7 @@ impl AttributeProvider for MidiServiceAttrs {
         uuid == Uuid16(0x2800) // FIXME not characteristics?
     }
 
-    fn group_end(&self, handle: Handle) -> Option<&Attribute<'_>> {
+    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AttrValue>> {
         match handle.as_u16() {
             0x0001 => Some(&self.attributes[3]),
             0x0002 => Some(&self.attributes[3]),

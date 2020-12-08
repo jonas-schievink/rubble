@@ -99,7 +99,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                         .for_attrs_in_range(range, |_provider, attr| {
                             if attr.att_type == *attribute_type {
                                 let data =
-                                    ByTypeAttData::new(att_mtu, attr.handle, attr.value.as_ref());
+                                    ByTypeAttData::new(att_mtu, attr.handle, attr.value.as_slice());
                                 if size == Some(data.encoded_size()) || size.is_none() {
                                     // Can try to encode `data`. If we run out of space, end the list.
                                     data.to_bytes(writer)?;
@@ -156,7 +156,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                                     att_mtu,
                                     attr.handle,
                                     provider.group_end(attr.handle).unwrap().handle,
-                                    attr.value.as_ref(),
+                                    attr.value.as_slice(),
                                 );
                                 if size == Some(data.encoded_size()) || size.is_none() {
                                     // Can try to encode `data`. If we run out of space, end the list.
@@ -197,10 +197,10 @@ impl<A: AttributeProvider> AttributeServer<A> {
                         self.attrs.for_attrs_in_range(
                             HandleRange::new(*handle, *handle),
                             |_provider, attr| {
-                                let value = if writer.space_left() < attr.value.as_ref().len() {
-                                    &attr.value.as_ref()[..writer.space_left()]
+                                let value = if writer.space_left() < attr.value.as_slice().len() {
+                                    &attr.value.as_slice()[..writer.space_left()]
                                 } else {
-                                    attr.value.as_ref()
+                                    attr.value.as_slice()
                                 };
                                 writer.write_slice(value)
                             },
