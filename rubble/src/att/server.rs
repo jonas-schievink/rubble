@@ -2,7 +2,7 @@
 
 use super::{
     pdus::{AttPdu, ByGroupAttData, ByTypeAttData, ErrorCode, Opcode},
-    AttError, AttrValue, AttributeProvider, Handle, HandleRange,
+    AttError, AttributeProvider, Handle, HandleRange,
 };
 use crate::bytes::{ByteReader, FromBytes, ToBytes};
 use crate::l2cap::{Protocol, ProtocolObj, Sender};

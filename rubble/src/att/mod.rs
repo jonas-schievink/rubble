@@ -61,7 +61,7 @@ impl AttrValue for () {
 /// An ATT server attribute
 pub struct Attribute<T>
 where
-    T: AttrValue,
+    T: ?Sized,
 {
     /// The type of the attribute as a UUID16, EG "Primary Service" or "Anaerobic Heart Rate Lower Limit"
     pub att_type: AttUuid,
@@ -96,8 +96,6 @@ impl<T: AttrValue> Attribute<T> {
 
 /// Trait for attribute sets that can be hosted by an `AttributeServer`.
 pub trait AttributeProvider {
-    type ValueType: AttrValue;
-
     /// Calls a closure `f` with every attribute whose handle is inside `range`, ascending.
     ///
     /// If `f` returns an error, this function will stop calling `f` and propagate the error
@@ -109,7 +107,7 @@ pub trait AttributeProvider {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
-        f: impl FnMut(&Self, &Attribute<Self::ValueType>) -> Result<(), Error>,
+        f: impl FnMut(&Self, &Attribute<dyn AttrValue>) -> Result<(), Error>,
     ) -> Result<(), Error>;
 
     /// Returns whether `uuid` is a valid grouping attribute type that can be used in *Read By
@@ -131,7 +129,7 @@ pub trait AttributeProvider {
     /// last attribute contained within that service.
     ///
     /// TODO: document what the BLE spec has to say about grouping for characteristics.
-    fn group_end(&self, handle: Handle) -> Option<&Attribute<Self::ValueType>>;
+    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AttrValue>>;
 }
 
 /// An empty attribute set.
@@ -140,11 +138,10 @@ pub trait AttributeProvider {
 pub struct NoAttributes;
 
 impl AttributeProvider for NoAttributes {
-    type ValueType = ();
     fn for_attrs_in_range(
         &mut self,
         _range: HandleRange,
-        _f: impl FnMut(&Self, &Attribute<Self::ValueType>) -> Result<(), Error>,
+        _f: impl FnMut(&Self, &Attribute<dyn AttrValue>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         Ok(())
     }
@@ -153,7 +150,7 @@ impl AttributeProvider for NoAttributes {
         false
     }
 
-    fn group_end(&self, _handle: Handle) -> Option<&Attribute<Self::ValueType>> {
+    fn group_end(&self, _handle: Handle) -> Option<&Attribute<dyn AttrValue>> {
         None
     }
 }
