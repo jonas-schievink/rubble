@@ -194,6 +194,9 @@
 <span id="191">191</span>
 <span id="192">192</span>
 <span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Generic `Timer` implementation that works with all 3 timers on the chip.</span>
 
@@ -205,6 +208,9 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52832&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">nrf52832_hal</span>::<span class="ident">pac</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52833&quot;</span>)]</span>
+<span class="kw">use</span> <span class="ident">nrf52833_hal</span>::<span class="ident">pac</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52840&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">nrf52840_hal</span>::<span class="ident">pac</span>;
