@@ -22,6 +22,7 @@ bbqueue = "0.4.1"
 
 nrf52810-hal = { version = "0.12", features = ["rt"], optional = true }
 nrf52832-hal = { version = "0.12", features = ["rt"], optional = true }
+nrf52833-hal = { version = "0.12", features = ["rt"], optional = true }
 nrf52840-hal = { version = "0.12", features = ["rt"], optional = true }
 
 [dependencies.log]
@@ -41,4 +42,5 @@ test = false
 default = ["rubble/log", "log"]
 52810 = ["rubble-nrf5x/52810", "nrf52810-hal"]
 52832 = ["rubble-nrf5x/52832", "nrf52832-hal"]
+52833 = ["rubble-nrf5x/52833", "nrf52833-hal"]
 52840 = ["rubble-nrf5x/52840", "nrf52840-hal"]

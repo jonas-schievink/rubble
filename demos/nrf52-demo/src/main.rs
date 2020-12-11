@@ -42,6 +42,8 @@ mod logger;
 use nrf52810_hal as hal;
 #[cfg(feature = "52832")]
 use nrf52832_hal as hal;
+#[cfg(feature = "52833")]
+use nrf52833_hal as hal;
 #[cfg(feature = "52840")]
 use nrf52840_hal as hal;
 
