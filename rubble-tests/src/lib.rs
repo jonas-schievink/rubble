@@ -30,7 +30,10 @@ fn additional_tests() {
 
     // Checks that rubble-nrf5x builds on all supported architectures.
     let targets = [
-        ("thumbv7em-none-eabi", &["52840", "52832", "52810"][..]),
+        (
+            "thumbv7em-none-eabi",
+            &["52840", "52833", "52832", "52810"][..],
+        ),
         ("thumbv6m-none-eabi", &["51"][..]),
     ];
     for (target, features) in &targets {
@@ -43,7 +46,7 @@ fn additional_tests() {
     }
 
     // Checks that the demos build correctly.
-    let features = ["52840", "52832", "52810"];
+    let features = ["52840", "52833", "52832", "52810"];
     let target = "thumbv7em-none-eabi";
     for demo in glob("demos/nrf52*").unwrap() {
         let demo = demo.unwrap().display().to_string();
