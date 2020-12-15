@@ -523,14 +523,6 @@
 <span id="520">520</span>
 <span id="521">521</span>
 <span id="522">522</span>
-<span id="523">523</span>
-<span id="524">524</span>
-<span id="525">525</span>
-<span id="526">526</span>
-<span id="527">527</span>
-<span id="528">528</span>
-<span id="529">529</span>
-<span id="530">530</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Integrated 2.4 GHz radio with BLE support.</span>
 <span class="doccomment">//!</span>
@@ -678,18 +670,10 @@
                     .<span class="ident">set_bit</span>()
             });
 
-            <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52840&quot;</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52833&quot;</span>)))]</span>
             <span class="ident">radio</span>.<span class="ident">crccnf</span>.<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> {
                 <span class="comment">// skip address since only the S0, Length, S1 and Payload need CRC</span>
                 <span class="comment">// 3 Bytes = CRC24</span>
-                <span class="ident">w</span>.<span class="ident">skipaddr</span>().<span class="ident">set_bit</span>().<span class="ident">len</span>().<span class="ident">three</span>()
-            });
-
-            <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52840&quot;</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52833&quot;</span>))]</span>
-            <span class="ident">radio</span>.<span class="ident">crccnf</span>.<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> {
-                <span class="comment">// skip address since only the S0, Length, S1 and Payload need CRC</span>
-                <span class="comment">// 3 Bytes = CRC24</span>
-                <span class="ident">w</span>.<span class="ident">skipaddr</span>().<span class="ident">bits</span>(<span class="number">1</span>).<span class="ident">len</span>().<span class="ident">three</span>()
+                <span class="ident">w</span>.<span class="ident">skipaddr</span>().<span class="ident">skip</span>().<span class="ident">len</span>().<span class="ident">three</span>()
             });
 
             <span class="ident">radio</span>
