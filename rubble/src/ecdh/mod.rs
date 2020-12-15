@@ -38,7 +38,7 @@ use rand_core::{CryptoRng, RngCore};
 /// A P-256 public key (point on the curve) in uncompressed format.
 ///
 /// The encoding is as specified in *[SEC 1: Elliptic Curve Cryptography]*, but without the leading
-/// byte: The first 32 Bytes are the big-endian encoding of the point's X coordinate, and the
+/// `0x04` byte: The first 32 Bytes are the big-endian encoding of the point's X coordinate, and the
 /// remaining 32 Bytes are the Y coordinate, encoded the same way.
 ///
 /// Note that this type does not provide any validity guarantees (unlike [`PrivateKey`]
