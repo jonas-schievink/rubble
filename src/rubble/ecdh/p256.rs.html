@@ -158,10 +158,11 @@
 <span id="155">155</span>
 <span id="156">156</span>
 <span id="157">157</span>
-<span id="158">158</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> ::<span class="ident">p256</span>::<span class="ident">arithmetic</span>::{<span class="ident">AffinePoint</span>, <span class="ident">ProjectivePoint</span>, <span class="ident">Scalar</span>};
+<span class="kw">use</span> ::<span class="ident">p256</span>::<span class="ident">elliptic_curve</span>::<span class="ident">sec1</span>::{<span class="ident">FromEncodedPoint</span>, <span class="ident">ToEncodedPoint</span>};
+<span class="kw">use</span> ::<span class="ident">p256</span>::<span class="ident">elliptic_curve</span>::<span class="ident">Field</span>;
+<span class="kw">use</span> ::<span class="ident">p256</span>::{<span class="ident">ProjectivePoint</span>, <span class="ident">Scalar</span>};
 <span class="kw">use</span> <span class="ident">rand_core</span>::{<span class="ident">CryptoRng</span>, <span class="ident">RngCore</span>};
 
 <span class="doccomment">/// An ECDH provider using the pure-Rust `p256` crate.</span>
@@ -181,31 +182,19 @@
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
+        <span class="kw">let</span> <span class="ident">scalar</span> <span class="op">=</span> <span class="ident">Scalar</span>::<span class="ident">random</span>(<span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">secret</span> <span class="op">=</span> <span class="ident">P256SecretKey</span> { <span class="ident">inner</span>: <span class="ident">scalar</span> };
 
-        <span class="kw">loop</span> {
-            <span class="ident">rng</span>.<span class="ident">fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>);
+        <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">ProjectivePoint</span>::<span class="ident">generator</span>() <span class="op">*</span> <span class="kw-2">&amp;</span><span class="ident">scalar</span>;
+        <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">public</span>.<span class="ident">to_affine</span>();
+        <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">public</span>.<span class="ident">to_encoded_point</span>(<span class="bool-val">false</span>);
 
-            <span class="comment">// If secret generation fails we get new random bytes and retry. This is fundamentally</span>
-            <span class="comment">// not constant-time, but it exposes no usable info to an attacker.</span>
-            <span class="kw">let</span> <span class="ident">opt</span> <span class="op">=</span> <span class="ident">Scalar</span>::<span class="ident">from_bytes</span>(<span class="ident">buf</span>);
-            <span class="kw">if</span> <span class="ident">opt</span>.<span class="ident">is_some</span>().<span class="ident">into</span>() {
-                <span class="kw">let</span> <span class="ident">scalar</span> <span class="op">=</span> <span class="ident">opt</span>.<span class="ident">unwrap</span>();
-                <span class="kw">let</span> <span class="ident">secret</span> <span class="op">=</span> <span class="ident">P256SecretKey</span> { <span class="ident">inner</span>: <span class="ident">scalar</span> };
+        <span class="comment">// Remove the leading `0x04` tag bytes since we don&#39;t use that in Rubble.</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">public_bytes</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">64</span>];
+        <span class="ident">public_bytes</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">public</span>.<span class="ident">as_bytes</span>()[<span class="number">1</span>..]);
+        <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">PublicKey</span>(<span class="ident">public_bytes</span>);
 
-                <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">ProjectivePoint</span>::<span class="ident">generator</span>() <span class="op">*</span> <span class="kw-2">&amp;</span><span class="ident">scalar</span>;
-                <span class="comment">// unwrap: cannot be the point at infinity</span>
-                <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">public</span>.<span class="ident">to_affine</span>().<span class="ident">unwrap</span>();
-                <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">public</span>.<span class="ident">to_uncompressed_pubkey</span>();
-
-                <span class="comment">// Remove the leading `0x04` tag bytes since we don&#39;t use that in Rubble.</span>
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">public_bytes</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">64</span>];
-                <span class="ident">public_bytes</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">public</span>.<span class="ident">as_bytes</span>()[<span class="number">1</span>..]);
-                <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">PublicKey</span>(<span class="ident">public_bytes</span>);
-
-                <span class="kw">return</span> (<span class="ident">secret</span>, <span class="ident">public</span>);
-            }
-        }
+        (<span class="ident">secret</span>, <span class="ident">public</span>)
     }
 }
 
@@ -213,6 +202,8 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// [`P256Provider`]: struct.P256Provider.html</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">P256SecretKey</span> {
+    <span class="comment">// NOTE: We&#39;re not using `EphemeralSecret` here, because it (intentionally) cannot be</span>
+    <span class="comment">// constructed from raw key material, but we want to do that in the tests below.</span>
     <span class="ident">inner</span>: <span class="ident">Scalar</span>,
 }
 
@@ -220,22 +211,29 @@
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
     <span class="kw">fn</span> <span class="ident">from_test_data</span>(<span class="ident">bytes</span>: [<span class="ident">u8</span>; <span class="number">32</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">inner</span>: <span class="ident">Scalar</span>::<span class="ident">from_bytes</span>(<span class="ident">bytes</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">inner</span>: <span class="ident">Scalar</span>::<span class="ident">from_bytes_reduced</span>((<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">into</span>()),
         }
     }
 }
 
 <span class="kw">impl</span> <span class="ident">SecretKey</span> <span class="kw">for</span> <span class="ident">P256SecretKey</span> {
     <span class="kw">fn</span> <span class="ident">agree</span>(<span class="self">self</span>, <span class="ident">foreign_key</span>: <span class="kw-2">&amp;</span><span class="ident">PublicKey</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SharedSecret</span>, <span class="ident">InvalidPublicKey</span><span class="op">&gt;</span> {
+        <span class="comment">// Convert the public key to SEC1 format.</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">encoded</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">65</span>];
+        <span class="ident">encoded</span>[<span class="number">0</span>] <span class="op">=</span> <span class="number">0x04</span>; <span class="comment">// indicates uncompressed format (see RFC 5480)</span>
+        <span class="ident">encoded</span>[<span class="number">1</span>..].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">foreign_key</span>.<span class="number">0</span>);
+
+        <span class="kw">let</span> <span class="ident">foreign_key</span> <span class="op">=</span>
+            ::<span class="ident">p256</span>::<span class="ident">EncodedPoint</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">encoded</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">InvalidPublicKey</span>::<span class="ident">new</span>())<span class="question-mark">?</span>;
+
         <span class="comment">// ECDH is nothing but multiplying the foreign public key by the local secret key.</span>
-        <span class="kw">let</span> <span class="ident">foreign_key</span> <span class="op">=</span> ::<span class="ident">p256</span>::<span class="ident">PublicKey</span>::<span class="ident">from_untagged_point</span>((<span class="kw-2">&amp;</span><span class="ident">foreign_key</span>.<span class="number">0</span>[..]).<span class="ident">into</span>());
-        <span class="kw">let</span> <span class="ident">opt</span> <span class="op">=</span> <span class="ident">AffinePoint</span>::<span class="ident">from_pubkey</span>(<span class="kw-2">&amp;</span><span class="ident">foreign_key</span>);
-        <span class="kw">if</span> <span class="ident">opt</span>.<span class="ident">is_none</span>().<span class="ident">into</span>() {
+        <span class="kw">let</span> <span class="ident">affine</span> <span class="op">=</span> ::<span class="ident">p256</span>::<span class="ident">AffinePoint</span>::<span class="ident">from_encoded_point</span>(<span class="kw-2">&amp;</span><span class="ident">foreign_key</span>);
+        <span class="kw">if</span> <span class="ident">affine</span>.<span class="ident">is_none</span>().<span class="ident">into</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidPublicKey</span>::<span class="ident">new</span>());
         }
 
-        <span class="kw">let</span> <span class="ident">mul_point</span> <span class="op">=</span> <span class="ident">ProjectivePoint</span>::<span class="ident">from</span>(<span class="ident">opt</span>.<span class="ident">unwrap</span>()) <span class="op">*</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">inner</span>;
-        <span class="kw">let</span> <span class="ident">uncomp_point</span> <span class="op">=</span> <span class="ident">mul_point</span>.<span class="ident">to_affine</span>().<span class="ident">unwrap</span>().<span class="ident">to_uncompressed_pubkey</span>();
+        <span class="kw">let</span> <span class="ident">mul_point</span> <span class="op">=</span> <span class="ident">ProjectivePoint</span>::<span class="ident">from</span>(<span class="ident">affine</span>.<span class="ident">unwrap</span>()) <span class="op">*</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">inner</span>;
+        <span class="kw">let</span> <span class="ident">uncomp_point</span> <span class="op">=</span> ::<span class="ident">p256</span>::<span class="ident">EncodedPoint</span>::<span class="ident">from</span>(<span class="ident">mul_point</span>.<span class="ident">to_affine</span>());
 
         <span class="comment">// First byte is a `0x04` tag, next 32 Bytes are the shared secret.</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">secret</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];

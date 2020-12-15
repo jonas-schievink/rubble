@@ -235,7 +235,7 @@
 <span class="doccomment">/// A P-256 public key (point on the curve) in uncompressed format.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// The encoding is as specified in *[SEC 1: Elliptic Curve Cryptography]*, but without the leading</span>
-<span class="doccomment">/// byte: The first 32 Bytes are the big-endian encoding of the point&#39;s X coordinate, and the</span>
+<span class="doccomment">/// `0x04` byte: The first 32 Bytes are the big-endian encoding of the point&#39;s X coordinate, and the</span>
 <span class="doccomment">/// remaining 32 Bytes are the Y coordinate, encoded the same way.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Note that this type does not provide any validity guarantees (unlike [`PrivateKey`]</span>
