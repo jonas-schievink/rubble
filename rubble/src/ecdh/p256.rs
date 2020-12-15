@@ -1,5 +1,7 @@
 use super::*;
-use ::p256::arithmetic::{AffinePoint, ProjectivePoint, Scalar};
+use ::p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use ::p256::elliptic_curve::Field;
+use ::p256::{ProjectivePoint, Scalar};
 use rand_core::{CryptoRng, RngCore};
 
 /// An ECDH provider using the pure-Rust `p256` crate.
@@ -19,31 +21,19 @@ impl EcdhProvider for P256Provider {
     where
         R: RngCore + CryptoRng,
     {
-        let mut buf = [0; 32];
+        let scalar = Scalar::random(rng);
+        let secret = P256SecretKey { inner: scalar };
 
-        loop {
-            rng.fill_bytes(&mut buf);
+        let public = ProjectivePoint::generator() * &scalar;
+        let public = public.to_affine();
+        let public = public.to_encoded_point(false);
 
-            // If secret generation fails we get new random bytes and retry. This is fundamentally
-            // not constant-time, but it exposes no usable info to an attacker.
-            let opt = Scalar::from_bytes(buf);
-            if opt.is_some().into() {
-                let scalar = opt.unwrap();
-                let secret = P256SecretKey { inner: scalar };
+        // Remove the leading `0x04` tag bytes since we don't use that in Rubble.
+        let mut public_bytes = [0; 64];
+        public_bytes.copy_from_slice(&public.as_bytes()[1..]);
+        let public = PublicKey(public_bytes);
 
-                let public = ProjectivePoint::generator() * &scalar;
-                // unwrap: cannot be the point at infinity
-                let public = public.to_affine().unwrap();
-                let public = public.to_uncompressed_pubkey();
-
-                // Remove the leading `0x04` tag bytes since we don't use that in Rubble.
-                let mut public_bytes = [0; 64];
-                public_bytes.copy_from_slice(&public.as_bytes()[1..]);
-                let public = PublicKey(public_bytes);
-
-                return (secret, public);
-            }
-        }
+        (secret, public)
     }
 }
 
@@ -51,6 +41,8 @@ impl EcdhProvider for P256Provider {
 ///
 /// [`P256Provider`]: struct.P256Provider.html
 pub struct P256SecretKey {
+    // NOTE: We're not using `EphemeralSecret` here, because it (intentionally) cannot be
+    // constructed from raw key material, but we want to do that in the tests below.
     inner: Scalar,
 }
 
@@ -58,22 +50,29 @@ impl P256SecretKey {
     #[cfg(test)]
     fn from_test_data(bytes: [u8; 32]) -> Self {
         Self {
-            inner: Scalar::from_bytes(bytes).unwrap(),
+            inner: Scalar::from_bytes_reduced((&bytes).into()),
         }
     }
 }
 
 impl SecretKey for P256SecretKey {
     fn agree(self, foreign_key: &PublicKey) -> Result<SharedSecret, InvalidPublicKey> {
+        // Convert the public key to SEC1 format.
+        let mut encoded = [0; 65];
+        encoded[0] = 0x04; // indicates uncompressed format (see RFC 5480)
+        encoded[1..].copy_from_slice(&foreign_key.0);
+
+        let foreign_key =
+            ::p256::EncodedPoint::from_bytes(&encoded).map_err(|_| InvalidPublicKey::new())?;
+
         // ECDH is nothing but multiplying the foreign public key by the local secret key.
-        let foreign_key = ::p256::PublicKey::from_untagged_point((&foreign_key.0[..]).into());
-        let opt = AffinePoint::from_pubkey(&foreign_key);
-        if opt.is_none().into() {
+        let affine = ::p256::AffinePoint::from_encoded_point(&foreign_key);
+        if affine.is_none().into() {
             return Err(InvalidPublicKey::new());
         }
 
-        let mul_point = ProjectivePoint::from(opt.unwrap()) * &self.inner;
-        let uncomp_point = mul_point.to_affine().unwrap().to_uncompressed_pubkey();
+        let mul_point = ProjectivePoint::from(affine.unwrap()) * &self.inner;
+        let uncomp_point = ::p256::EncodedPoint::from(mul_point.to_affine());
 
         // First byte is a `0x04` tag, next 32 Bytes are the shared secret.
         let mut secret = [0; 32];
