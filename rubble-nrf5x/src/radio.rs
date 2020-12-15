@@ -147,18 +147,10 @@ impl BleRadio {
                     .set_bit()
             });
 
-            #[cfg(not(any(feature = "52840", feature = "52833")))]
             radio.crccnf.write(|w| {
                 // skip address since only the S0, Length, S1 and Payload need CRC
                 // 3 Bytes = CRC24
-                w.skipaddr().set_bit().len().three()
-            });
-
-            #[cfg(any(feature = "52840", feature = "52833"))]
-            radio.crccnf.write(|w| {
-                // skip address since only the S0, Length, S1 and Payload need CRC
-                // 3 Bytes = CRC24
-                w.skipaddr().bits(1).len().three()
+                w.skipaddr().skip().len().three()
             });
 
             radio
