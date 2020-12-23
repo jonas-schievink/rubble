@@ -41,23 +41,6 @@ pub use self::handle::{Handle, HandleRange};
 pub use self::server::{AttributeServer, AttributeServerTx};
 pub use self::uuid::AttUuid;
 
-/// An attribute value that can be represented as a byte slice.
-pub trait AttrValue {
-    fn as_slice(&self) -> &[u8];
-}
-
-impl AttrValue for &[u8] {
-    fn as_slice(&self) -> &[u8] {
-        self
-    }
-}
-
-impl AttrValue for () {
-    fn as_slice(&self) -> &[u8] {
-        &[]
-    }
-}
-
 /// An ATT server attribute
 pub struct Attribute<T>
 where
@@ -72,20 +55,20 @@ where
     pub value: T,
 }
 
-impl<T: AttrValue> Attribute<T> {
+impl<T: AsRef<[u8]>> Attribute<T> {
     /// Creates a new attribute.
     pub fn new(att_type: AttUuid, handle: Handle, value: T) -> Self {
         assert_ne!(handle, Handle::NULL);
         Attribute {
             att_type,
             handle,
-            value: value,
+            value,
         }
     }
 
     /// Retrieves the attribute's value as a slice.
     pub fn value(&self) -> &[u8] {
-        self.value.as_slice()
+        self.value.as_ref()
     }
 
     /// Overrides the previously set attribute's value.
@@ -136,7 +119,7 @@ pub trait AttributeProvider {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
-        f: impl FnMut(&Self, &Attribute<dyn AttrValue>) -> Result<(), Error>,
+        f: impl FnMut(&Self, &Attribute<dyn AsRef<[u8]>>) -> Result<(), Error>,
     ) -> Result<(), Error>;
 
     /// Returns whether `uuid` is a valid grouping attribute type that can be used in *Read By
@@ -158,7 +141,7 @@ pub trait AttributeProvider {
     /// last attribute contained within that service.
     ///
     /// TODO: document what the BLE spec has to say about grouping for characteristics.
-    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AttrValue>>;
+    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AsRef<[u8]>>>;
 
     /// Retrieves the permissions for the given attribute.
     ///
@@ -195,7 +178,7 @@ impl AttributeProvider for NoAttributes {
     fn for_attrs_in_range(
         &mut self,
         _range: HandleRange,
-        _f: impl FnMut(&Self, &Attribute<dyn AttrValue>) -> Result<(), Error>,
+        _f: impl FnMut(&Self, &Attribute<dyn AsRef<[u8]>>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         Ok(())
     }
@@ -204,7 +187,7 @@ impl AttributeProvider for NoAttributes {
         false
     }
 
-    fn group_end(&self, _handle: Handle) -> Option<&Attribute<dyn AttrValue>> {
+    fn group_end(&self, _handle: Handle) -> Option<&Attribute<dyn AsRef<[u8]>>> {
         None
     }
 }

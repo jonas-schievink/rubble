@@ -33,11 +33,14 @@ use rubble_nrf5x::{
     utils::get_device_address,
 };
 
-pub struct LedBlinkAttrs<'a> {
+pub struct LedBlinkAttrs {
     // State and resources to be modified/queried when packets are received
     led_pin: Pin<Output<PushPull>>,
     // Attributes exposed to clients
-    attributes: [Attribute<'a>; 3],
+    attributes: [Attribute<&'static [u8]>; 2],
+    // These attributes are also exposed to the client, but because they are writeable
+    // it is easiest for this struct to take ownership of the data
+    owned_attributes: [Attribute<[u8; 1]>; 1],
 }
 
 const PRIMARY_SERVICE_UUID16: Uuid16 = Uuid16(0x2800);
@@ -77,8 +80,8 @@ const LED_CHAR_DECL_VALUE: [u8; 19] = [
     0x32,
 ];
 
-impl<'a> LedBlinkAttrs<'a> {
-    fn new(led_pin: Pin<Output<PushPull>>, led_state: &'a mut [u8; 1]) -> Self {
+impl LedBlinkAttrs {
+    fn new(led_pin: Pin<Output<PushPull>>) -> Self {
         Self {
             led_pin,
             attributes: [
@@ -92,18 +95,20 @@ impl<'a> LedBlinkAttrs<'a> {
                     Handle::from_raw(0x0002),
                     &LED_CHAR_DECL_VALUE,
                 ),
+            ],
+            owned_attributes: [
                 // Characteristic value
                 Attribute::new(
                     Uuid128::from_bytes(LED_STATE_CHAR_UUID128).into(),
                     Handle::from_raw(0x0003),
-                    &[0],
+                    [0u8],
                 ),
             ],
         }
     }
 }
 
-impl<'a> AttributeProvider for LedBlinkAttrs<'a> {
+impl AttributeProvider for LedBlinkAttrs {
     /// Retrieves the permissions for attribute with the given handle.
     fn attr_access_permissions(&self, handle: Handle) -> AttributeAccessPermissions {
         match handle.as_u16() {
@@ -130,7 +135,7 @@ impl<'a> AttributeProvider for LedBlinkAttrs<'a> {
                     rprintln!("Setting LED low");
                     self.led_pin.set_high().unwrap();
                 }
-                self.attributes[2].set_value(data);
+                self.owned_attributes[0].value.copy_from_slice(data);
                 Ok(())
             }
             _ => panic!("Attempted to write an unwriteable attribute"),
@@ -141,10 +146,10 @@ impl<'a> AttributeProvider for LedBlinkAttrs<'a> {
         uuid == PRIMARY_SERVICE_UUID16 || uuid == CHARACTERISTIC_UUID16
     }
 
-    fn group_end(&self, handle: Handle) -> core::option::Option<&Attribute<'_>> {
+    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AsRef<[u8]>>> {
         match handle.as_u16() {
             // Handles for the primary service and characteristic
-            0x0001 | 0x0002 => Some(&self.attributes[2]),
+            0x0001 | 0x0002 => Some(&self.owned_attributes[0]),
             _ => None,
         }
     }
@@ -154,7 +159,7 @@ impl<'a> AttributeProvider for LedBlinkAttrs<'a> {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
-        mut f: impl FnMut(&Self, Attribute<'_>) -> Result<(), Error>,
+        mut f: impl FnMut(&Self, &Attribute<dyn AsRef<[u8]>>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         let count = self.attributes.len();
         let start = usize::from(range.start().as_u16() - 1); // handles start at 1, not 0
@@ -168,14 +173,7 @@ impl<'a> AttributeProvider for LedBlinkAttrs<'a> {
         };
 
         for attr in attrs {
-            f(
-                self,
-                Attribute {
-                    att_type: attr.att_type,
-                    handle: attr.handle,
-                    value: attr.value,
-                },
-            )?;
+            f(self, attr)?;
         }
         Ok(())
     }
@@ -186,7 +184,7 @@ pub enum AppConfig {}
 impl Config for AppConfig {
     type Timer = BleTimer<hal::pac::TIMER0>;
     type Transmitter = BleRadio;
-    type ChannelMapper = BleChannelMap<LedBlinkAttrs<'static>, NoSecurity>;
+    type ChannelMapper = BleChannelMap<LedBlinkAttrs, NoSecurity>;
     type PacketQueue = &'static mut SimpleQueue;
 }
 
@@ -207,7 +205,7 @@ const APP: () = {
         radio: BleRadio,
     }
 
-    #[init(resources = [led_state, ble_tx_buf, ble_rx_buf, tx_queue, rx_queue])]
+    #[init(resources = [ble_tx_buf, ble_rx_buf, tx_queue, rx_queue])]
     fn init(ctx: init::Context) -> init::LateResources {
         rtt_init_print!();
         rprintln!("RTT initialized");
@@ -242,7 +240,6 @@ const APP: () = {
             rx,
             L2CAPState::new(BleChannelMap::with_attributes(LedBlinkAttrs::new(
                 p0.p0_23.into_push_pull_output(Level::High).degrade(),
-                ctx.resources.led_state,
             ))),
         );
 

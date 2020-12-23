@@ -103,7 +103,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                                 && provider.attr_access_permissions(attr.handle).is_readable()
                             {
                                 let data =
-                                    ByTypeAttData::new(att_mtu, attr.handle, attr.value.as_slice());
+                                    ByTypeAttData::new(att_mtu, attr.handle, attr.value.as_ref());
                                 if size == Some(data.encoded_size()) || size.is_none() {
                                     // Can try to encode `data`. If we run out of space, end the list.
                                     data.to_bytes(writer)?;
@@ -162,7 +162,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                                     att_mtu,
                                     attr.handle,
                                     provider.group_end(attr.handle).unwrap().handle,
-                                    attr.value.as_slice(),
+                                    attr.value.as_ref(),
                                 );
                                 if size == Some(data.encoded_size()) || size.is_none() {
                                     // Can try to encode `data`. If we run out of space, end the list.
@@ -205,10 +205,10 @@ impl<A: AttributeProvider> AttributeServer<A> {
                             |_provider, attr| {
                                 // FIXME short circuit if attribute is not readable
                                 // Err(AttError::new(ErrorCode::ReadNotPermitted, *handle))
-                                let value = if writer.space_left() < attr.value.as_slice().len() {
-                                    &attr.value.as_slice()[..writer.space_left()]
+                                let value = if writer.space_left() < attr.value.as_ref().len() {
+                                    &attr.value.as_ref()[..writer.space_left()]
                                 } else {
-                                    attr.value.as_slice()
+                                    attr.value.as_ref()
                                 };
                                 writer.write_slice(value)
                             },
