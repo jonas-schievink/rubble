@@ -80,21 +80,21 @@ impl<T: AsRef<[u8]>> Attribute<T> {
 pub enum AttributeAccessPermissions {
     Readable,
     Writeable,
-    ReadableAndWritable,
+    ReadableAndWriteable,
 }
 
 impl AttributeAccessPermissions {
     fn is_readable(&self) -> bool {
         match self {
             AttributeAccessPermissions::Readable
-            | AttributeAccessPermissions::ReadableAndWritable => true,
+            | AttributeAccessPermissions::ReadableAndWriteable => true,
             AttributeAccessPermissions::Writeable => false,
         }
     }
     fn is_writeable(&self) -> bool {
         match self {
             AttributeAccessPermissions::Writeable
-            | AttributeAccessPermissions::ReadableAndWritable => true,
+            | AttributeAccessPermissions::ReadableAndWriteable => true,
             AttributeAccessPermissions::Readable => false,
         }
     }
@@ -160,7 +160,7 @@ pub trait AttributeProvider {
     /// This will only be called on handles for which
     /// `attribute_access_permissions` returns
     /// [`AttributeAccessPermissions::Writeable`]
-    /// or [`AttributeAccessPermission::ReadableAndWriteable`].
+    /// or [`AttributeAccessPermissions::ReadableAndWriteable`].
     ///
     /// By default, panics on all writes. This must be overwritten if
     /// `attribute_access_permissions` is.
