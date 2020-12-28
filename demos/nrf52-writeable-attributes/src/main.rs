@@ -1,3 +1,5 @@
+//! Starts a GATT server that exposes a single attribute which, when written to,
+//! toggles an LED on/off (on pin 17 by default).
 #![no_std]
 #![no_main]
 
@@ -34,17 +36,19 @@ use rubble_nrf5x::{
 };
 
 pub struct LedBlinkAttrs {
-    // State and resources to be modified/queried when packets are received
+    // Attributes exposed to clients that don't change.
+    // This includes the "primary service" and "characteristic" attributes.
+    static_attributes: [Attribute<&'static [u8]>; 3],
+    // State and resources to be modified/queried when packets are received.
+    // The AttributeValueProvider allows attributes to be generated lazily; those attributes should
+    // use these fields.
     led_pin: Pin<Output<PushPull>>,
-    // Attributes exposed to clients
-    attributes: [Attribute<&'static [u8]>; 2],
-    // These attributes are also exposed to the client, but because they are writeable
-    // it is easiest for this struct to take ownership of the data
-    owned_attributes: [Attribute<[u8; 1]>; 1],
+    led_buf: [u8; 1],
 }
 
 const PRIMARY_SERVICE_UUID16: Uuid16 = Uuid16(0x2800);
 const CHARACTERISTIC_UUID16: Uuid16 = Uuid16(0x2803);
+const GENERIC_ATTRIBUTE_UUID16: Uuid16 = Uuid16(0x1801);
 
 // TODO what UUID should this be? I took this from a course assignment :P
 // 32e61089-2b22-4db5-a914-43ce41986c70
@@ -81,10 +85,11 @@ const LED_CHAR_DECL_VALUE: [u8; 19] = [
 ];
 
 impl LedBlinkAttrs {
-    fn new(led_pin: Pin<Output<PushPull>>) -> Self {
+    fn new(mut led_pin: Pin<Output<PushPull>>) -> Self {
+        // Turn off by default (active low)
+        led_pin.set_high().unwrap();
         Self {
-            led_pin,
-            attributes: [
+            static_attributes: [
                 Attribute::new(
                     PRIMARY_SERVICE_UUID16.into(),
                     Handle::from_raw(0x0001),
@@ -95,16 +100,29 @@ impl LedBlinkAttrs {
                     Handle::from_raw(0x0002),
                     &LED_CHAR_DECL_VALUE,
                 ),
-            ],
-            owned_attributes: [
-                // Characteristic value
+                // Dummy ending attribute
+                // This needs to come after our lazily generated data attribute because group_end()
+                // needs to return a reference
                 Attribute::new(
-                    Uuid128::from_bytes(LED_STATE_CHAR_UUID128).into(),
-                    Handle::from_raw(0x0003),
-                    [0u8],
+                    GENERIC_ATTRIBUTE_UUID16.into(),
+                    Handle::from_raw(0x0004),
+                    &[],
                 ),
             ],
+            led_pin,
+            led_buf: [0u8],
         }
+    }
+}
+
+impl LedBlinkAttrs {
+    // Lazily produces an attribute to be read/written, representing the LED state.
+    fn led_data_attr(&self) -> Attribute<[u8; 1]> {
+        Attribute::new(
+            Uuid128::from_bytes(LED_STATE_CHAR_UUID128).into(),
+            Handle::from_raw(0x0003),
+            self.led_buf,
+        )
     }
 }
 
@@ -122,10 +140,10 @@ impl AttributeProvider for LedBlinkAttrs {
     fn write_attr(&mut self, handle: Handle, data: &[u8]) -> Result<(), Error> {
         match handle.as_u16() {
             0x0003 => {
+                rprintln!("Received data: {:#?}", data);
                 if data.is_empty() {
                     return Err(Error::InvalidLength);
                 }
-                rprintln!("Received data: {:#?}", data);
                 // If we receive a 1, activate the LED; otherwise deactivate it
                 // Assumes LED is active low
                 if data[0] == 1 {
@@ -135,7 +153,8 @@ impl AttributeProvider for LedBlinkAttrs {
                     rprintln!("Setting LED low");
                     self.led_pin.set_high().unwrap();
                 }
-                self.owned_attributes[0].value.copy_from_slice(data);
+                // Copy written value into buffer to display back for reading
+                self.led_buf.copy_from_slice(data);
                 Ok(())
             }
             _ => panic!("Attempted to write an unwriteable attribute"),
@@ -149,19 +168,23 @@ impl AttributeProvider for LedBlinkAttrs {
     fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AsRef<[u8]>>> {
         match handle.as_u16() {
             // Handles for the primary service and characteristic
-            0x0001 | 0x0002 => Some(&self.owned_attributes[0]),
+            // The group end is a dummy attribute; strictly speaking it's not required
+            // but we can't use the lazily generated attribute because this funtion requires
+            // returning a reference
+            0x0001 | 0x0002 => Some(&self.static_attributes[2]),
             _ => None,
         }
     }
 
-    // Boilerplate to apply a function to all attributes with handles within the specified range
-    // This was copied from the implementation of gatt:BatteryServiceAttrs
+    /// Boilerplate to apply a function to all attributes with handles within the specified range
+    /// This was copied from the implementation of gatt:BatteryServiceAttrs
+    /// with some slight modifications to allow for lazily generated attributes
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
         mut f: impl FnMut(&Self, &Attribute<dyn AsRef<[u8]>>) -> Result<(), Error>,
     ) -> Result<(), Error> {
-        let count = self.attributes.len();
+        let count = self.static_attributes.len();
         let start = usize::from(range.start().as_u16() - 1); // handles start at 1, not 0
         let end = usize::from(range.end().as_u16() - 1);
 
@@ -169,12 +192,20 @@ impl AttributeProvider for LedBlinkAttrs {
             &[]
         } else {
             let end = cmp::min(count - 1, end);
-            &self.attributes[start..=end]
+            &self.static_attributes[start..=end]
         };
 
         for attr in attrs {
             f(self, attr)?;
         }
+        // Check lazy attributes
+        // Note that with this implementation, if a static attribute has handle greater than a
+        // lazy attribute, the order in which f() is applied is not preserved.
+        // This may matter for the purposes of short-circuiting an operation if it cannot be applied
+        // to a particular attribute
+        if (start..=end).contains(&0x0003) {
+            f(self, &self.led_data_attr())?;
+        };
         Ok(())
     }
 }
@@ -235,19 +266,22 @@ const APP: () = {
         // Create the actual BLE stack objects
         let mut ble_ll = LinkLayer::<AppConfig>::new(device_address, ble_timer);
 
+        // Assumes pin 17 corresponds to an LED.
+        // On the NRF52DK board, this is LED 1.
         let ble_r = Responder::new(
             tx,
             rx,
             L2CAPState::new(BleChannelMap::with_attributes(LedBlinkAttrs::new(
-                p0.p0_23.into_push_pull_output(Level::High).degrade(),
+                p0.p0_17.into_push_pull_output(Level::High).degrade(),
             ))),
         );
 
         // Send advertisement and set up regular interrupt
+        let name = "Rubble Write Demo";
         let next_update = ble_ll
             .start_advertise(
                 Duration::from_millis(1000),
-                &[AdStructure::CompleteLocalName("CONCVRRENS CERTA CELERIS")],
+                &[AdStructure::CompleteLocalName(name)],
                 &mut radio,
                 tx_cons,
                 rx_prod,
@@ -255,7 +289,7 @@ const APP: () = {
             .unwrap();
 
         ble_ll.timer().configure_interrupt(next_update);
-        rprintln!("begin advertising");
+        rprintln!("Advertising with name '{}'", name);
 
         init::LateResources {
             radio,

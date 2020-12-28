@@ -223,7 +223,18 @@ impl<A: AttributeProvider> AttributeServer<A> {
 
             AttPdu::WriteReq { value, handle } => {
                 if self.attrs.attr_access_permissions(*handle).is_writeable() {
-                    self.attrs.write_attr(*handle, value.as_ref()).unwrap();
+                    self.attrs
+                        .write_attr(*handle, value.as_ref())
+                        .map_err(|err| {
+                            // Convert rubble::Error to AttError
+                            AttError::new(
+                                match err {
+                                    Error::InvalidLength => ErrorCode::InvalidAttributeValueLength,
+                                    _ => ErrorCode::UnlikelyError,
+                                },
+                                *handle,
+                            )
+                        })?;
                     responder
                         .send_with(|writer| -> Result<(), Error> {
                             writer.write_u8(Opcode::WriteRsp.into())?;
