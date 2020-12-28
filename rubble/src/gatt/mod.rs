@@ -22,7 +22,7 @@ impl BatteryServiceAttrs {
                 Attribute::new(
                     Uuid16(0x2800).into(), // "Primary Service"
                     Handle::from_raw(0x0001),
-                    &[0x0F, 0x18].as_ref(), // "Battery Service" = 0x180F
+                    &[0x0F, 0x18], // "Battery Service" = 0x180F
                 ),
                 Attribute::new(
                     Uuid16(0x2803).into(), // "Characteristic"
