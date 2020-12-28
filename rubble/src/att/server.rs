@@ -203,8 +203,13 @@ impl<A: AttributeProvider> AttributeServer<A> {
                         self.attrs.for_attrs_in_range(
                             HandleRange::new(*handle, *handle),
                             |_provider, attr| {
-                                // FIXME short circuit if attribute is not readable
-                                // Err(AttError::new(ErrorCode::ReadNotPermitted, *handle))
+                                // FIXME return if attribute is not readable
+                                // This code currently doesn't work because the callback should
+                                // return rubble::Error rather than an AtError
+                                // if !self.attrs.attr_access_permissions(*handle).is_readable() {
+                                //     return
+                                //     Err(AttError::new(ErrorCode::ReadNotPermitted, *handle))
+                                // }
                                 let value = if writer.space_left() < attr.value.as_ref().len() {
                                     &attr.value.as_ref()[..writer.space_left()]
                                 } else {
