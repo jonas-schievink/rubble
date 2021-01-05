@@ -19,6 +19,7 @@ cortex-m-rtic = "0.5.3"
 cortex-m-rt = "0.6.11"
 panic-semihosting = "0.5.3"
 bbqueue = "0.4.1"
+rtt-target = { version = "0.2.0", features = ["cortex-m"] }
 
 nrf52810-hal = { version = "0.12", features = ["rt"], optional = true }
 nrf52832-hal = { version = "0.12", features = ["rt"], optional = true }

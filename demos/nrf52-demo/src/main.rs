@@ -35,6 +35,7 @@ macro_rules! config {
 
 #[macro_use]
 mod config;
+mod attrs;
 mod logger;
 
 // Import the right HAL/PAC crate, depending on the target chip
@@ -48,24 +49,38 @@ use nrf52833_hal as hal;
 use nrf52840_hal as hal;
 
 use bbqueue::Consumer;
-use core::fmt::Write;
-use core::sync::atomic::{compiler_fence, Ordering};
-use hal::uarte::{Baudrate, Parity, Uarte};
-use hal::{gpio::Level, pac::UARTE0};
-use rubble::l2cap::{BleChannelMap, L2CAPState};
-use rubble::link::queue::{PacketQueue, SimpleQueue};
-use rubble::link::{ad_structure::AdStructure, LinkLayer, Responder, MIN_PDU_BUF};
-use rubble::time::{Duration, Timer};
-use rubble::{config::Config, gatt::BatteryServiceAttrs, security::NoSecurity};
-use rubble_nrf5x::radio::{BleRadio, PacketBuffer};
-use rubble_nrf5x::{timer::BleTimer, utils::get_device_address};
+use core::{
+    fmt::Write,
+    sync::atomic::{compiler_fence, Ordering},
+};
+use hal::{
+    gpio::Level,
+    pac::UARTE0,
+    uarte::{Baudrate, Parity, Uarte},
+};
+use rubble::{
+    config::Config,
+    l2cap::{BleChannelMap, L2CAPState},
+    link::{
+        ad_structure::AdStructure,
+        queue::{PacketQueue, SimpleQueue},
+        LinkLayer, Responder, MIN_PDU_BUF,
+    },
+    security::NoSecurity,
+    time::{Duration, Timer},
+};
+use rubble_nrf5x::{
+    radio::{BleRadio, PacketBuffer},
+    timer::BleTimer,
+    utils::get_device_address,
+};
 
 pub enum AppConfig {}
 
 impl Config for AppConfig {
     type Timer = BleTimer<hal::pac::TIMER0>;
     type Transmitter = BleRadio;
-    type ChannelMapper = BleChannelMap<BatteryServiceAttrs, NoSecurity>;
+    type ChannelMapper = BleChannelMap<attrs::LedBlinkAttrs, NoSecurity>;
     type PacketQueue = &'static mut SimpleQueue;
 }
 
@@ -121,10 +136,14 @@ const APP: () = {
         // Create the actual BLE stack objects
         let mut ble_ll = LinkLayer::<AppConfig>::new(device_address, ble_timer);
 
+        // Assumes pin 17 corresponds to an LED.
+        // On the NRF52DK board, this is LED 1.
         let ble_r = Responder::new(
             tx,
             rx,
-            L2CAPState::new(BleChannelMap::with_attributes(BatteryServiceAttrs::new())),
+            L2CAPState::new(BleChannelMap::with_attributes(attrs::LedBlinkAttrs::new(
+                p0.p0_17.into_push_pull_output(Level::High).degrade(),
+            ))),
         );
 
         // Send advertisement and set up regular interrupt
