@@ -275,7 +275,7 @@ impl<'a> ByteWriter<'a> {
     /// Note that if the created `ByteWriter` is not used, the bytes will contain whatever contents
     /// they had before creating `self` (ie. most likely garbage data left over from earlier use).
     /// If you are really sure you want that, `skip` is a more explicit way of accomplishing that.
-    #[must_use]
+    #[must_use = "data from ByteWriter will contain garbage if not used (use skip() if this is intended)"]
     pub fn split_off(&mut self, len: usize) -> Result<Self, Error> {
         if self.space_left() < len {
             Err(Error::Eof)
@@ -415,7 +415,7 @@ impl<'a> ByteReader<'a> {
     ///
     /// Note that if the created `ByteReader` is not used, the bytes will be ignored. If you are
     /// really sure you want that, `skip` is a more explicit way of accomplishing that.
-    #[must_use]
+    #[must_use = "data from ByteReader will be ignored if not used (use skip() if this is intended)"]
     pub fn split_off(&mut self, len: usize) -> Result<Self, Error> {
         if self.bytes_left() < len {
             Err(Error::Eof)

@@ -21,6 +21,7 @@ use bitflags::bitflags;
 ///
 /// From a very unrepresentative scan, most devices seem to include Flags and Manufacturer Data, and
 /// optionally a device name, of course.
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone)]
 pub enum AdStructure<'a> {
     /// Device flags and baseband capabilities.
@@ -64,9 +65,6 @@ pub enum AdStructure<'a> {
         /// Raw data transmitted after the type.
         data: &'a [u8],
     },
-
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 impl<'a> ToBytes for AdStructure<'a> {
@@ -116,7 +114,6 @@ impl<'a> ToBytes for AdStructure<'a> {
                 buf.write_u8(*ty)?;
                 buf.write_slice(data)?;
             }
-            AdStructure::__Nonexhaustive => unreachable!(),
         }
         let len = left_before - buf.space_left();
         assert!(len <= 255);
