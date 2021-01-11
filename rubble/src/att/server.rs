@@ -255,7 +255,10 @@ impl<A: AttributeProvider> AttributeServer<A> {
             AttPdu::WriteCommand { handle, value } => {
                 // WriteCommand shouldn't respond to the client even on failure
                 if self.attrs.attr_access_permissions(*handle).is_writeable() {
-                    self.attrs.write_attr(*handle, value.as_ref()).unwrap();
+                    self.attrs
+                        .write_attr(*handle, value.as_ref())
+                        .map_err(|err| error!("error while handling write command: {:?}", err))
+                        .ok();
                 }
                 Ok(())
             }
