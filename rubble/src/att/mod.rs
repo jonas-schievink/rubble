@@ -41,23 +41,6 @@ pub use self::handle::{Handle, HandleRange};
 pub use self::server::{AttributeServer, AttributeServerTx};
 pub use self::uuid::AttUuid;
 
-/// An attribute value that can be represented as a byte slice.
-pub trait AttrValue {
-    fn as_slice(&self) -> &[u8];
-}
-
-impl AttrValue for &[u8] {
-    fn as_slice(&self) -> &[u8] {
-        self
-    }
-}
-
-impl AttrValue for () {
-    fn as_slice(&self) -> &[u8] {
-        &[]
-    }
-}
-
 /// An ATT server attribute
 pub struct Attribute<T>
 where
@@ -72,25 +55,54 @@ where
     pub value: T,
 }
 
-impl<T: AttrValue> Attribute<T> {
+impl<T: AsRef<[u8]>> Attribute<T> {
     /// Creates a new attribute.
     pub fn new(att_type: AttUuid, handle: Handle, value: T) -> Self {
         assert_ne!(handle, Handle::NULL);
         Attribute {
             att_type,
             handle,
-            value: value,
+            value,
         }
     }
 
     /// Retrieves the attribute's value as a slice.
     pub fn value(&self) -> &[u8] {
-        self.value.as_slice()
+        self.value.as_ref()
     }
 
     /// Overrides the previously set attribute's value.
     pub fn set_value(&mut self, value: T) {
         self.value = value;
+    }
+}
+
+pub enum AttributeAccessPermissions {
+    Readable,
+    Writeable,
+    ReadableAndWriteable,
+}
+
+impl AttributeAccessPermissions {
+    fn is_readable(&self) -> bool {
+        match self {
+            AttributeAccessPermissions::Readable
+            | AttributeAccessPermissions::ReadableAndWriteable => true,
+            AttributeAccessPermissions::Writeable => false,
+        }
+    }
+    fn is_writeable(&self) -> bool {
+        match self {
+            AttributeAccessPermissions::Writeable
+            | AttributeAccessPermissions::ReadableAndWriteable => true,
+            AttributeAccessPermissions::Readable => false,
+        }
+    }
+}
+
+impl Default for AttributeAccessPermissions {
+    fn default() -> Self {
+        AttributeAccessPermissions::Readable
     }
 }
 
@@ -107,7 +119,7 @@ pub trait AttributeProvider {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
-        f: impl FnMut(&Self, &Attribute<dyn AttrValue>) -> Result<(), Error>,
+        f: impl FnMut(&Self, &Attribute<dyn AsRef<[u8]>>) -> Result<(), Error>,
     ) -> Result<(), Error>;
 
     /// Returns whether `uuid` is a valid grouping attribute type that can be used in *Read By
@@ -129,7 +141,32 @@ pub trait AttributeProvider {
     /// last attribute contained within that service.
     ///
     /// TODO: document what the BLE spec has to say about grouping for characteristics.
-    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AttrValue>>;
+    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AsRef<[u8]>>>;
+
+    /// Retrieves the permissions for the given attribute.
+    ///
+    /// These are used purely for access control within rubble, and won't be
+    /// communicated with clients. They should be coordinated beforehand as part
+    /// of a larger protocol.
+    ///
+    /// Defaults to read-only. If this is overwritten and some attributes are made writeable,
+    /// `write_attribute` must be implemented as well.
+    fn attr_access_permissions(&self, _handle: Handle) -> AttributeAccessPermissions {
+        AttributeAccessPermissions::Readable
+    }
+
+    /// Attempts to write data to the given attribute.
+    ///
+    /// This will only be called on handles for which
+    /// `attribute_access_permissions` returns
+    /// [`AttributeAccessPermissions::Writeable`]
+    /// or [`AttributeAccessPermissions::ReadableAndWriteable`].
+    ///
+    /// By default, panics on all writes. This must be overwritten if
+    /// `attribute_access_permissions` is.
+    fn write_attr(&mut self, _handle: Handle, _data: &[u8]) -> Result<(), Error> {
+        unimplemented!("by default, no attributes should have write access permissions, and this should never be called");
+    }
 }
 
 /// An empty attribute set.
@@ -141,7 +178,7 @@ impl AttributeProvider for NoAttributes {
     fn for_attrs_in_range(
         &mut self,
         _range: HandleRange,
-        _f: impl FnMut(&Self, &Attribute<dyn AttrValue>) -> Result<(), Error>,
+        _f: impl FnMut(&Self, &Attribute<dyn AsRef<[u8]>>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         Ok(())
     }
@@ -150,7 +187,7 @@ impl AttributeProvider for NoAttributes {
         false
     }
 
-    fn group_end(&self, _handle: Handle) -> Option<&Attribute<dyn AttrValue>> {
+    fn group_end(&self, _handle: Handle) -> Option<&Attribute<dyn AsRef<[u8]>>> {
         None
     }
 }

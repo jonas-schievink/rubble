@@ -5,7 +5,7 @@
 
 pub mod characteristic;
 
-use crate::att::{AttUuid, AttrValue, Attribute, AttributeProvider, Handle, HandleRange};
+use crate::att::{AttUuid, Attribute, AttributeProvider, Handle, HandleRange};
 use crate::uuid::{Uuid128, Uuid16};
 use crate::Error;
 use core::cmp;
@@ -48,7 +48,7 @@ impl AttributeProvider for BatteryServiceAttrs {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
-        mut f: impl FnMut(&Self, &Attribute<dyn AttrValue>) -> Result<(), Error>,
+        mut f: impl FnMut(&Self, &Attribute<dyn AsRef<[u8]>>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         let count = self.attributes.len();
         let start = usize::from(range.start().as_u16() - 1); // handles start at 1, not 0
@@ -71,7 +71,7 @@ impl AttributeProvider for BatteryServiceAttrs {
         uuid == Uuid16(0x2800) // FIXME not characteristics?
     }
 
-    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AttrValue>> {
+    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AsRef<[u8]>>> {
         match handle.as_u16() {
             0x0001 => Some(&self.attributes[2]),
             0x0002 => Some(&self.attributes[2]),
@@ -158,7 +158,7 @@ impl AttributeProvider for MidiServiceAttrs {
     fn for_attrs_in_range(
         &mut self,
         range: HandleRange,
-        mut f: impl FnMut(&Self, &Attribute<dyn AttrValue>) -> Result<(), Error>,
+        mut f: impl FnMut(&Self, &Attribute<dyn AsRef<[u8]>>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         let count = self.attributes.len();
         let start = usize::from(range.start().as_u16() - 1); // handles start at 1, not 0
@@ -181,7 +181,7 @@ impl AttributeProvider for MidiServiceAttrs {
         uuid == Uuid16(0x2800) // FIXME not characteristics?
     }
 
-    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AttrValue>> {
+    fn group_end(&self, handle: Handle) -> Option<&Attribute<dyn AsRef<[u8]>>> {
         match handle.as_u16() {
             0x0001 => Some(&self.attributes[3]),
             0x0002 => Some(&self.attributes[3]),

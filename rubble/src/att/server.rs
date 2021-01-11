@@ -96,10 +96,14 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     let mut size = None;
                     let att_mtu = self.att_mtu();
                     self.attrs
-                        .for_attrs_in_range(range, |_provider, attr| {
-                            if attr.att_type == *attribute_type {
+                        .for_attrs_in_range(range, |provider, attr| {
+                            // "Only attributes that can be read shall be returned in a
+                            //  Read By Type Response."
+                            if attr.att_type == *attribute_type
+                                && provider.attr_access_permissions(attr.handle).is_readable()
+                            {
                                 let data =
-                                    ByTypeAttData::new(att_mtu, attr.handle, attr.value.as_slice());
+                                    ByTypeAttData::new(att_mtu, attr.handle, attr.value.as_ref());
                                 if size == Some(data.encoded_size()) || size.is_none() {
                                     // Can try to encode `data`. If we run out of space, end the list.
                                     data.to_bytes(writer)?;
@@ -151,12 +155,14 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     let att_mtu = self.att_mtu();
                     self.attrs
                         .for_attrs_in_range(range, |provider, attr| {
-                            if attr.att_type == *group_type {
+                            if attr.att_type == *group_type
+                                && provider.attr_access_permissions(attr.handle).is_readable()
+                            {
                                 let data = ByGroupAttData::new(
                                     att_mtu,
                                     attr.handle,
                                     provider.group_end(attr.handle).unwrap().handle,
-                                    attr.value.as_slice(),
+                                    attr.value.as_ref(),
                                 );
                                 if size == Some(data.encoded_size()) || size.is_none() {
                                     // Can try to encode `data`. If we run out of space, end the list.
@@ -197,10 +203,17 @@ impl<A: AttributeProvider> AttributeServer<A> {
                         self.attrs.for_attrs_in_range(
                             HandleRange::new(*handle, *handle),
                             |_provider, attr| {
-                                let value = if writer.space_left() < attr.value.as_slice().len() {
-                                    &attr.value.as_slice()[..writer.space_left()]
+                                // FIXME return if attribute is not readable
+                                // This code currently doesn't work because the callback should
+                                // return rubble::Error rather than an AtError
+                                // if !self.attrs.attr_access_permissions(*handle).is_readable() {
+                                //     return
+                                //     Err(AttError::new(ErrorCode::ReadNotPermitted, *handle))
+                                // }
+                                let value = if writer.space_left() < attr.value.as_ref().len() {
+                                    &attr.value.as_ref()[..writer.space_left()]
                                 } else {
-                                    attr.value.as_slice()
+                                    attr.value.as_ref()
                                 };
                                 writer.write_slice(value)
                             },
@@ -213,17 +226,40 @@ impl<A: AttributeProvider> AttributeServer<A> {
                 Ok(())
             }
 
-            AttPdu::WriteReq { .. } => {
-                // FIXME: ATT Writes are not yet supported, but we pretend they work so that some
-                // applications that only need CCCD writes work (eg. BLE MIDI).
-                warn!("NYI: ATT Write Req");
-
-                responder
-                    .send_with(|writer| -> Result<(), Error> {
-                        writer.write_u8(Opcode::WriteRsp.into())?;
-                        Ok(())
-                    })
-                    .unwrap();
+            AttPdu::WriteReq { value, handle } => {
+                if self.attrs.attr_access_permissions(*handle).is_writeable() {
+                    self.attrs
+                        .write_attr(*handle, value.as_ref())
+                        .map_err(|err| {
+                            // Convert rubble::Error to AttError
+                            AttError::new(
+                                match err {
+                                    Error::InvalidLength => ErrorCode::InvalidAttributeValueLength,
+                                    _ => ErrorCode::UnlikelyError,
+                                },
+                                *handle,
+                            )
+                        })?;
+                    responder
+                        .send_with(|writer| -> Result<(), Error> {
+                            writer.write_u8(Opcode::WriteRsp.into())?;
+                            Ok(())
+                        })
+                        .map_err(|err| error!("error while handling write request: {:?}", err))
+                        .ok();
+                    Ok(())
+                } else {
+                    Err(AttError::new(ErrorCode::WriteNotPermitted, *handle))
+                }
+            }
+            AttPdu::WriteCommand { handle, value } => {
+                // WriteCommand shouldn't respond to the client even on failure
+                if self.attrs.attr_access_permissions(*handle).is_writeable() {
+                    self.attrs
+                        .write_attr(*handle, value.as_ref())
+                        .map_err(|err| error!("error while handling write command: {:?}", err))
+                        .ok();
+                }
                 Ok(())
             }
 
@@ -251,10 +287,9 @@ impl<A: AttributeProvider> AttributeServer<A> {
             | AttPdu::FindByTypeValueReq { .. }
             | AttPdu::ReadBlobReq { .. }
             | AttPdu::ReadMultipleReq { .. }
-            | AttPdu::WriteCommand { .. }
-            | AttPdu::SignedWriteCommand { .. }
             | AttPdu::PrepareWriteReq { .. }
             | AttPdu::ExecuteWriteReq { .. }
+            | AttPdu::SignedWriteCommand { .. }
             | AttPdu::HandleValueConfirmation { .. } => {
                 if msg.opcode().is_command() {
                     // According to the spec, unknown Command PDUs should be ignored
