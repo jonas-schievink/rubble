@@ -80,7 +80,7 @@ pub enum AppConfig {}
 impl Config for AppConfig {
     type Timer = BleTimer<hal::pac::TIMER0>;
     type Transmitter = BleRadio;
-    type ChannelMapper = BleChannelMap<attrs::LedBlinkAttrs, NoSecurity>;
+    type ChannelMapper = BleChannelMap<attrs::DemoAttrs, NoSecurity>;
     type PacketQueue = &'static mut SimpleQueue;
 }
 
@@ -141,7 +141,7 @@ const APP: () = {
         let ble_r = Responder::new(
             tx,
             rx,
-            L2CAPState::new(BleChannelMap::with_attributes(attrs::LedBlinkAttrs::new(
+            L2CAPState::new(BleChannelMap::with_attributes(attrs::DemoAttrs::new(
                 p0.p0_17.into_push_pull_output(Level::High).degrade(),
             ))),
         );

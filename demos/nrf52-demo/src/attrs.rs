@@ -19,7 +19,7 @@ use rubble::{
     Error,
 };
 
-pub struct LedBlinkAttrs {
+pub struct DemoAttrs {
     // Attributes exposed to clients that don't change.
     // This includes the "primary service" and "characteristic" attributes.
     // Some attributes are copied from the declaration of `BatteryServiceAttrs` in the gatt module.
@@ -70,7 +70,7 @@ const LED_CHAR_DECL_VALUE: [u8; 19] = [
     0xA8,
 ];
 
-impl LedBlinkAttrs {
+impl DemoAttrs {
     pub fn new(mut led_pin: Pin<Output<PushPull>>) -> Self {
         // Turn off by default (active low)
         led_pin.set_high().unwrap();
@@ -123,7 +123,7 @@ impl LedBlinkAttrs {
     }
 }
 
-impl LedBlinkAttrs {
+impl DemoAttrs {
     // Lazily produces an attribute to be read/written, representing the LED state.
     fn led_data_attr(&self) -> Attribute<[u8; 1]> {
         Attribute::new(
@@ -134,7 +134,7 @@ impl LedBlinkAttrs {
     }
 }
 
-impl AttributeProvider for LedBlinkAttrs {
+impl AttributeProvider for DemoAttrs {
     /// Retrieves the permissions for attribute with the given handle.
     fn attr_access_permissions(&self, handle: Handle) -> AttributeAccessPermissions {
         match handle.as_u16() {

@@ -245,7 +245,8 @@ impl<A: AttributeProvider> AttributeServer<A> {
                             writer.write_u8(Opcode::WriteRsp.into())?;
                             Ok(())
                         })
-                        .unwrap();
+                        .map_err(|err| error!("error while handling write request: {:?}", err))
+                        .ok();
                     Ok(())
                 } else {
                     Err(AttError::new(ErrorCode::WriteNotPermitted, *handle))
