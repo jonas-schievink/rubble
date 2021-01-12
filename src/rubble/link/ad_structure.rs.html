@@ -372,9 +372,6 @@
 <span id="369">369</span>
 <span id="370">370</span>
 <span id="371">371</span>
-<span id="372">372</span>
-<span id="373">373</span>
-<span id="374">374</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Advertising Data / Extended Inquiry Response (EIR) data.</span>
 <span class="doccomment">//!</span>
@@ -399,6 +396,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// From a very unrepresentative scan, most devices seem to include Flags and Manufacturer Data, and</span>
 <span class="doccomment">/// optionally a device name, of course.</span>
+<span class="attribute">#[<span class="ident">non_exhaustive</span>]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Device flags and baseband capabilities.</span>
@@ -442,9 +440,6 @@
         <span class="doccomment">/// Raw data transmitted after the type.</span>
         <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
     },
-
-    <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
-    <span class="ident">__Nonexhaustive</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ToBytes</span> <span class="kw">for</span> <span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
@@ -494,7 +489,6 @@
                 <span class="ident">buf</span>.<span class="ident">write_u8</span>(<span class="kw-2">*</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
                 <span class="ident">buf</span>.<span class="ident">write_slice</span>(<span class="ident">data</span>)<span class="question-mark">?</span>;
             }
-            <span class="ident">AdStructure</span>::<span class="ident">__Nonexhaustive</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
         }
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">left_before</span> <span class="op">-</span> <span class="ident">buf</span>.<span class="ident">space_left</span>();
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">len</span> <span class="op">&lt;</span><span class="op">=</span> <span class="number">255</span>);

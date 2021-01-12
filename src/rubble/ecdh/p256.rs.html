@@ -158,11 +158,19 @@
 <span id="155">155</span>
 <span id="156">156</span>
 <span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> ::<span class="ident">p256</span>::<span class="ident">elliptic_curve</span>::<span class="ident">sec1</span>::{<span class="ident">FromEncodedPoint</span>, <span class="ident">ToEncodedPoint</span>};
-<span class="kw">use</span> ::<span class="ident">p256</span>::<span class="ident">elliptic_curve</span>::<span class="ident">Field</span>;
-<span class="kw">use</span> ::<span class="ident">p256</span>::{<span class="ident">ProjectivePoint</span>, <span class="ident">Scalar</span>};
+<span class="kw">use</span> ::<span class="ident">p256</span>::{
+    <span class="ident">elliptic_curve</span>::{
+        <span class="ident">sec1</span>::{<span class="ident">FromEncodedPoint</span>, <span class="ident">ToEncodedPoint</span>},
+        <span class="ident">Field</span>,
+    },
+    <span class="ident">ProjectivePoint</span>, <span class="ident">Scalar</span>,
+};
 <span class="kw">use</span> <span class="ident">rand_core</span>::{<span class="ident">CryptoRng</span>, <span class="ident">RngCore</span>};
 
 <span class="doccomment">/// An ECDH provider using the pure-Rust `p256` crate.</span>
@@ -185,7 +193,7 @@
         <span class="kw">let</span> <span class="ident">scalar</span> <span class="op">=</span> <span class="ident">Scalar</span>::<span class="ident">random</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">secret</span> <span class="op">=</span> <span class="ident">P256SecretKey</span> { <span class="ident">inner</span>: <span class="ident">scalar</span> };
 
-        <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">ProjectivePoint</span>::<span class="ident">generator</span>() <span class="op">*</span> <span class="kw-2">&amp;</span><span class="ident">scalar</span>;
+        <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">ProjectivePoint</span>::<span class="ident">generator</span>() <span class="op">*</span> <span class="ident">scalar</span>;
         <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">public</span>.<span class="ident">to_affine</span>();
         <span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">public</span>.<span class="ident">to_encoded_point</span>(<span class="bool-val">false</span>);
 
@@ -228,11 +236,11 @@
 
         <span class="comment">// ECDH is nothing but multiplying the foreign public key by the local secret key.</span>
         <span class="kw">let</span> <span class="ident">affine</span> <span class="op">=</span> ::<span class="ident">p256</span>::<span class="ident">AffinePoint</span>::<span class="ident">from_encoded_point</span>(<span class="kw-2">&amp;</span><span class="ident">foreign_key</span>);
-        <span class="kw">if</span> <span class="ident">affine</span>.<span class="ident">is_none</span>().<span class="ident">into</span>() {
+        <span class="kw">if</span> <span class="ident">affine</span>.<span class="ident">is_none</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidPublicKey</span>::<span class="ident">new</span>());
         }
 
-        <span class="kw">let</span> <span class="ident">mul_point</span> <span class="op">=</span> <span class="ident">ProjectivePoint</span>::<span class="ident">from</span>(<span class="ident">affine</span>.<span class="ident">unwrap</span>()) <span class="op">*</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">inner</span>;
+        <span class="kw">let</span> <span class="ident">mul_point</span> <span class="op">=</span> <span class="ident">ProjectivePoint</span>::<span class="ident">from</span>(<span class="ident">affine</span>.<span class="ident">unwrap</span>()) <span class="op">*</span> <span class="self">self</span>.<span class="ident">inner</span>;
         <span class="kw">let</span> <span class="ident">uncomp_point</span> <span class="op">=</span> ::<span class="ident">p256</span>::<span class="ident">EncodedPoint</span>::<span class="ident">from</span>(<span class="ident">mul_point</span>.<span class="ident">to_affine</span>());
 
         <span class="comment">// First byte is a `0x04` tag, next 32 Bytes are the shared secret.</span>

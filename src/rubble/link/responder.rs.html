@@ -101,9 +101,6 @@
 <span id="98"> 98</span>
 <span id="99"> 99</span>
 <span id="100">100</span>
-<span id="101">101</span>
-<span id="102">102</span>
-<span id="103">103</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">l2cap</span>::{<span class="ident">L2CAPState</span>, <span class="ident">L2CAPStateTx</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::<span class="ident">data</span>::{<span class="ident">Llid</span>, <span class="ident">Pdu</span>};
@@ -172,13 +169,10 @@
                     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;-&gt; Response: {:?}&quot;</span>, <span class="ident">response</span>);
 
                     <span class="comment">// Consume the LL Control PDU iff we can fit the response in the TX buffer:</span>
-                    <span class="ident">Consume</span>::<span class="ident">on_success</span>(<span class="ident">this</span>.<span class="ident">tx</span>.<span class="ident">produce_with</span>(
-                        <span class="ident">response</span>.<span class="ident">encoded_size</span>().<span class="ident">into</span>(),
-                        <span class="op">|</span><span class="ident">writer</span><span class="op">|</span> {
-                            <span class="ident">response</span>.<span class="ident">to_bytes</span>(<span class="ident">writer</span>)<span class="question-mark">?</span>;
-                            <span class="prelude-val">Ok</span>(<span class="ident">Llid</span>::<span class="ident">Control</span>)
-                        },
-                    ))
+                    <span class="ident">Consume</span>::<span class="ident">on_success</span>(<span class="ident">this</span>.<span class="ident">tx</span>.<span class="ident">produce_with</span>(<span class="ident">response</span>.<span class="ident">encoded_size</span>(), <span class="op">|</span><span class="ident">writer</span><span class="op">|</span> {
+                        <span class="ident">response</span>.<span class="ident">to_bytes</span>(<span class="ident">writer</span>)<span class="question-mark">?</span>;
+                        <span class="prelude-val">Ok</span>(<span class="ident">Llid</span>::<span class="ident">Control</span>)
+                    }))
                 }
                 <span class="ident">Pdu</span>::<span class="ident">DataStart</span> { <span class="ident">message</span> } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;L2start: {:?}&quot;</span>, <span class="ident">HexSlice</span>(<span class="ident">message</span>));

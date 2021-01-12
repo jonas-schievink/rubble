@@ -831,7 +831,7 @@
     <span class="doccomment">/// Note that if the created `ByteWriter` is not used, the bytes will contain whatever contents</span>
     <span class="doccomment">/// they had before creating `self` (ie. most likely garbage data left over from earlier use).</span>
     <span class="doccomment">/// If you are really sure you want that, `skip` is a more explicit way of accomplishing that.</span>
-    <span class="attribute">#[<span class="ident">must_use</span>]</span>
+    <span class="attribute">#[<span class="ident">must_use</span> <span class="op">=</span> <span class="string">&quot;data from ByteWriter will contain garbage if not used (use skip() if this is intended)&quot;</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">split_off</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">space_left</span>() <span class="op">&lt;</span> <span class="ident">len</span> {
             <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)
@@ -971,7 +971,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Note that if the created `ByteReader` is not used, the bytes will be ignored. If you are</span>
     <span class="doccomment">/// really sure you want that, `skip` is a more explicit way of accomplishing that.</span>
-    <span class="attribute">#[<span class="ident">must_use</span>]</span>
+    <span class="attribute">#[<span class="ident">must_use</span> <span class="op">=</span> <span class="string">&quot;data from ByteReader will be ignored if not used (use skip() if this is intended)&quot;</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">split_off</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">bytes_left</span>() <span class="op">&lt;</span> <span class="ident">len</span> {
             <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)

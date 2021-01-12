@@ -266,6 +266,7 @@
 <span id="263">263</span>
 <span id="264">264</span>
 <span id="265">265</span>
+<span id="266">266</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! BLE UUIDs (16, 32 or 128 bits).</span>
 <span class="doccomment">//!</span>
@@ -457,6 +458,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">many_single_char_names</span>, <span class="ident">clippy</span>::<span class="ident">just_underscores_and_digits</span>)]</span>
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">let</span> [<span class="ident">_0</span>, <span class="ident">_1</span>, <span class="ident">_2</span>, <span class="ident">_3</span>, <span class="ident">_4</span>, <span class="ident">_5</span>, <span class="ident">_6</span>, <span class="ident">_7</span>, <span class="ident">_8</span>, <span class="ident">_9</span>, <span class="ident">_10</span>, <span class="ident">_11</span>, <span class="ident">_12</span>, <span class="ident">_13</span>, <span class="ident">_14</span>, <span class="ident">_15</span>] <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>;
         <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">u32</span>::<span class="ident">from_be_bytes</span>([<span class="ident">_0</span>, <span class="ident">_1</span>, <span class="ident">_2</span>, <span class="ident">_3</span>]);
