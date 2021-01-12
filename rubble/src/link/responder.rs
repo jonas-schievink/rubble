@@ -65,13 +65,10 @@ impl<C: Config> Responder<C> {
                     info!("-> Response: {:?}", response);
 
                     // Consume the LL Control PDU iff we can fit the response in the TX buffer:
-                    Consume::on_success(this.tx.produce_with(
-                        response.encoded_size().into(),
-                        |writer| {
-                            response.to_bytes(writer)?;
-                            Ok(Llid::Control)
-                        },
-                    ))
+                    Consume::on_success(this.tx.produce_with(response.encoded_size(), |writer| {
+                        response.to_bytes(writer)?;
+                        Ok(Llid::Control)
+                    }))
                 }
                 Pdu::DataStart { message } => {
                     info!("L2start: {:?}", HexSlice(message));

@@ -204,11 +204,10 @@ impl<C: Config> Connection<C> {
                 // resent until we have space.
 
                 let result: Result<(), Error> =
-                    self.rx
-                        .produce_with(header.payload_length().into(), |writer| {
-                            writer.write_slice(payload)?;
-                            Ok(header.llid())
-                        });
+                    self.rx.produce_with(header.payload_length(), |writer| {
+                        writer.write_slice(payload)?;
+                        Ok(header.llid())
+                    });
 
                 if result.is_ok() {
                     // Acknowledge the packet

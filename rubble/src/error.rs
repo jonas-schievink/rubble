@@ -2,6 +2,7 @@ use core::fmt;
 
 /// Errors returned by the BLE stack.
 #[derive(Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Error {
     /// Packet specified an invalid length value or was too short.
     ///
@@ -21,9 +22,6 @@ pub enum Error {
 
     /// Parsing didn't consume the entire buffer.
     IncompleteParse,
-
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 impl fmt::Display for Error {
@@ -33,7 +31,6 @@ impl fmt::Display for Error {
             Error::InvalidValue => "invalid value for field",
             Error::Eof => "end of buffer",
             Error::IncompleteParse => "excess data in buffer",
-            Error::__Nonexhaustive => unreachable!(),
         })
     }
 }

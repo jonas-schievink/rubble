@@ -188,6 +188,7 @@ impl fmt::Debug for Uuid32 {
 }
 
 impl fmt::Debug for Uuid128 {
+    #[allow(clippy::many_single_char_names, clippy::just_underscores_and_digits)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let [_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15] = self.0;
         let a = u32::from_be_bytes([_0, _1, _2, _3]);

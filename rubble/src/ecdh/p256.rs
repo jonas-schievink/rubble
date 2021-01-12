@@ -1,7 +1,11 @@
 use super::*;
-use ::p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
-use ::p256::elliptic_curve::Field;
-use ::p256::{ProjectivePoint, Scalar};
+use ::p256::{
+    elliptic_curve::{
+        sec1::{FromEncodedPoint, ToEncodedPoint},
+        Field,
+    },
+    ProjectivePoint, Scalar,
+};
 use rand_core::{CryptoRng, RngCore};
 
 /// An ECDH provider using the pure-Rust `p256` crate.
@@ -24,7 +28,7 @@ impl EcdhProvider for P256Provider {
         let scalar = Scalar::random(rng);
         let secret = P256SecretKey { inner: scalar };
 
-        let public = ProjectivePoint::generator() * &scalar;
+        let public = ProjectivePoint::generator() * scalar;
         let public = public.to_affine();
         let public = public.to_encoded_point(false);
 
@@ -67,11 +71,11 @@ impl SecretKey for P256SecretKey {
 
         // ECDH is nothing but multiplying the foreign public key by the local secret key.
         let affine = ::p256::AffinePoint::from_encoded_point(&foreign_key);
-        if affine.is_none().into() {
+        if affine.is_none() {
             return Err(InvalidPublicKey::new());
         }
 
-        let mul_point = ProjectivePoint::from(affine.unwrap()) * &self.inner;
+        let mul_point = ProjectivePoint::from(affine.unwrap()) * self.inner;
         let uncomp_point = ::p256::EncodedPoint::from(mul_point.to_affine());
 
         // First byte is a `0x04` tag, next 32 Bytes are the shared secret.

@@ -88,10 +88,7 @@ impl Channel {
     ///
     /// L2CAP PDUs addressed to connectionless channels are called *G-frames*.
     pub fn is_connectionless(&self) -> bool {
-        match self.0 {
-            0x0002 | 0x0001 | 0x0005 => true,
-            _ => false,
-        }
+        matches!(self.0, 0x0002 | 0x0001 | 0x0005)
     }
 }
 
