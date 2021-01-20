@@ -3,38 +3,8 @@
 #![warn(rust_2018_idioms)]
 
 // We need to import this crate explicitly so we have a panic handler
-use panic_semihosting as _;
+use panic_rtt_target as _;
 
-/// Configuration macro to be called by the user configuration in `config.rs`.
-///
-/// Expands to yet another `apply_config!` macro that's called from `init` and performs some
-/// hardware initialization based on the config values.
-macro_rules! config {
-    (
-        baudrate = $baudrate:ident;
-        tx_pin = $tx_pin:ident;
-        rx_pin = $rx_pin:ident;
-    ) => {
-        macro_rules! apply_config {
-            ( $p0:ident, $uart:ident ) => {{
-                let rxd = $p0.$rx_pin.into_floating_input().degrade();
-                let txd = $p0.$tx_pin.into_push_pull_output(Level::Low).degrade();
-
-                let pins = hal::uarte::Pins {
-                    rxd,
-                    txd,
-                    cts: None,
-                    rts: None,
-                };
-
-                hal::uarte::Uarte::new($uart, pins, Parity::EXCLUDED, Baudrate::$baudrate)
-            }};
-        }
-    };
-}
-
-#[macro_use]
-mod config;
 mod attrs;
 mod logger;
 
@@ -49,15 +19,9 @@ use nrf52833_hal as hal;
 use nrf52840_hal as hal;
 
 use bbqueue::Consumer;
-use core::{
-    fmt::Write,
-    sync::atomic::{compiler_fence, Ordering},
-};
-use hal::{
-    gpio::Level,
-    pac::UARTE0,
-    uarte::{Baudrate, Parity, Uarte},
-};
+use core::sync::atomic::{compiler_fence, Ordering};
+use hal::gpio::Level;
+use rtt_target::{rtt_init, UpChannel};
 use rubble::{
     config::Config,
     l2cap::{BleChannelMap, L2CAPState},
@@ -98,12 +62,23 @@ const APP: () = {
         ble_ll: LinkLayer<AppConfig>,
         ble_r: Responder<AppConfig>,
         radio: BleRadio,
-        serial: Uarte<UARTE0>,
+        log_channel: UpChannel,
         log_sink: Consumer<'static, logger::BufferSize>,
     }
 
     #[init(resources = [ble_tx_buf, ble_rx_buf, tx_queue, rx_queue])]
     fn init(ctx: init::Context) -> init::LateResources {
+        let rtt = rtt_init! {
+            up: {
+                0: {
+                    size: 1024
+                    mode: NoBlockTrim
+                    name: "Rubble Logs"
+                }
+            }
+        };
+        let log_channel = rtt.up.0;
+
         // On reset, the internal high frequency clock is already used, but we
         // also need to switch to the external HF oscillator. This is needed
         // for Bluetooth to work.
@@ -112,10 +87,6 @@ const APP: () = {
         let ble_timer = BleTimer::init(ctx.device.TIMER0);
 
         let p0 = hal::gpio::p0::Parts::new(ctx.device.P0);
-
-        let uart = ctx.device.UARTE0;
-        let mut serial = apply_config!(p0, uart);
-        writeln!(serial, "\n--- INIT ---").unwrap();
 
         // Determine device address
         let device_address = get_device_address();
@@ -163,7 +134,7 @@ const APP: () = {
             radio,
             ble_ll,
             ble_r,
-            serial,
+            log_channel,
             log_sink,
         }
     }
@@ -210,15 +181,13 @@ const APP: () = {
         }
     }
 
-    #[idle(resources = [log_sink, serial])]
+    #[idle(resources = [log_sink, log_channel])]
     fn idle(ctx: idle::Context) -> ! {
         // Drain the logging buffer through the serial connection
         loop {
             if cfg!(feature = "log") {
                 while let Ok(grant) = ctx.resources.log_sink.read() {
-                    for chunk in grant.buf().chunks(255) {
-                        ctx.resources.serial.write(chunk).unwrap();
-                    }
+                    ctx.resources.log_channel.write(grant.buf());
 
                     let len = grant.buf().len();
                     grant.release(len);
