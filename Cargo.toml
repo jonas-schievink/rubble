@@ -6,6 +6,9 @@ members = [
     "rubble-docs",
     "demos/*/",
 ]
+exclude = [
+    "demos/.cargo"
+]
 
 [profile.dev]
 opt-level = "s"
