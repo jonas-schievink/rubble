@@ -11,6 +11,8 @@ mod logger;
 // Import the right HAL/PAC crate, depending on the target chip
 #[cfg(feature = "52810")]
 use nrf52810_hal as hal;
+#[cfg(feature = "52811")]
+use nrf52811_hal as hal;
 #[cfg(feature = "52832")]
 use nrf52832_hal as hal;
 #[cfg(feature = "52833")]

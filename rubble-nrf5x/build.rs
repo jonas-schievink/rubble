@@ -1,7 +1,7 @@
 use std::env;
 
 fn main() {
-    let features = &["51", "52810", "52832", "52833", "52840"];
+    let features = &["51", "52810", "52811", "52832", "52833", "52840"];
     let count = features
         .iter()
         .filter(|name| env::var_os(format!("CARGO_FEATURE_{}", name)).is_some())
