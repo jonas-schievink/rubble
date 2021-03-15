@@ -8,6 +8,8 @@ use crate::bytes::{ByteReader, FromBytes, ToBytes};
 use crate::l2cap::{Protocol, ProtocolObj, Sender};
 use crate::{utils::HexSlice, Error};
 
+const DYNAMIC_READ_BUFFER_SIZE: usize = 256; // this limits the maximum value size for dynamic reads to 256 bytes
+
 /// An Attribute Protocol server providing read and write access to stored attributes.
 pub struct AttributeServer<A: AttributeProvider> {
     attrs: A,
@@ -196,28 +198,68 @@ impl<A: AttributeProvider> AttributeServer<A> {
             }
 
             AttPdu::ReadReq { handle } => {
+                if !self.attrs.attr_access_permissions(*handle).is_readable() {
+                    return Err(AttError::new(ErrorCode::ReadNotPermitted, *handle));
+                }
+
                 responder
                     .send_with(|writer| -> Result<(), Error> {
                         writer.write_u8(Opcode::ReadRsp.into())?;
 
-                        self.attrs.for_attrs_in_range(
-                            HandleRange::new(*handle, *handle),
-                            |_provider, attr| {
-                                // FIXME return if attribute is not readable
-                                // This code currently doesn't work because the callback should
-                                // return rubble::Error rather than an AtError
-                                // if !self.attrs.attr_access_permissions(*handle).is_readable() {
-                                //     return
-                                //     Err(AttError::new(ErrorCode::ReadNotPermitted, *handle))
-                                // }
-                                let value = if writer.space_left() < attr.value.as_ref().len() {
-                                    &attr.value.as_ref()[..writer.space_left()]
-                                } else {
-                                    attr.value.as_ref()
-                                };
-                                writer.write_slice(value)
-                            },
-                        )?;
+                        let mut buffer = [0u8; DYNAMIC_READ_BUFFER_SIZE];
+                        if let Some(data_len) = self.attrs.read_attr_dynamic(*handle, &mut buffer) {
+                            let value = &buffer[..data_len];
+                            writer.write_slice_truncate(value);
+                        } else {
+                            self.attrs.for_attrs_in_range(
+                                HandleRange::new(*handle, *handle),
+                                |_provider, attr| {
+                                    let value = &attr.value.as_ref();
+                                    writer.write_slice_truncate(value);
+                                    Ok(())
+                                },
+                            )?;
+                        }
+
+                        Ok(())
+                    })
+                    .unwrap();
+
+                Ok(())
+            }
+
+            AttPdu::ReadBlobReq { handle, offset } => {
+                if !self.attrs.attr_access_permissions(*handle).is_readable() {
+                    return Err(AttError::new(ErrorCode::ReadNotPermitted, *handle));
+                }
+
+                responder
+                    .send_with(|writer| -> Result<(), Error> {
+                        writer.write_u8(Opcode::ReadBlobRsp.into())?;
+
+                        let mut buffer = [0u8; DYNAMIC_READ_BUFFER_SIZE];
+                        if let Some(data_len) = self.attrs.read_attr_dynamic(*handle, &mut buffer) {
+                            let offset = *offset as usize;
+                            let slice = &buffer[..data_len];
+                            let slice = &slice[offset..];
+
+                            let value = slice.as_ref();
+
+                            writer.write_slice_truncate(value);
+                        } else {
+                            self.attrs.for_attrs_in_range(
+                                HandleRange::new(*handle, *handle),
+                                |_provider, attr| {
+                                    let value = attr.value.as_ref();
+                                    let offset = *offset as usize;
+                                    let slice = &value[offset..];
+
+                                    writer.write_slice_truncate(slice);
+
+                                    Ok(())
+                                },
+                            )?;
+                        }
 
                         Ok(())
                     })
@@ -263,6 +305,77 @@ impl<A: AttributeProvider> AttributeServer<A> {
                 Ok(())
             }
 
+            AttPdu::PrepareWriteReq {
+                handle,
+                offset,
+                value,
+            } => {
+                if self.attrs.attr_access_permissions(*handle).is_writeable() {
+                    self.attrs
+                        .prepare_write_attr(*handle, *offset, value.as_ref())
+                        .map_err(|err| {
+                            // Convert rubble::Error to AttError
+                            AttError::new(
+                                match err {
+                                    Error::InvalidLength => ErrorCode::InvalidAttributeValueLength,
+                                    _ => ErrorCode::UnlikelyError,
+                                },
+                                *handle,
+                            )
+                        })?;
+                    responder
+                        .send_with(|writer| -> Result<(), Error> {
+                            writer.write_u8(Opcode::PrepareWriteRsp.into())?;
+                            writer.write_u16_le(handle.as_u16())?;
+                            writer.write_u16_le(*offset)?;
+                            writer.write_slice(value.as_ref())?;
+                            Ok(())
+                        })
+                        .map_err(|err| error!("error while handling write request: {:?}", err))
+                        .ok();
+                    Ok(())
+                } else {
+                    Err(AttError::new(ErrorCode::WriteNotPermitted, *handle))
+                }
+            }
+
+            AttPdu::ExecuteWriteReq { flags } => {
+                self.attrs.execute_write_attr(*flags).map_err(|err| {
+                    // Convert rubble::Error to AttError
+                    AttError::new(
+                        match err {
+                            Error::InvalidLength => ErrorCode::InvalidAttributeValueLength,
+                            _ => ErrorCode::UnlikelyError,
+                        },
+                        Handle::NULL,
+                    )
+                })?;
+                responder
+                    .send_with(|writer| -> Result<(), Error> {
+                        writer.write_u8(Opcode::ExecuteWriteRsp.into())?;
+                        Ok(())
+                    })
+                    .map_err(|err| error!("error while handling write request: {:?}", err))
+                    .ok();
+                Ok(())
+            }
+
+            AttPdu::FindInformationReq { handle_range } => {
+                let range = handle_range.check()?;
+                self.attrs
+                    .find_information(range, responder)
+                    .map_err(|err| {
+                        // Convert rubble::Error to AttError
+                        AttError::new(
+                            match err {
+                                Error::InvalidLength => ErrorCode::InvalidAttributeValueLength,
+                                _ => ErrorCode::UnlikelyError,
+                            },
+                            Handle::NULL,
+                        )
+                    })
+            }
+
             // Responses are always invalid here
             AttPdu::ErrorRsp { .. }
             | AttPdu::ExchangeMtuRsp { .. }
@@ -283,12 +396,8 @@ impl<A: AttributeProvider> AttributeServer<A> {
 
             // Unknown (undecoded) or unimplemented requests and commands
             AttPdu::Unknown { .. }
-            | AttPdu::FindInformationReq { .. }
             | AttPdu::FindByTypeValueReq { .. }
-            | AttPdu::ReadBlobReq { .. }
             | AttPdu::ReadMultipleReq { .. }
-            | AttPdu::PrepareWriteReq { .. }
-            | AttPdu::ExecuteWriteReq { .. }
             | AttPdu::SignedWriteCommand { .. }
             | AttPdu::HandleValueConfirmation { .. } => {
                 if msg.opcode().is_command() {
