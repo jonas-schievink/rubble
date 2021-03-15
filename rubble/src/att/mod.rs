@@ -35,7 +35,7 @@ mod server;
 mod uuid;
 
 use self::{handle::*, pdus::*};
-use crate::Error;
+use crate::{l2cap::Sender, Error};
 
 pub use self::handle::{Handle, HandleRange};
 pub use self::server::{AttributeServer, AttributeServerTx};
@@ -166,6 +166,39 @@ pub trait AttributeProvider {
     /// `attribute_access_permissions` is.
     fn write_attr(&mut self, _handle: Handle, _data: &[u8]) -> Result<(), Error> {
         unimplemented!("by default, no attributes should have write access permissions, and this should never be called");
+    }
+
+    /// If this read is from dynamic data fill the buffer and return the length of the data.
+    /// If not return None.
+    ///
+    /// By default returns `None`.
+    fn read_attr_dynamic(&mut self, _handle: Handle, _buffer: &mut [u8]) -> Option<usize> {
+        None
+    }
+
+    /// In order to write data longer than the MTU the procedure is explained in
+    /// BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 3, Part F section 3.4.6.
+    fn prepare_write_attr(
+        &mut self,
+        _handle: Handle,
+        _offset: u16,
+        _data: &[u8],
+    ) -> Result<(), Error> {
+        unimplemented!("you need to implement prepare_write_attr to make queued writes work")
+    }
+
+    /// In order to write data longer than the MTU the procedure is explained in
+    /// BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 3, Part F section 3.4.6.
+    fn execute_write_attr(&mut self, _flags: u8) -> Result<(), Error> {
+        unimplemented!("you need to implement execute_write_attr to make queued writes work")
+    }
+
+    fn find_information(
+        &mut self,
+        _range: HandleRange,
+        _responder: &mut Sender<'_>,
+    ) -> Result<(), Error> {
+        unimplemented!("you need to implement find_information to make things like Client Characteristic Configuration work")
     }
 }
 
