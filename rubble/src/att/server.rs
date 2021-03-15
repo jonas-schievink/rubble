@@ -8,6 +8,8 @@ use crate::bytes::{ByteReader, FromBytes, ToBytes};
 use crate::l2cap::{Protocol, ProtocolObj, Sender};
 use crate::{utils::HexSlice, Error};
 
+const DYNAMIC_READ_BUFFER_SIZE: usize = 256; // this limits the maximum value size for dynamic reads to 256 bytes
+
 /// An Attribute Protocol server providing read and write access to stored attributes.
 pub struct AttributeServer<A: AttributeProvider> {
     attrs: A,
@@ -196,11 +198,15 @@ impl<A: AttributeProvider> AttributeServer<A> {
             }
 
             AttPdu::ReadReq { handle } => {
+                if !self.attrs.attr_access_permissions(*handle).is_readable() {
+                    return Err(AttError::new(ErrorCode::ReadNotPermitted, *handle));
+                }
+
                 responder
                     .send_with(|writer| -> Result<(), Error> {
                         writer.write_u8(Opcode::ReadRsp.into())?;
 
-                        let mut buffer = [0u8; 256]; // this limits the maximum value size to 256 bytes
+                        let mut buffer = [0u8; DYNAMIC_READ_BUFFER_SIZE];
                         if let Some(data_len) = self.attrs.read_attr_dynamic(*handle, &mut buffer) {
                             let value = &buffer[..data_len];
                             writer.write_slice_truncate(value);
@@ -208,13 +214,6 @@ impl<A: AttributeProvider> AttributeServer<A> {
                             self.attrs.for_attrs_in_range(
                                 HandleRange::new(*handle, *handle),
                                 |_provider, attr| {
-                                    // FIXME return if attribute is not readable
-                                    // This code currently doesn't work because the callback should
-                                    // return rubble::Error rather than an AtError
-                                    // if !self.attrs.attr_access_permissions(*handle).is_readable() {
-                                    //     return
-                                    //     Err(AttError::new(ErrorCode::ReadNotPermitted, *handle))
-                                    // }
                                     let value = &attr.value.as_ref();
                                     writer.write_slice_truncate(value);
                                     Ok(())
@@ -230,11 +229,15 @@ impl<A: AttributeProvider> AttributeServer<A> {
             }
 
             AttPdu::ReadBlobReq { handle, offset } => {
+                if !self.attrs.attr_access_permissions(*handle).is_readable() {
+                    return Err(AttError::new(ErrorCode::ReadNotPermitted, *handle));
+                }
+
                 responder
                     .send_with(|writer| -> Result<(), Error> {
                         writer.write_u8(Opcode::ReadBlobRsp.into())?;
 
-                        let mut buffer = [0u8; 256]; // this limits the maximum value size to 256 bytes
+                        let mut buffer = [0u8; DYNAMIC_READ_BUFFER_SIZE];
                         if let Some(data_len) = self.attrs.read_attr_dynamic(*handle, &mut buffer) {
                             let offset = *offset as usize;
                             let slice = &buffer[..data_len];
@@ -247,13 +250,6 @@ impl<A: AttributeProvider> AttributeServer<A> {
                             self.attrs.for_attrs_in_range(
                                 HandleRange::new(*handle, *handle),
                                 |_provider, attr| {
-                                    // FIXME return if attribute is not readable
-                                    // This code currently doesn't work because the callback should
-                                    // return rubble::Error rather than an AtError
-                                    // if !self.attrs.attr_access_permissions(*handle).is_readable() {
-                                    //     return
-                                    //     Err(AttError::new(ErrorCode::ReadNotPermitted, *handle))
-                                    // }
                                     let value = attr.value.as_ref();
                                     let offset = *offset as usize;
                                     let slice = &value[offset..];
