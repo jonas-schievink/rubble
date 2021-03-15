@@ -234,7 +234,7 @@ impl<A: AttributeProvider> AttributeServer<A> {
                     .send_with(|writer| -> Result<(), Error> {
                         writer.write_u8(Opcode::ReadBlobRsp.into())?;
 
-                        let mut buffer = [0u8; 256];
+                        let mut buffer = [0u8; 256]; // this limits the maximum value size to 256 bytes
                         if let Some(data_len) = self.attrs.read_attr_dynamic(*handle, &mut buffer) {
                             let offset = *offset as usize;
                             let slice = &buffer[..data_len];

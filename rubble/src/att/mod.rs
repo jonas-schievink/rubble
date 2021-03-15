@@ -171,12 +171,14 @@ pub trait AttributeProvider {
     /// If this read is from dynamic data fill the buffer and return the length of the data.
     /// If not return None.
     ///
+    /// Currently the buffer is 256 bytes.
+    ///
     /// By default returns `None`.
     fn read_attr_dynamic(&mut self, _handle: Handle, _buffer: &mut [u8]) -> Option<usize> {
         None
     }
 
-    /// In order to write data longer than the MTU the procedure is explained in
+    /// In order to write data longer than what would fit one write request the procedure is explained in
     /// BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 3, Part F section 3.4.6.
     fn prepare_write_attr(
         &mut self,
@@ -187,12 +189,13 @@ pub trait AttributeProvider {
         unimplemented!("you need to implement prepare_write_attr to make queued writes work")
     }
 
-    /// In order to write data longer than the MTU the procedure is explained in
+    /// In order to write data longer than what would fit one write request the procedure is explained in
     /// BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 3, Part F section 3.4.6.
     fn execute_write_attr(&mut self, _flags: u8) -> Result<(), Error> {
         unimplemented!("you need to implement execute_write_attr to make queued writes work")
     }
 
+    /// See BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 3, Part F section 3.4.3.1 on what to implement here.
     fn find_information(
         &mut self,
         _range: HandleRange,
