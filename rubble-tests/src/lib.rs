@@ -32,7 +32,7 @@ fn additional_tests() {
     let targets = [
         (
             "thumbv7em-none-eabi",
-            &["52840", "52833", "52832", "52811", "52810"][..],
+            &["52840", "52833", "52832", "52811", "52810", "52805"][..],
         ),
         ("thumbv6m-none-eabi", &["51"][..]),
     ];
@@ -46,7 +46,7 @@ fn additional_tests() {
     }
 
     // Checks that the demos build correctly.
-    let features = ["52840", "52833", "52832", "52811", "52810"];
+    let features = ["52840", "52833", "52832", "52811", "52810", "52805"];
     let target = "thumbv7em-none-eabi";
     for demo in glob("demos/nrf52*").unwrap() {
         let demo = demo.unwrap().display().to_string();

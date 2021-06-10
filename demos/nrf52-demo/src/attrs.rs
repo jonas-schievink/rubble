@@ -1,5 +1,7 @@
 //! Defines a custom `AttributeValueProvider`.
 
+#[cfg(feature = "52805")]
+use nrf52805_hal as hal;
 #[cfg(feature = "52810")]
 use nrf52810_hal as hal;
 #[cfg(feature = "52811")]

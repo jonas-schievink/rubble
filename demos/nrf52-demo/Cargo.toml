@@ -21,6 +21,7 @@ bbqueue = "0.4.1"
 rtt-target = { version = "0.3.0", features = ["cortex-m"] }
 panic-rtt-target = { version = "0.1.1", features = ["cortex-m"] }
 
+nrf52805-hal = { version = "0.12", features = ["rt"], optional = true }
 nrf52810-hal = { version = "0.12", features = ["rt"], optional = true }
 nrf52811-hal = { version = "0.12", features = ["rt"], optional = true }
 nrf52832-hal = { version = "0.12", features = ["rt"], optional = true }
@@ -42,6 +43,7 @@ test = false
 # Note: To turn this default feature off you must run Cargo from inside the demo
 # directory, not from the workspace root.
 default = ["rubble/log", "log"]
+52805 = ["rubble-nrf5x/52805", "nrf52805-hal"]
 52810 = ["rubble-nrf5x/52810", "nrf52810-hal"]
 52811 = ["rubble-nrf5x/52811", "nrf52811-hal"]
 52832 = ["rubble-nrf5x/52832", "nrf52832-hal"]

@@ -3,6 +3,9 @@
 #[cfg(feature = "51")]
 use nrf51_hal::pac;
 
+#[cfg(feature = "52805")]
+use nrf52805_hal::pac;
+
 #[cfg(feature = "52810")]
 use nrf52810_hal::pac;
 
