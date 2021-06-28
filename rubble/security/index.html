@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `security` mod in crate `rubble`."><meta name="keywords" content="rust, rustlang, rust-lang, security"><title>rubble::security - Rust</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The LE Security Manager protocol."><meta name="keywords" content="rust, rustlang, rust-lang, security"><title>rubble::security - Rust</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a><p class="location">Module security</p><div class="sidebar-elems"><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li></ul></div><p class="location"><a href="../index.html">rubble</a></p><script>window.sidebarCurrent = {name: "security", ty: "mod", relpath: "../"};</script><script defer src="../sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../src/rubble/security.rs.html#1-348" title="goto source code">[src]</a></span><span class="in-band">Module <a href="../index.html">rubble</a>::<wbr><a class="mod" href="">security</a></span></h1><div class="docblock"><p>The LE Security Manager protocol.</p>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a><p class="location">Module security</p><div class="sidebar-elems"><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li></ul></div><p class="location"><a href="../index.html">rubble</a></p><div id="sidebar-vars" data-name="security" data-ty="mod" data-relpath="../"></div><script defer src="../sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Module <a href="../index.html">rubble</a>::<wbr><a class="mod" href="">security</a><button id="copy-path" onclick="copy_path(this)">⎘</button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../src/rubble/security.rs.html#1-348" title="goto source code">[src]</a></span></h1><div class="docblock"><p>The LE Security Manager protocol.</p>
 <p>The Security Manager is a mandatory part of BLE and is connected to L2CAP channel <code>0x0006</code> when
 the Link-Layer connection is established.</p>
 <h1 id="ble-security" class="section-header"><a href="#ble-security">BLE Security</a></h1>
@@ -26,15 +26,15 @@ provide interfaces to export and import key sets.</p>
 <p>Most times, when talking about <em>pairing</em>, the <em>bonding</em> part is implied. If it were not, you
 would constantly have to re-pair devices when reconnecting them.</p>
 <h2 id="le-legacy-pairing-vs-le-secure-connections" class="section-header"><a href="#le-legacy-pairing-vs-le-secure-connections">LE Legacy Pairing vs. LE Secure Connections</a></h2>
-<p>Bluetooth's security track record is an actual record in that it is so atrociously bad that this
+<p>Bluetooth’s security track record is an actual record in that it is so atrociously bad that this
 protocol should have never seen the light of the day. Alas, here we are.</p>
-<p>LE security is generally able to utilize <em>AES-128-CCM</em> for encryption, which isn't broken by
-itself (unlike the &quot;export-grade&quot; encryption used by earlier Bluetooth versions). However, the
+<p>LE security is generally able to utilize <em>AES-128-CCM</em> for encryption, which isn’t broken by
+itself (unlike the “export-grade” encryption used by earlier Bluetooth versions). However, the
 way the AES key is exchanged differs between <em>LE Legacy Pairing</em> and <em>LE Secure Connections</em>
 pairing, which hugely impacts actual security.</p>
 <h3 id="le-legacy-pairing" class="section-header"><a href="#le-legacy-pairing">LE Legacy Pairing</a></h3>
 <p>For BLE 4.0 and 4.1, only the <em>LE Legacy Pairing</em> (as it is now known as) was available. Like
-every awfully designed protocol, they've rolled their own crypto and use their own key exchange
+every awfully designed protocol, they’ve rolled their own crypto and use their own key exchange
 procedure (with the usual catastrophic consequences). First, a shared 128-bit <strong>T</strong>emporary
 <strong>K</strong>ey (TK) is obtained, which is then used to generate the 128-bit <strong>S</strong>hort-<strong>T</strong>erm <strong>K</strong>ey
 (STK) that is used to initially encrypt the connection while other keys are exchanged.</p>
@@ -44,12 +44,12 @@ they only need to listen for the <code>Mrand</code> and <code>Srand</code> value
 decrypt the connection.</p>
 <p>There are 3 methods of determining the TK:</p>
 <ul>
-<li><em>&quot;Just Works&quot;</em>: TK=0</li>
+<li><em>“Just Works”</em>: TK=0</li>
 <li><em>Passkey Entry</em>: A 6-digit number is displayed on one device and input on the other device.
 The number is directly used as the TK (after zero-padding it to 128 bits).</li>
 <li><em>Out-of-Band</em> (OOB): The 128-bit TK is provided by an external mechanism (eg. NFC).</li>
 </ul>
-<p>&quot;Just Works&quot; obviously is broken without any effort other than listening for the exchanged
+<p>“Just Works” obviously is broken without any effort other than listening for the exchanged
 <code>Mrand</code> and <code>Srand</code> values.</p>
 <p>The Passkey Entry method only allows 1000000 different TKs (equivalent to using 20-bit keys)
 and does not do any key derivation. This makes it trivial to brute-force the TK by running the
@@ -58,16 +58,16 @@ STK derivation up to a million times.</p>
 eavesdropping is by using a secure Out-of-Band channel for agreeing on the TK.</strong></p>
 <h3 id="le-secure-connections-pairing" class="section-header"><a href="#le-secure-connections-pairing">LE Secure Connections pairing</a></h3>
 <p>Added with BLE 4.2, this finally uses established cryptography to do everything. It uses ECDH on
-the P-256 curve (aka &quot;secp256r1&quot; or &quot;prime256v1&quot;).</p>
+the P-256 curve (aka “secp256r1” or “prime256v1”).</p>
 <p>Using ECDH immediately protects against passive eavesdropping. MITM-protection works similarly
 to what <em>LE Legacy Pairing</em> attempted to do, but is actually relevant here since the base key
-exchange isn't broken to begin with. There are several user confirmation processes that can
+exchange isn’t broken to begin with. There are several user confirmation processes that can
 offer MITM-protection:</p>
 <ul>
-<li><em>&quot;Just Works&quot;</em>: No MITM-protection. Uses the <em>Numeric Comparison</em> protocol internally, with
+<li><em>“Just Works”</em>: No MITM-protection. Uses the <em>Numeric Comparison</em> protocol internally, with
 automatic confirmation.</li>
 <li><em>Numeric Comparison</em>: Both devices display a 6-digit confirmation value and the user is
-required to compare them and confirm on each device if they're equal.</li>
+required to compare them and confirm on each device if they’re equal.</li>
 <li><em>Passkey Entry</em>: Either a generated passkey is displayed on one device and input on the other,
 or the user inputs the same passkey into both devices.</li>
 <li><em>Out-of-Band</em> (OOB): An Out-of-Band mechanism is used to exchange random nonces and confirm
@@ -91,4 +91,5 @@ can still <em>resolve</em> this address by using a shared <strong>I</strong>dent
 </td></tr><tr class="module-item"><td><a class="enum" href="enum.IoCapabilities.html" title="rubble::security::IoCapabilities enum">IoCapabilities</a></td><td class="docblock-short"><p>Describes the I/O capabilities of a device that can be used for the pairing process.</p>
 </td></tr></table><h2 id="traits" class="section-header"><a href="#traits">Traits</a></h2>
 <table><tr class="module-item"><td><a class="trait" href="trait.SecurityLevel.html" title="rubble::security::SecurityLevel trait">SecurityLevel</a></td><td class="docblock-short"><p>Supported security levels.</p>
-</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "rubble";</script><script src="../../main.js"></script><script defer src="../../search-index.js"></script></body></html>
+</td></tr></table></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="rubble" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+    <script src="../../main.js"></script></body></html>

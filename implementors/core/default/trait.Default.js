@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["rubble"] = [{"text":"impl Default for AttributeAccessPermissions","synthetic":false,"types":[]}];
+implementors["rubble"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/default/trait.Default.html\" title=\"trait core::default::Default\">Default</a> for <a class=\"enum\" href=\"rubble/att/enum.AttributeAccessPermissions.html\" title=\"enum rubble::att::AttributeAccessPermissions\">AttributeAccessPermissions</a>","synthetic":false,"types":["rubble::att::AttributeAccessPermissions"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

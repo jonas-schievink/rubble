@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["rubble"] = [{"text":"impl Into&lt;Uuid128&gt; for AttUuid","synthetic":false,"types":[]}];
+implementors["rubble"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/convert/trait.Into.html\" title=\"trait core::convert::Into\">Into</a>&lt;<a class=\"struct\" href=\"rubble/uuid/struct.Uuid128.html\" title=\"struct rubble::uuid::Uuid128\">Uuid128</a>&gt; for <a class=\"enum\" href=\"rubble/att/enum.AttUuid.html\" title=\"enum rubble::att::AttUuid\">AttUuid</a>","synthetic":false,"types":["rubble::att::uuid::AttUuid"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

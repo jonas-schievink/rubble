@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/link/queue.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>queue.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/link/queue.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>queue.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -484,11 +484,11 @@
 <span class="doccomment">//! [`SimpleProducer`]: struct.SimpleProducer.html</span>
 <span class="doccomment">//! [`SimpleConsumer`]: struct.SimpleConsumer.html</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::<span class="ident">data</span>::{<span class="self">self</span>, <span class="ident">Llid</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::{<span class="ident">MIN_DATA_PAYLOAD_BUF</span>, <span class="ident">MIN_DATA_PDU_BUF</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::data</span>::{<span class="self">self</span>, <span class="ident">Llid</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link</span>::{<span class="ident">MIN_DATA_PAYLOAD_BUF</span>, <span class="ident">MIN_DATA_PDU_BUF</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">Error</span>};
-<span class="kw">use</span> <span class="ident">heapless</span>::<span class="ident">consts</span>::<span class="ident">U1</span>;
-<span class="kw">use</span> <span class="ident">heapless</span>::<span class="ident">spsc</span>::{<span class="self">self</span>, <span class="ident">MultiCore</span>};
+<span class="kw">use</span> <span class="ident">heapless::consts::U1</span>;
+<span class="kw">use</span> <span class="ident">heapless::spsc</span>::{<span class="self">self</span>, <span class="ident">MultiCore</span>};
 
 <span class="doccomment">/// A splittable SPSC queue for data channel PDUs.</span>
 <span class="doccomment">///</span>
@@ -510,7 +510,7 @@
     <span class="doccomment">/// the associated `Producer` and `Consumer` types can make use of the lifetime `&#39;a`.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// For an example of that, see the provided impl for `&amp;&#39;a mut SimpleQueue` in this file.</span>
-    <span class="kw">fn</span> <span class="ident">split</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span>::<span class="ident">Producer</span>, <span class="self">Self</span>::<span class="ident">Consumer</span>);
+    <span class="kw">fn</span> <span class="ident">split</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span><span class="ident">::Producer</span>, <span class="self">Self</span><span class="ident">::Consumer</span>);
 }
 
 <span class="doccomment">/// The producing (writing) half of a packet queue.</span>
@@ -570,7 +570,7 @@
                 <span class="prelude-val">Ok</span>(<span class="ident">llid</span>)
             } <span class="kw">else</span> {
                 <span class="ident">r</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">result</span>.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ()));
-                <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InvalidValue</span>)
+                <span class="prelude-val">Err</span>(<span class="ident">Error::InvalidValue</span>)
             }
         })
         .<span class="ident">ok</span>();
@@ -592,7 +592,7 @@
     <span class="doccomment">/// If the queue is empty, `Error::Eof` is returned.</span>
     <span class="kw">fn</span> <span class="ident">consume_raw_with</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">data</span>::<span class="ident">Header</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
+        <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">data::Header</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">Error</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// Passes the next packet in the queue to a closure.</span>
@@ -603,12 +603,12 @@
     <span class="doccomment">/// If the queue is empty, `Error::Eof` is returned.</span>
     <span class="kw">fn</span> <span class="ident">consume_pdu_with</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">data</span>::<span class="ident">Header</span>, <span class="ident">data</span>::<span class="ident">Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
+        <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">data::Header</span>, <span class="ident">data::Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">consume_raw_with</span>(<span class="op">|</span><span class="ident">header</span>, <span class="ident">raw</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="ident">pdu</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">data</span>::<span class="ident">Pdu</span>::<span class="ident">parse</span>(<span class="ident">header</span>, <span class="ident">raw</span>) {
+            <span class="kw">let</span> <span class="ident">pdu</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">data::Pdu::parse</span>(<span class="ident">header</span>, <span class="ident">raw</span>) {
                 <span class="prelude-val">Ok</span>(<span class="ident">pdu</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">pdu</span>,
-                <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Consume</span>::<span class="ident">always</span>(<span class="prelude-val">Err</span>(<span class="ident">e</span>)),
+                <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Consume::always</span>(<span class="prelude-val">Err</span>(<span class="ident">e</span>)),
             };
 
             <span class="ident">f</span>(<span class="ident">header</span>, <span class="ident">pdu</span>)
@@ -683,14 +683,14 @@
 <span class="doccomment">/// This queue also minimizes RAM usage: In addition to the raw buffer space, only minimal space is</span>
 <span class="doccomment">/// needed for housekeeping.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SimpleQueue</span> {
-    <span class="ident">inner</span>: <span class="ident">spsc</span>::<span class="ident">Queue</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="ident">U1</span>, <span class="ident">u8</span>, <span class="ident">MultiCore</span><span class="op">&gt;</span>,
+    <span class="ident">inner</span>: <span class="ident">spsc::Queue</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="ident">U1</span>, <span class="ident">u8</span>, <span class="ident">MultiCore</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">SimpleQueue</span> {
     <span class="doccomment">/// Creates a new, empty queue.</span>
     <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">inner</span>: <span class="ident">spsc</span>::<span class="ident">Queue</span>(<span class="ident">heapless</span>::<span class="ident">i</span>::<span class="ident">Queue</span>::<span class="ident">u8</span>()),
+            <span class="ident">inner</span>: <span class="ident">spsc::Queue</span>(<span class="ident">heapless::i::Queue::u8</span>()),
         }
     }
 }
@@ -700,7 +700,7 @@
 
     <span class="kw">type</span> <span class="ident">Consumer</span> <span class="op">=</span> <span class="ident">SimpleConsumer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">split</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span>::<span class="ident">Producer</span>, <span class="self">Self</span>::<span class="ident">Consumer</span>) {
+    <span class="kw">fn</span> <span class="ident">split</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span><span class="ident">::Producer</span>, <span class="self">Self</span><span class="ident">::Consumer</span>) {
         <span class="kw">let</span> (<span class="ident">p</span>, <span class="ident">c</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">split</span>();
         (<span class="ident">SimpleProducer</span> { <span class="ident">inner</span>: <span class="ident">p</span> }, <span class="ident">SimpleConsumer</span> { <span class="ident">inner</span>: <span class="ident">c</span> })
     }
@@ -708,7 +708,7 @@
 
 <span class="doccomment">/// Producer (writer) half returned by `SimpleQueue::split`.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SimpleProducer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="ident">inner</span>: <span class="ident">spsc</span>::<span class="ident">Producer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="ident">U1</span>, <span class="ident">u8</span>, <span class="ident">MultiCore</span><span class="op">&gt;</span>,
+    <span class="ident">inner</span>: <span class="ident">spsc::Producer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="ident">U1</span>, <span class="ident">u8</span>, <span class="ident">MultiCore</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Producer</span> <span class="kw">for</span> <span class="ident">SimpleProducer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
@@ -726,21 +726,21 @@
         <span class="ident">payload_bytes</span>: <span class="ident">u8</span>,
         <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">dyn</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Llid</span>, <span class="ident">Error</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">payload_bytes</span>) <span class="op">&lt;</span><span class="op">=</span> <span class="ident">MIN_DATA_PAYLOAD_BUF</span>);
+        <span class="macro">assert!</span>(<span class="ident">usize::from</span>(<span class="ident">payload_bytes</span>) <span class="op">&lt;</span><span class="op">=</span> <span class="ident">MIN_DATA_PAYLOAD_BUF</span>);
 
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">ready</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>);
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::Eof</span>);
         }
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0</span>; <span class="ident">MIN_DATA_PDU_BUF</span>];
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">writer</span> <span class="op">=</span> <span class="ident">ByteWriter</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[<span class="number">2</span>..]);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">writer</span> <span class="op">=</span> <span class="ident">ByteWriter::new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[<span class="number">2</span>..]);
         <span class="kw">let</span> <span class="ident">free</span> <span class="op">=</span> <span class="ident">writer</span>.<span class="ident">space_left</span>();
         <span class="kw">let</span> <span class="ident">llid</span> <span class="op">=</span> <span class="ident">f</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">writer</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">used</span> <span class="op">=</span> <span class="ident">free</span> <span class="op">-</span> <span class="ident">writer</span>.<span class="ident">space_left</span>();
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">header</span> <span class="op">=</span> <span class="ident">data</span>::<span class="ident">Header</span>::<span class="ident">new</span>(<span class="ident">llid</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">header</span> <span class="op">=</span> <span class="ident">data::Header::new</span>(<span class="ident">llid</span>);
         <span class="ident">header</span>.<span class="ident">set_payload_length</span>(<span class="ident">used</span> <span class="kw">as</span> <span class="ident">u8</span>);
-        <span class="ident">header</span>.<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[..<span class="number">2</span>]))<span class="question-mark">?</span>;
+        <span class="ident">header</span>.<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter::new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[..<span class="number">2</span>]))<span class="question-mark">?</span>;
 
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">enqueue</span>(<span class="ident">buf</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ()).<span class="ident">unwrap</span>();
         <span class="prelude-val">Ok</span>(())
@@ -749,7 +749,7 @@
 
 <span class="doccomment">/// Consumer (reader) half returned by `SimpleQueue::split`.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SimpleConsumer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="ident">inner</span>: <span class="ident">spsc</span>::<span class="ident">Consumer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="ident">U1</span>, <span class="ident">u8</span>, <span class="ident">MultiCore</span><span class="op">&gt;</span>,
+    <span class="ident">inner</span>: <span class="ident">spsc::Consumer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="ident">U1</span>, <span class="ident">u8</span>, <span class="ident">MultiCore</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Consumer</span> <span class="kw">for</span> <span class="ident">SimpleConsumer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
@@ -759,13 +759,13 @@
 
     <span class="kw">fn</span> <span class="ident">consume_raw_with</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">data</span>::<span class="ident">Header</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
+        <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">data::Header</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">packet</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">peek</span>() {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">ByteReader</span>::<span class="ident">new</span>(<span class="ident">packet</span>);
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">ByteReader::new</span>(<span class="ident">packet</span>);
             <span class="kw">let</span> <span class="ident">raw_header</span>: [<span class="ident">u8</span>; <span class="number">2</span>] <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">read_array</span>().<span class="ident">unwrap</span>();
-            <span class="kw">let</span> <span class="ident">header</span> <span class="op">=</span> <span class="ident">data</span>::<span class="ident">Header</span>::<span class="ident">parse</span>(<span class="kw-2">&amp;</span><span class="ident">raw_header</span>);
-            <span class="kw">let</span> <span class="ident">pl_len</span> <span class="op">=</span> <span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>());
+            <span class="kw">let</span> <span class="ident">header</span> <span class="op">=</span> <span class="ident">data::Header::parse</span>(<span class="kw-2">&amp;</span><span class="ident">raw_header</span>);
+            <span class="kw">let</span> <span class="ident">pl_len</span> <span class="op">=</span> <span class="ident">usize::from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>());
             <span class="kw">let</span> <span class="ident">raw_payload</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">read_slice</span>(<span class="ident">pl_len</span>)<span class="question-mark">?</span>;
 
             <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">f</span>(<span class="ident">header</span>, <span class="ident">raw_payload</span>);
@@ -774,7 +774,7 @@
             }
             <span class="ident">res</span>.<span class="ident">result</span>
         } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)
+            <span class="prelude-val">Err</span>(<span class="ident">Error::Eof</span>)
         }
     }
 }
@@ -792,29 +792,29 @@
 <span class="doccomment">/// function, something that sometimes doesn&#39;t work when invariant lifetimes are involved.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run_tests</span>(<span class="ident">queue</span>: <span class="kw">impl</span> <span class="ident">PacketQueue</span>) {
     <span class="kw">fn</span> <span class="ident">assert_empty</span>(<span class="ident">c</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">Consumer</span>) {
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">c</span>.<span class="ident">has_data</span>(), <span class="string">&quot;empty queue `has_data()` returned true&quot;</span>);
+        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">c</span>.<span class="ident">has_data</span>(), <span class="string">&quot;empty queue `has_data()` returned true&quot;</span>);
 
         <span class="kw">let</span> <span class="ident">err</span> <span class="op">=</span> <span class="ident">c</span>
             .<span class="ident">consume_raw_with</span>(<span class="op">|</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-                <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;`consume_raw_with` on empty queue invoked the callback&quot;</span>);
+                <span class="macro">unreachable!</span>(<span class="string">&quot;`consume_raw_with` on empty queue invoked the callback&quot;</span>);
             })
             .<span class="ident">unwrap_err</span>();
 
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
+        <span class="macro">assert_eq!</span>(
             <span class="ident">err</span>,
-            <span class="ident">Error</span>::<span class="ident">Eof</span>,
+            <span class="ident">Error::Eof</span>,
             <span class="string">&quot;empty queues `consume_raw_with` didn&#39;t return expected `Error::Eof&quot;</span>
         );
 
         <span class="kw">let</span> <span class="ident">err</span> <span class="op">=</span> <span class="ident">c</span>
             .<span class="ident">consume_pdu_with</span>(<span class="op">|</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-                <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;`consume_pdu_with` on empty queue invoked the callback&quot;</span>);
+                <span class="macro">unreachable!</span>(<span class="string">&quot;`consume_pdu_with` on empty queue invoked the callback&quot;</span>);
             })
             .<span class="ident">unwrap_err</span>();
 
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
+        <span class="macro">assert_eq!</span>(
             <span class="ident">err</span>,
-            <span class="ident">Error</span>::<span class="ident">Eof</span>,
+            <span class="ident">Error::Eof</span>,
             <span class="string">&quot;empty queues `consume_pdu_with` didn&#39;t return expected `Error::Eof&quot;</span>
         );
     }
@@ -823,7 +823,7 @@
     <span class="ident">assert_empty</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">c</span>);
 
     <span class="kw">let</span> <span class="ident">free_space</span> <span class="op">=</span> <span class="ident">p</span>.<span class="ident">free_space</span>();
-    <span class="macro">assert</span><span class="macro">!</span>(
+    <span class="macro">assert!</span>(
         <span class="ident">free_space</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">MIN_DATA_PAYLOAD_BUF</span> <span class="kw">as</span> <span class="ident">u8</span>,
         <span class="string">&quot;empty queue has space for {} byte payload, need at least {}&quot;</span>,
         <span class="ident">free_space</span>,
@@ -832,42 +832,42 @@
 
     <span class="comment">// Enqueue the largest packet</span>
     <span class="ident">p</span>.<span class="ident">produce_with</span>(<span class="ident">MIN_DATA_PAYLOAD_BUF</span> <span class="kw">as</span> <span class="ident">u8</span>, <span class="op">|</span><span class="ident">writer</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
+        <span class="macro">assert_eq!</span>(
             <span class="ident">writer</span>.<span class="ident">space_left</span>(),
             <span class="ident">MIN_DATA_PAYLOAD_BUF</span>,
             <span class="string">&quot;produce_with didn&#39;t pass ByteWriter with correct buffer&quot;</span>
         );
         <span class="ident">writer</span>.<span class="ident">write_slice</span>(<span class="kw-2">&amp;</span>[<span class="number">0</span>; <span class="ident">MIN_DATA_PAYLOAD_BUF</span>]).<span class="ident">unwrap</span>();
-        <span class="prelude-val">Ok</span>(<span class="ident">Llid</span>::<span class="ident">DataStart</span>)
+        <span class="prelude-val">Ok</span>(<span class="ident">Llid::DataStart</span>)
     })
     .<span class="ident">expect</span>(<span class="string">&quot;enqueuing packet failed&quot;</span>);
 
-    <span class="macro">assert</span><span class="macro">!</span>(
+    <span class="macro">assert!</span>(
         <span class="ident">c</span>.<span class="ident">has_data</span>(),
         <span class="string">&quot;consumer&#39;s `has_data()` still false after enqueuing packet&quot;</span>
     );
 
     <span class="comment">// Peek at the packet</span>
     <span class="ident">c</span>.<span class="ident">consume_raw_with</span>(<span class="op">|</span><span class="ident">header</span>, <span class="ident">data</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()), <span class="ident">MIN_DATA_PAYLOAD_BUF</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
+        <span class="macro">assert_eq!</span>(<span class="ident">usize::from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()), <span class="ident">MIN_DATA_PAYLOAD_BUF</span>);
+        <span class="macro">assert_eq!</span>(
             <span class="ident">data</span>,
             <span class="kw-2">&amp;</span>[<span class="number">0</span>; <span class="ident">MIN_DATA_PAYLOAD_BUF</span>][..],
             <span class="string">&quot;consume_raw_with didn&#39;t yield correct payload&quot;</span>
         );
-        <span class="ident">Consume</span>::<span class="ident">never</span>(<span class="prelude-val">Ok</span>(()))
+        <span class="ident">Consume::never</span>(<span class="prelude-val">Ok</span>(()))
     })
     .<span class="ident">expect</span>(<span class="string">&quot;consume_raw_with failed when data is available&quot;</span>);
 
-    <span class="macro">assert</span><span class="macro">!</span>(
+    <span class="macro">assert!</span>(
         <span class="ident">c</span>.<span class="ident">has_data</span>(),
         <span class="string">&quot;`has_data()` returned false after using `Consume::never`&quot;</span>
     );
 
     <span class="comment">// Now consume it</span>
     <span class="ident">c</span>.<span class="ident">consume_pdu_with</span>(<span class="op">|</span><span class="ident">header</span>, <span class="kw">_</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()), <span class="ident">MIN_DATA_PAYLOAD_BUF</span>);
-        <span class="ident">Consume</span>::<span class="ident">always</span>(<span class="prelude-val">Ok</span>(()))
+        <span class="macro">assert_eq!</span>(<span class="ident">usize::from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()), <span class="ident">MIN_DATA_PAYLOAD_BUF</span>);
+        <span class="ident">Consume::always</span>(<span class="prelude-val">Ok</span>(()))
     })
     .<span class="ident">expect</span>(<span class="string">&quot;consume_pdu_with failed when data is available&quot;</span>);
 
@@ -876,41 +876,41 @@
 
     <span class="comment">// Enqueue the smallest packet (0 payload bytes)</span>
     <span class="ident">p</span>.<span class="ident">produce_with</span>(<span class="number">0</span>, <span class="op">|</span><span class="ident">writer</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
+        <span class="macro">assert_eq!</span>(
             <span class="ident">writer</span>.<span class="ident">space_left</span>(),
             <span class="ident">MIN_DATA_PAYLOAD_BUF</span>,
             <span class="string">&quot;produce_with didn&#39;t pass ByteWriter with correct buffer&quot;</span>
         );
-        <span class="prelude-val">Ok</span>(<span class="ident">Llid</span>::<span class="ident">DataStart</span>)
+        <span class="prelude-val">Ok</span>(<span class="ident">Llid::DataStart</span>)
     })
     .<span class="ident">expect</span>(<span class="string">&quot;enqueuing packet failed&quot;</span>);
 
-    <span class="macro">assert</span><span class="macro">!</span>(
+    <span class="macro">assert!</span>(
         <span class="ident">c</span>.<span class="ident">has_data</span>(),
         <span class="string">&quot;consumer&#39;s `has_data()` still false after enqueuing empty packet&quot;</span>
     );
 
     <span class="comment">// Peek at the packet</span>
     <span class="ident">c</span>.<span class="ident">consume_raw_with</span>(<span class="op">|</span><span class="ident">header</span>, <span class="ident">data</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()), <span class="number">0</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
+        <span class="macro">assert_eq!</span>(<span class="ident">usize::from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()), <span class="number">0</span>);
+        <span class="macro">assert_eq!</span>(
             <span class="ident">data</span>,
             <span class="kw-2">&amp;</span>[][..],
             <span class="string">&quot;consume_raw_with didn&#39;t yield correct empty payload&quot;</span>
         );
-        <span class="ident">Consume</span>::<span class="ident">never</span>(<span class="prelude-val">Ok</span>(()))
+        <span class="ident">Consume::never</span>(<span class="prelude-val">Ok</span>(()))
     })
     .<span class="ident">expect</span>(<span class="string">&quot;consume_raw_with failed when empty packet is available&quot;</span>);
 
-    <span class="macro">assert</span><span class="macro">!</span>(
+    <span class="macro">assert!</span>(
         <span class="ident">c</span>.<span class="ident">has_data</span>(),
         <span class="string">&quot;`has_data()` returned false after using `Consume::never`&quot;</span>
     );
 
     <span class="comment">// Now consume it</span>
     <span class="ident">c</span>.<span class="ident">consume_pdu_with</span>(<span class="op">|</span><span class="ident">header</span>, <span class="kw">_</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()), <span class="number">0</span>);
-        <span class="ident">Consume</span>::<span class="ident">always</span>(<span class="prelude-val">Ok</span>(()))
+        <span class="macro">assert_eq!</span>(<span class="ident">usize::from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()), <span class="number">0</span>);
+        <span class="ident">Consume::always</span>(<span class="prelude-val">Ok</span>(()))
     })
     .<span class="ident">expect</span>(<span class="string">&quot;consume_pdu_with failed when empty packet is available&quot;</span>);
 
@@ -922,7 +922,8 @@
 
 <span class="attribute">#[<span class="ident">test</span>]</span>
 <span class="kw">fn</span> <span class="ident">simple_queue</span>() {
-    <span class="ident">run_tests</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">SimpleQueue</span>::<span class="ident">new</span>());
+    <span class="ident">run_tests</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">SimpleQueue::new</span>());
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "rubble";</script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="rubble" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>

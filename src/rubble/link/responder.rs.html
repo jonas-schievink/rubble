@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/link/responder.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>responder.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/link/responder.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>responder.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -102,11 +102,11 @@
 <span id="99"> 99</span>
 <span id="100">100</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">l2cap</span>::{<span class="ident">L2CAPState</span>, <span class="ident">L2CAPStateTx</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::<span class="ident">data</span>::{<span class="ident">Llid</span>, <span class="ident">Pdu</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::<span class="ident">llcp</span>::<span class="ident">ControlPdu</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::<span class="ident">queue</span>::{<span class="ident">Consume</span>, <span class="ident">Consumer</span>, <span class="ident">Producer</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="ident">ToBytes</span>, <span class="ident">config</span>::<span class="kw-2">*</span>, <span class="ident">utils</span>::<span class="ident">HexSlice</span>, <span class="ident">Error</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::l2cap</span>::{<span class="ident">L2CAPState</span>, <span class="ident">L2CAPStateTx</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::data</span>::{<span class="ident">Llid</span>, <span class="ident">Pdu</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::llcp::ControlPdu</span>;
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::queue</span>::{<span class="ident">Consume</span>, <span class="ident">Consumer</span>, <span class="ident">Producer</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes::ToBytes</span>, <span class="ident">config</span>::<span class="kw-2">*</span>, <span class="ident">utils::HexSlice</span>, <span class="ident">Error</span>};
 
 <span class="doccomment">/// Data channel packet processor.</span>
 <span class="doccomment">///</span>
@@ -120,7 +120,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Responder</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
     <span class="ident">tx</span>: <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
     <span class="ident">rx</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ConfConsumer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">l2cap</span>: <span class="ident">L2CAPState</span><span class="op">&lt;</span><span class="ident">C</span>::<span class="ident">ChannelMapper</span><span class="op">&gt;</span>,
+    <span class="ident">l2cap</span>: <span class="ident">L2CAPState</span><span class="op">&lt;</span><span class="ident">C::ChannelMapper</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Responder</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> {
@@ -128,7 +128,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">tx</span>: <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
         <span class="ident">rx</span>: <span class="ident">ConfConsumer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-        <span class="ident">l2cap</span>: <span class="ident">L2CAPState</span><span class="op">&lt;</span><span class="ident">C</span>::<span class="ident">ChannelMapper</span><span class="op">&gt;</span>,
+        <span class="ident">l2cap</span>: <span class="ident">L2CAPState</span><span class="op">&lt;</span><span class="ident">C::ChannelMapper</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">tx</span>,
@@ -151,35 +151,35 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">process_one</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">with_rx</span>(<span class="op">|</span><span class="ident">rx</span>, <span class="ident">this</span><span class="op">|</span> {
             <span class="ident">rx</span>.<span class="ident">consume_pdu_with</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">pdu</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">pdu</span> {
-                <span class="ident">Pdu</span>::<span class="ident">Control</span> { <span class="ident">data</span> } <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Pdu::Control</span> { <span class="ident">data</span> } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="comment">// Also see:</span>
                     <span class="comment">// https://github.com/jonas-schievink/rubble/issues/26</span>
 
                     <span class="kw">let</span> <span class="ident">pdu</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">read</span>();
-                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;&lt;- LL Control PDU: {:?}&quot;</span>, <span class="ident">pdu</span>);
+                    <span class="macro">info!</span>(<span class="string">&quot;&lt;- LL Control PDU: {:?}&quot;</span>, <span class="ident">pdu</span>);
                     <span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">pdu</span> {
                         <span class="comment">// These PDUs are handled by the real-time code:</span>
-                        <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { .. } <span class="op">|</span> <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
-                            <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;LLCPDU not handled by LL&quot;</span>);
+                        <span class="ident">ControlPdu::FeatureReq</span> { .. } <span class="op">|</span> <span class="ident">ControlPdu::VersionInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
+                            <span class="macro">unreachable!</span>(<span class="string">&quot;LLCPDU not handled by LL&quot;</span>);
                         }
-                        <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> {
+                        <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::UnknownRsp</span> {
                             <span class="ident">unknown_type</span>: <span class="ident">pdu</span>.<span class="ident">opcode</span>(),
                         },
                     };
-                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;-&gt; Response: {:?}&quot;</span>, <span class="ident">response</span>);
+                    <span class="macro">info!</span>(<span class="string">&quot;-&gt; Response: {:?}&quot;</span>, <span class="ident">response</span>);
 
                     <span class="comment">// Consume the LL Control PDU iff we can fit the response in the TX buffer:</span>
-                    <span class="ident">Consume</span>::<span class="ident">on_success</span>(<span class="ident">this</span>.<span class="ident">tx</span>.<span class="ident">produce_with</span>(<span class="ident">response</span>.<span class="ident">encoded_size</span>(), <span class="op">|</span><span class="ident">writer</span><span class="op">|</span> {
+                    <span class="ident">Consume::on_success</span>(<span class="ident">this</span>.<span class="ident">tx</span>.<span class="ident">produce_with</span>(<span class="ident">response</span>.<span class="ident">encoded_size</span>(), <span class="op">|</span><span class="ident">writer</span><span class="op">|</span> {
                         <span class="ident">response</span>.<span class="ident">to_bytes</span>(<span class="ident">writer</span>)<span class="question-mark">?</span>;
-                        <span class="prelude-val">Ok</span>(<span class="ident">Llid</span>::<span class="ident">Control</span>)
+                        <span class="prelude-val">Ok</span>(<span class="ident">Llid::Control</span>)
                     }))
                 }
-                <span class="ident">Pdu</span>::<span class="ident">DataStart</span> { <span class="ident">message</span> } <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;L2start: {:?}&quot;</span>, <span class="ident">HexSlice</span>(<span class="ident">message</span>));
+                <span class="ident">Pdu::DataStart</span> { <span class="ident">message</span> } <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="macro">info!</span>(<span class="string">&quot;L2start: {:?}&quot;</span>, <span class="ident">HexSlice</span>(<span class="ident">message</span>));
                     <span class="ident">this</span>.<span class="ident">l2cap</span>().<span class="ident">process_start</span>(<span class="ident">message</span>)
                 }
-                <span class="ident">Pdu</span>::<span class="ident">DataCont</span> { <span class="ident">message</span> } <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;L2cont {:?}&quot;</span>, <span class="ident">HexSlice</span>(<span class="ident">message</span>));
+                <span class="ident">Pdu::DataCont</span> { <span class="ident">message</span> } <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="macro">info!</span>(<span class="string">&quot;L2cont {:?}&quot;</span>, <span class="ident">HexSlice</span>(<span class="ident">message</span>));
                     <span class="ident">this</span>.<span class="ident">l2cap</span>().<span class="ident">process_cont</span>(<span class="ident">message</span>)
                 }
             })
@@ -187,7 +187,7 @@
     }
 
     <span class="doccomment">/// Obtains access to the L2CAP instance.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">l2cap</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">L2CAPStateTx</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">C</span>::<span class="ident">ChannelMapper</span>, <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">l2cap</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">L2CAPStateTx</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">C::ChannelMapper</span>, <span class="ident">ConfProducer</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">l2cap</span>.<span class="ident">tx</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">tx</span>)
     }
 
@@ -203,4 +203,5 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "rubble";</script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="rubble" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>

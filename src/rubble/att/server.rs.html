@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/att/server.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>server.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/att/server.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>server.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -479,9 +479,9 @@
     <span class="ident">pdus</span>::{<span class="ident">AttPdu</span>, <span class="ident">ByGroupAttData</span>, <span class="ident">ByTypeAttData</span>, <span class="ident">ErrorCode</span>, <span class="ident">Opcode</span>},
     <span class="ident">AttError</span>, <span class="ident">AttributeProvider</span>, <span class="ident">Handle</span>, <span class="ident">HandleRange</span>,
 };
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">bytes</span>::{<span class="ident">ByteReader</span>, <span class="ident">FromBytes</span>, <span class="ident">ToBytes</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">l2cap</span>::{<span class="ident">Protocol</span>, <span class="ident">ProtocolObj</span>, <span class="ident">Sender</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">utils</span>::<span class="ident">HexSlice</span>, <span class="ident">Error</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::bytes</span>::{<span class="ident">ByteReader</span>, <span class="ident">FromBytes</span>, <span class="ident">ToBytes</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::l2cap</span>::{<span class="ident">Protocol</span>, <span class="ident">ProtocolObj</span>, <span class="ident">Sender</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">utils::HexSlice</span>, <span class="ident">Error</span>};
 
 <span class="kw">const</span> <span class="ident">DYNAMIC_READ_BUFFER_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">256</span>; <span class="comment">// this limits the maximum value size for dynamic reads to 256 bytes</span>
 
@@ -517,7 +517,7 @@
     <span class="doccomment">/// Returns the `ATT_MTU` value, the maximum size of an ATT PDU that can be processed and sent</span>
     <span class="doccomment">/// out by the server.</span>
     <span class="kw">fn</span> <span class="ident">att_mtu</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
-        <span class="self">Self</span>::<span class="ident">RSP_PDU_SIZE</span>
+        <span class="self">Self</span><span class="ident">::RSP_PDU_SIZE</span>
     }
 
     <span class="doccomment">/// Process an incoming request (or command) PDU and return a response.</span>
@@ -537,7 +537,7 @@
 
         <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Error</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">RspError</span> {
             <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">e</span>: <span class="ident">Error</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-                <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;unexpected error: {}&quot;</span>, <span class="ident">e</span>);
+                <span class="macro">panic!</span>(<span class="string">&quot;unexpected error: {}&quot;</span>, <span class="ident">e</span>);
             }
         }
 
@@ -548,16 +548,16 @@
         }
 
         <span class="kw">match</span> <span class="ident">msg</span> {
-            <span class="ident">AttPdu</span>::<span class="ident">ExchangeMtuReq</span> { <span class="ident">mtu</span>: <span class="ident">_mtu</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AttPdu::ExchangeMtuReq</span> { <span class="ident">mtu</span>: <span class="ident">_mtu</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">responder</span>
-                    .<span class="ident">send</span>(<span class="ident">AttPdu</span>::<span class="ident">ExchangeMtuRsp</span> {
-                        <span class="ident">mtu</span>: <span class="ident">u16</span>::<span class="ident">from</span>(<span class="self">Self</span>::<span class="ident">RSP_PDU_SIZE</span>),
+                    .<span class="ident">send</span>(<span class="ident">AttPdu::ExchangeMtuRsp</span> {
+                        <span class="ident">mtu</span>: <span class="ident">u16::from</span>(<span class="self">Self</span><span class="ident">::RSP_PDU_SIZE</span>),
                     })
                     .<span class="ident">unwrap</span>();
                 <span class="prelude-val">Ok</span>(())
             }
 
-            <span class="ident">AttPdu</span>::<span class="ident">ReadByTypeReq</span> {
+            <span class="ident">AttPdu::ReadByTypeReq</span> {
                 <span class="ident">handle_range</span>,
                 <span class="ident">attribute_type</span>,
             } <span class="op">=</span><span class="op">&gt;</span> {
@@ -567,8 +567,8 @@
                     <span class="comment">// If no attributes match request, return `AttributeNotFound` error, else send</span>
                     <span class="comment">// `ReadByTypeResponse` with at least one entry</span>
 
-                    <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode</span>::<span class="ident">ReadByTypeRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
-                    <span class="kw">let</span> <span class="ident">length</span> <span class="op">=</span> <span class="ident">writer</span>.<span class="ident">split_next_mut</span>().<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)<span class="question-mark">?</span>;
+                    <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode::ReadByTypeRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
+                    <span class="kw">let</span> <span class="ident">length</span> <span class="op">=</span> <span class="ident">writer</span>.<span class="ident">split_next_mut</span>().<span class="ident">ok_or</span>(<span class="ident">Error::Eof</span>)<span class="question-mark">?</span>;
 
                     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">size</span> <span class="op">=</span> <span class="prelude-val">None</span>;
                     <span class="kw">let</span> <span class="ident">att_mtu</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">att_mtu</span>();
@@ -580,7 +580,7 @@
                                 <span class="op">&amp;&amp;</span> <span class="ident">provider</span>.<span class="ident">attr_access_permissions</span>(<span class="ident">attr</span>.<span class="ident">handle</span>).<span class="ident">is_readable</span>()
                             {
                                 <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span>
-                                    <span class="ident">ByTypeAttData</span>::<span class="ident">new</span>(<span class="ident">att_mtu</span>, <span class="ident">attr</span>.<span class="ident">handle</span>, <span class="ident">attr</span>.<span class="ident">value</span>.<span class="ident">as_ref</span>());
+                                    <span class="ident">ByTypeAttData::new</span>(<span class="ident">att_mtu</span>, <span class="ident">attr</span>.<span class="ident">handle</span>, <span class="ident">attr</span>.<span class="ident">value</span>.<span class="ident">as_ref</span>());
                                 <span class="kw">if</span> <span class="ident">size</span> <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">data</span>.<span class="ident">encoded_size</span>()) <span class="op">|</span><span class="op">|</span> <span class="ident">size</span>.<span class="ident">is_none</span>() {
                                     <span class="comment">// Can try to encode `data`. If we run out of space, end the list.</span>
                                     <span class="ident">data</span>.<span class="ident">to_bytes</span>(<span class="ident">writer</span>)<span class="question-mark">?</span>;
@@ -597,7 +597,7 @@
                         <span class="kw-2">*</span><span class="ident">length</span> <span class="op">=</span> <span class="ident">size</span>;
                         <span class="prelude-val">Ok</span>(())
                     } <span class="kw">else</span> {
-                        <span class="prelude-val">Err</span>(<span class="ident">AttError</span>::<span class="ident">attribute_not_found</span>().<span class="ident">into</span>())
+                        <span class="prelude-val">Err</span>(<span class="ident">AttError::attribute_not_found</span>().<span class="ident">into</span>())
                     }
                 });
 
@@ -607,7 +607,7 @@
                 }
             }
 
-            <span class="ident">AttPdu</span>::<span class="ident">ReadByGroupReq</span> {
+            <span class="ident">AttPdu::ReadByGroupReq</span> {
                 <span class="ident">handle_range</span>,
                 <span class="ident">group_type</span>,
             } <span class="op">=</span><span class="op">&gt;</span> {
@@ -615,8 +615,8 @@
 
                 <span class="comment">// Reject if `group_type` is not a grouping attribute</span>
                 <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">attrs</span>.<span class="ident">is_grouping_attr</span>(<span class="kw-2">*</span><span class="ident">group_type</span>) {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">AttError</span>::<span class="ident">new</span>(
-                        <span class="ident">ErrorCode</span>::<span class="ident">UnsupportedGroupType</span>,
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">AttError::new</span>(
+                        <span class="ident">ErrorCode::UnsupportedGroupType</span>,
                         <span class="ident">range</span>.<span class="ident">start</span>(),
                     ));
                 }
@@ -625,8 +625,8 @@
                     <span class="comment">// If no attributes match request, return `AttributeNotFound` error, else send</span>
                     <span class="comment">// response with at least one entry.</span>
 
-                    <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode</span>::<span class="ident">ReadByGroupRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
-                    <span class="kw">let</span> <span class="ident">length</span> <span class="op">=</span> <span class="ident">writer</span>.<span class="ident">split_next_mut</span>().<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)<span class="question-mark">?</span>;
+                    <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode::ReadByGroupRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
+                    <span class="kw">let</span> <span class="ident">length</span> <span class="op">=</span> <span class="ident">writer</span>.<span class="ident">split_next_mut</span>().<span class="ident">ok_or</span>(<span class="ident">Error::Eof</span>)<span class="question-mark">?</span>;
 
                     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">size</span> <span class="op">=</span> <span class="prelude-val">None</span>;
                     <span class="kw">let</span> <span class="ident">att_mtu</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">att_mtu</span>();
@@ -635,7 +635,7 @@
                             <span class="kw">if</span> <span class="ident">attr</span>.<span class="ident">att_type</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">group_type</span>
                                 <span class="op">&amp;&amp;</span> <span class="ident">provider</span>.<span class="ident">attr_access_permissions</span>(<span class="ident">attr</span>.<span class="ident">handle</span>).<span class="ident">is_readable</span>()
                             {
-                                <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">ByGroupAttData</span>::<span class="ident">new</span>(
+                                <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">ByGroupAttData::new</span>(
                                     <span class="ident">att_mtu</span>,
                                     <span class="ident">attr</span>.<span class="ident">handle</span>,
                                     <span class="ident">provider</span>.<span class="ident">group_end</span>(<span class="ident">attr</span>.<span class="ident">handle</span>).<span class="ident">unwrap</span>().<span class="ident">handle</span>,
@@ -655,14 +655,14 @@
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">size</span>) <span class="op">=</span> <span class="ident">size</span> {
                         <span class="comment">// At least one attr</span>
                         <span class="kw-2">*</span><span class="ident">length</span> <span class="op">=</span> <span class="ident">size</span>;
-                        <span class="macro">debug</span><span class="macro">!</span>(
+                        <span class="macro">debug!</span>(
                             <span class="string">&quot;ATT-&gt;ReadByGroupRsp (size={}, left={})&quot;</span>,
                             <span class="ident">size</span>,
                             <span class="ident">writer</span>.<span class="ident">space_left</span>()
                         );
                         <span class="prelude-val">Ok</span>(())
                     } <span class="kw">else</span> {
-                        <span class="prelude-val">Err</span>(<span class="ident">AttError</span>::<span class="ident">attribute_not_found</span>().<span class="ident">into</span>())
+                        <span class="prelude-val">Err</span>(<span class="ident">AttError::attribute_not_found</span>().<span class="ident">into</span>())
                     }
                 });
 
@@ -672,14 +672,14 @@
                 }
             }
 
-            <span class="ident">AttPdu</span>::<span class="ident">ReadReq</span> { <span class="ident">handle</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AttPdu::ReadReq</span> { <span class="ident">handle</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">attrs</span>.<span class="ident">attr_access_permissions</span>(<span class="kw-2">*</span><span class="ident">handle</span>).<span class="ident">is_readable</span>() {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">AttError</span>::<span class="ident">new</span>(<span class="ident">ErrorCode</span>::<span class="ident">ReadNotPermitted</span>, <span class="kw-2">*</span><span class="ident">handle</span>));
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">AttError::new</span>(<span class="ident">ErrorCode::ReadNotPermitted</span>, <span class="kw-2">*</span><span class="ident">handle</span>));
                 }
 
                 <span class="ident">responder</span>
                     .<span class="ident">send_with</span>(<span class="op">|</span><span class="ident">writer</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-                        <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode</span>::<span class="ident">ReadRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
+                        <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode::ReadRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
 
                         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buffer</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="ident">DYNAMIC_READ_BUFFER_SIZE</span>];
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">data_len</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">attrs</span>.<span class="ident">read_attr_dynamic</span>(<span class="kw-2">*</span><span class="ident">handle</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buffer</span>) {
@@ -687,7 +687,7 @@
                             <span class="ident">writer</span>.<span class="ident">write_slice_truncate</span>(<span class="ident">value</span>);
                         } <span class="kw">else</span> {
                             <span class="self">self</span>.<span class="ident">attrs</span>.<span class="ident">for_attrs_in_range</span>(
-                                <span class="ident">HandleRange</span>::<span class="ident">new</span>(<span class="kw-2">*</span><span class="ident">handle</span>, <span class="kw-2">*</span><span class="ident">handle</span>),
+                                <span class="ident">HandleRange::new</span>(<span class="kw-2">*</span><span class="ident">handle</span>, <span class="kw-2">*</span><span class="ident">handle</span>),
                                 <span class="op">|</span><span class="ident">_provider</span>, <span class="ident">attr</span><span class="op">|</span> {
                                     <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">attr</span>.<span class="ident">value</span>.<span class="ident">as_ref</span>();
                                     <span class="ident">writer</span>.<span class="ident">write_slice_truncate</span>(<span class="ident">value</span>);
@@ -703,14 +703,14 @@
                 <span class="prelude-val">Ok</span>(())
             }
 
-            <span class="ident">AttPdu</span>::<span class="ident">ReadBlobReq</span> { <span class="ident">handle</span>, <span class="ident">offset</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AttPdu::ReadBlobReq</span> { <span class="ident">handle</span>, <span class="ident">offset</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">attrs</span>.<span class="ident">attr_access_permissions</span>(<span class="kw-2">*</span><span class="ident">handle</span>).<span class="ident">is_readable</span>() {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">AttError</span>::<span class="ident">new</span>(<span class="ident">ErrorCode</span>::<span class="ident">ReadNotPermitted</span>, <span class="kw-2">*</span><span class="ident">handle</span>));
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">AttError::new</span>(<span class="ident">ErrorCode::ReadNotPermitted</span>, <span class="kw-2">*</span><span class="ident">handle</span>));
                 }
 
                 <span class="ident">responder</span>
                     .<span class="ident">send_with</span>(<span class="op">|</span><span class="ident">writer</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-                        <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode</span>::<span class="ident">ReadBlobRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
+                        <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode::ReadBlobRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
 
                         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buffer</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="ident">DYNAMIC_READ_BUFFER_SIZE</span>];
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">data_len</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">attrs</span>.<span class="ident">read_attr_dynamic</span>(<span class="kw-2">*</span><span class="ident">handle</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buffer</span>) {
@@ -723,7 +723,7 @@
                             <span class="ident">writer</span>.<span class="ident">write_slice_truncate</span>(<span class="ident">value</span>);
                         } <span class="kw">else</span> {
                             <span class="self">self</span>.<span class="ident">attrs</span>.<span class="ident">for_attrs_in_range</span>(
-                                <span class="ident">HandleRange</span>::<span class="ident">new</span>(<span class="kw-2">*</span><span class="ident">handle</span>, <span class="kw-2">*</span><span class="ident">handle</span>),
+                                <span class="ident">HandleRange::new</span>(<span class="kw-2">*</span><span class="ident">handle</span>, <span class="kw-2">*</span><span class="ident">handle</span>),
                                 <span class="op">|</span><span class="ident">_provider</span>, <span class="ident">attr</span><span class="op">|</span> {
                                     <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="ident">attr</span>.<span class="ident">value</span>.<span class="ident">as_ref</span>();
                                     <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">offset</span> <span class="kw">as</span> <span class="ident">usize</span>;
@@ -743,44 +743,44 @@
                 <span class="prelude-val">Ok</span>(())
             }
 
-            <span class="ident">AttPdu</span>::<span class="ident">WriteReq</span> { <span class="ident">value</span>, <span class="ident">handle</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AttPdu::WriteReq</span> { <span class="ident">value</span>, <span class="ident">handle</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="self">self</span>.<span class="ident">attrs</span>.<span class="ident">attr_access_permissions</span>(<span class="kw-2">*</span><span class="ident">handle</span>).<span class="ident">is_writeable</span>() {
                     <span class="self">self</span>.<span class="ident">attrs</span>
                         .<span class="ident">write_attr</span>(<span class="kw-2">*</span><span class="ident">handle</span>, <span class="ident">value</span>.<span class="ident">as_ref</span>())
                         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
                             <span class="comment">// Convert rubble::Error to AttError</span>
-                            <span class="ident">AttError</span>::<span class="ident">new</span>(
+                            <span class="ident">AttError::new</span>(
                                 <span class="kw">match</span> <span class="ident">err</span> {
-                                    <span class="ident">Error</span>::<span class="ident">InvalidLength</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode</span>::<span class="ident">InvalidAttributeValueLength</span>,
-                                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode</span>::<span class="ident">UnlikelyError</span>,
+                                    <span class="ident">Error::InvalidLength</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode::InvalidAttributeValueLength</span>,
+                                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode::UnlikelyError</span>,
                                 },
                                 <span class="kw-2">*</span><span class="ident">handle</span>,
                             )
                         })<span class="question-mark">?</span>;
                     <span class="ident">responder</span>
                         .<span class="ident">send_with</span>(<span class="op">|</span><span class="ident">writer</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-                            <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode</span>::<span class="ident">WriteRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
+                            <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode::WriteRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
                             <span class="prelude-val">Ok</span>(())
                         })
-                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;error while handling write request: {:?}&quot;</span>, <span class="ident">err</span>))
+                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">error!</span>(<span class="string">&quot;error while handling write request: {:?}&quot;</span>, <span class="ident">err</span>))
                         .<span class="ident">ok</span>();
                     <span class="prelude-val">Ok</span>(())
                 } <span class="kw">else</span> {
-                    <span class="prelude-val">Err</span>(<span class="ident">AttError</span>::<span class="ident">new</span>(<span class="ident">ErrorCode</span>::<span class="ident">WriteNotPermitted</span>, <span class="kw-2">*</span><span class="ident">handle</span>))
+                    <span class="prelude-val">Err</span>(<span class="ident">AttError::new</span>(<span class="ident">ErrorCode::WriteNotPermitted</span>, <span class="kw-2">*</span><span class="ident">handle</span>))
                 }
             }
-            <span class="ident">AttPdu</span>::<span class="ident">WriteCommand</span> { <span class="ident">handle</span>, <span class="ident">value</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AttPdu::WriteCommand</span> { <span class="ident">handle</span>, <span class="ident">value</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="comment">// WriteCommand shouldn&#39;t respond to the client even on failure</span>
                 <span class="kw">if</span> <span class="self">self</span>.<span class="ident">attrs</span>.<span class="ident">attr_access_permissions</span>(<span class="kw-2">*</span><span class="ident">handle</span>).<span class="ident">is_writeable</span>() {
                     <span class="self">self</span>.<span class="ident">attrs</span>
                         .<span class="ident">write_attr</span>(<span class="kw-2">*</span><span class="ident">handle</span>, <span class="ident">value</span>.<span class="ident">as_ref</span>())
-                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;error while handling write command: {:?}&quot;</span>, <span class="ident">err</span>))
+                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">error!</span>(<span class="string">&quot;error while handling write command: {:?}&quot;</span>, <span class="ident">err</span>))
                         .<span class="ident">ok</span>();
                 }
                 <span class="prelude-val">Ok</span>(())
             }
 
-            <span class="ident">AttPdu</span>::<span class="ident">PrepareWriteReq</span> {
+            <span class="ident">AttPdu::PrepareWriteReq</span> {
                 <span class="ident">handle</span>,
                 <span class="ident">offset</span>,
                 <span class="ident">value</span>,
@@ -790,97 +790,97 @@
                         .<span class="ident">prepare_write_attr</span>(<span class="kw-2">*</span><span class="ident">handle</span>, <span class="kw-2">*</span><span class="ident">offset</span>, <span class="ident">value</span>.<span class="ident">as_ref</span>())
                         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
                             <span class="comment">// Convert rubble::Error to AttError</span>
-                            <span class="ident">AttError</span>::<span class="ident">new</span>(
+                            <span class="ident">AttError::new</span>(
                                 <span class="kw">match</span> <span class="ident">err</span> {
-                                    <span class="ident">Error</span>::<span class="ident">InvalidLength</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode</span>::<span class="ident">InvalidAttributeValueLength</span>,
-                                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode</span>::<span class="ident">UnlikelyError</span>,
+                                    <span class="ident">Error::InvalidLength</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode::InvalidAttributeValueLength</span>,
+                                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode::UnlikelyError</span>,
                                 },
                                 <span class="kw-2">*</span><span class="ident">handle</span>,
                             )
                         })<span class="question-mark">?</span>;
                     <span class="ident">responder</span>
                         .<span class="ident">send_with</span>(<span class="op">|</span><span class="ident">writer</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-                            <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode</span>::<span class="ident">PrepareWriteRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
+                            <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode::PrepareWriteRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
                             <span class="ident">writer</span>.<span class="ident">write_u16_le</span>(<span class="ident">handle</span>.<span class="ident">as_u16</span>())<span class="question-mark">?</span>;
                             <span class="ident">writer</span>.<span class="ident">write_u16_le</span>(<span class="kw-2">*</span><span class="ident">offset</span>)<span class="question-mark">?</span>;
                             <span class="ident">writer</span>.<span class="ident">write_slice</span>(<span class="ident">value</span>.<span class="ident">as_ref</span>())<span class="question-mark">?</span>;
                             <span class="prelude-val">Ok</span>(())
                         })
-                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;error while handling write request: {:?}&quot;</span>, <span class="ident">err</span>))
+                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">error!</span>(<span class="string">&quot;error while handling write request: {:?}&quot;</span>, <span class="ident">err</span>))
                         .<span class="ident">ok</span>();
                     <span class="prelude-val">Ok</span>(())
                 } <span class="kw">else</span> {
-                    <span class="prelude-val">Err</span>(<span class="ident">AttError</span>::<span class="ident">new</span>(<span class="ident">ErrorCode</span>::<span class="ident">WriteNotPermitted</span>, <span class="kw-2">*</span><span class="ident">handle</span>))
+                    <span class="prelude-val">Err</span>(<span class="ident">AttError::new</span>(<span class="ident">ErrorCode::WriteNotPermitted</span>, <span class="kw-2">*</span><span class="ident">handle</span>))
                 }
             }
 
-            <span class="ident">AttPdu</span>::<span class="ident">ExecuteWriteReq</span> { <span class="ident">flags</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AttPdu::ExecuteWriteReq</span> { <span class="ident">flags</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">attrs</span>.<span class="ident">execute_write_attr</span>(<span class="kw-2">*</span><span class="ident">flags</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
                     <span class="comment">// Convert rubble::Error to AttError</span>
-                    <span class="ident">AttError</span>::<span class="ident">new</span>(
+                    <span class="ident">AttError::new</span>(
                         <span class="kw">match</span> <span class="ident">err</span> {
-                            <span class="ident">Error</span>::<span class="ident">InvalidLength</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode</span>::<span class="ident">InvalidAttributeValueLength</span>,
-                            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode</span>::<span class="ident">UnlikelyError</span>,
+                            <span class="ident">Error::InvalidLength</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode::InvalidAttributeValueLength</span>,
+                            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode::UnlikelyError</span>,
                         },
-                        <span class="ident">Handle</span>::<span class="ident">NULL</span>,
+                        <span class="ident">Handle::NULL</span>,
                     )
                 })<span class="question-mark">?</span>;
                 <span class="ident">responder</span>
                     .<span class="ident">send_with</span>(<span class="op">|</span><span class="ident">writer</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-                        <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode</span>::<span class="ident">ExecuteWriteRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
+                        <span class="ident">writer</span>.<span class="ident">write_u8</span>(<span class="ident">Opcode::ExecuteWriteRsp</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
                         <span class="prelude-val">Ok</span>(())
                     })
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;error while handling write request: {:?}&quot;</span>, <span class="ident">err</span>))
+                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">error!</span>(<span class="string">&quot;error while handling write request: {:?}&quot;</span>, <span class="ident">err</span>))
                     .<span class="ident">ok</span>();
                 <span class="prelude-val">Ok</span>(())
             }
 
-            <span class="ident">AttPdu</span>::<span class="ident">FindInformationReq</span> { <span class="ident">handle_range</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AttPdu::FindInformationReq</span> { <span class="ident">handle_range</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">range</span> <span class="op">=</span> <span class="ident">handle_range</span>.<span class="ident">check</span>()<span class="question-mark">?</span>;
                 <span class="self">self</span>.<span class="ident">attrs</span>
                     .<span class="ident">find_information</span>(<span class="ident">range</span>, <span class="ident">responder</span>)
                     .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
                         <span class="comment">// Convert rubble::Error to AttError</span>
-                        <span class="ident">AttError</span>::<span class="ident">new</span>(
+                        <span class="ident">AttError::new</span>(
                             <span class="kw">match</span> <span class="ident">err</span> {
-                                <span class="ident">Error</span>::<span class="ident">InvalidLength</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode</span>::<span class="ident">InvalidAttributeValueLength</span>,
-                                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode</span>::<span class="ident">UnlikelyError</span>,
+                                <span class="ident">Error::InvalidLength</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode::InvalidAttributeValueLength</span>,
+                                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ErrorCode::UnlikelyError</span>,
                             },
-                            <span class="ident">Handle</span>::<span class="ident">NULL</span>,
+                            <span class="ident">Handle::NULL</span>,
                         )
                     })
             }
 
             <span class="comment">// Responses are always invalid here</span>
-            <span class="ident">AttPdu</span>::<span class="ident">ErrorRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">ExchangeMtuRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">FindInformationRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">FindByTypeValueRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">ReadByTypeRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">ReadRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">ReadBlobRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">ReadMultipleRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">ReadByGroupRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">WriteRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">PrepareWriteRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">ExecuteWriteRsp</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">HandleValueNotification</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">HandleValueIndication</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="prelude-val">Err</span>(<span class="ident">AttError</span>::<span class="ident">new</span>(<span class="ident">ErrorCode</span>::<span class="ident">InvalidPdu</span>, <span class="ident">Handle</span>::<span class="ident">NULL</span>))
+            <span class="ident">AttPdu::ErrorRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::ExchangeMtuRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::FindInformationRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::FindByTypeValueRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::ReadByTypeRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::ReadRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::ReadBlobRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::ReadMultipleRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::ReadByGroupRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::WriteRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::PrepareWriteRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::ExecuteWriteRsp</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::HandleValueNotification</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::HandleValueIndication</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Err</span>(<span class="ident">AttError::new</span>(<span class="ident">ErrorCode::InvalidPdu</span>, <span class="ident">Handle::NULL</span>))
             }
 
             <span class="comment">// Unknown (undecoded) or unimplemented requests and commands</span>
-            <span class="ident">AttPdu</span>::<span class="ident">Unknown</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">FindByTypeValueReq</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">ReadMultipleReq</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">SignedWriteCommand</span> { .. }
-            <span class="op">|</span> <span class="ident">AttPdu</span>::<span class="ident">HandleValueConfirmation</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AttPdu::Unknown</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::FindByTypeValueReq</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::ReadMultipleReq</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::SignedWriteCommand</span> { .. }
+            <span class="op">|</span> <span class="ident">AttPdu::HandleValueConfirmation</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="ident">msg</span>.<span class="ident">opcode</span>().<span class="ident">is_command</span>() {
                     <span class="comment">// According to the spec, unknown Command PDUs should be ignored</span>
                     <span class="prelude-val">Ok</span>(())
                 } <span class="kw">else</span> {
                     <span class="comment">// Unknown requests are rejected with a `RequestNotSupported` error</span>
-                    <span class="prelude-val">Err</span>(<span class="ident">AttError</span>::<span class="ident">new</span>(<span class="ident">ErrorCode</span>::<span class="ident">RequestNotSupported</span>, <span class="ident">Handle</span>::<span class="ident">NULL</span>))
+                    <span class="prelude-val">Err</span>(<span class="ident">AttError::new</span>(<span class="ident">ErrorCode::RequestNotSupported</span>, <span class="ident">Handle::NULL</span>))
                 }
             }
         }
@@ -889,16 +889,16 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">AttributeProvider</span><span class="op">&gt;</span> <span class="ident">ProtocolObj</span> <span class="kw">for</span> <span class="ident">AttributeServer</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">process_message</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">message</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="kw-2">mut</span> <span class="ident">responder</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">pdu</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">AttPdu</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span>::<span class="ident">new</span>(<span class="ident">message</span>))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">pdu</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">AttPdu::from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader::new</span>(<span class="ident">message</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">opcode</span> <span class="op">=</span> <span class="ident">pdu</span>.<span class="ident">opcode</span>();
-        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;ATT&lt;- {:?}&quot;</span>, <span class="ident">pdu</span>);
+        <span class="macro">debug!</span>(<span class="string">&quot;ATT&lt;- {:?}&quot;</span>, <span class="ident">pdu</span>);
 
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">process_request</span>(<span class="ident">pdu</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">responder</span>) {
             <span class="prelude-val">Ok</span>(()) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
             <span class="prelude-val">Err</span>(<span class="ident">att_error</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;ATT-&gt; {:?}&quot;</span>, <span class="ident">att_error</span>);
+                <span class="macro">debug!</span>(<span class="string">&quot;ATT-&gt; {:?}&quot;</span>, <span class="ident">att_error</span>);
 
-                <span class="ident">responder</span>.<span class="ident">send</span>(<span class="ident">AttPdu</span>::<span class="ident">ErrorRsp</span> {
+                <span class="ident">responder</span>.<span class="ident">send</span>(<span class="ident">AttPdu::ErrorRsp</span> {
                     <span class="ident">opcode</span>,
                     <span class="ident">handle</span>: <span class="ident">att_error</span>.<span class="ident">handle</span>(),
                     <span class="ident">error_code</span>: <span class="ident">att_error</span>.<span class="ident">error_code</span>(),
@@ -937,7 +937,7 @@
         <span class="comment">// `sender`, and is consumed by this method. `AttPdu`s encoder will truncate `value` to fit</span>
         <span class="comment">// and doesn&#39;t error.</span>
         <span class="self">self</span>.<span class="ident">sender</span>
-            .<span class="ident">send</span>(<span class="ident">AttPdu</span>::<span class="ident">HandleValueNotification</span> {
+            .<span class="ident">send</span>(<span class="ident">AttPdu::HandleValueNotification</span> {
                 <span class="ident">handle</span>,
                 <span class="ident">value</span>: <span class="ident">HexSlice</span>(<span class="ident">value</span>),
             })
@@ -945,4 +945,5 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "rubble";</script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="rubble" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>

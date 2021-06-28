@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/uuid.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>uuid.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/uuid.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>uuid.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -285,7 +285,7 @@
 <span class="doccomment">//! `1234ABCD-0000-1000-8000-00805F9B34FB`.</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">Error</span>};
-<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">fmt</span>;
+<span class="kw">use</span> <span class="ident">core::fmt</span>;
 
 <span class="comment">// FIXME this could be more readable</span>
 <span class="kw">const</span> <span class="ident">BASE_UUID</span>: [<span class="ident">u8</span>; <span class="number">16</span>] <span class="op">=</span> [
@@ -336,7 +336,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">index</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">16</span>];
 
-        <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">eat_byte</span> {
+        <span class="macro">macro_rules!</span> <span class="ident">eat_byte</span> {
             (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">s</span>:<span class="ident">ident</span>[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">i</span>:<span class="ident">ident</span>..]) <span class="op">=</span><span class="op">&gt;</span> {{
                 <span class="kw">let</span> <span class="ident">hi</span> <span class="op">=</span> <span class="ident">parse_nibble</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">s</span>.<span class="ident">as_bytes</span>()[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">i</span>]);
                 <span class="macro-nonterminal">$</span><span class="macro-nonterminal">i</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
@@ -346,7 +346,7 @@
             }};
         }
 
-        <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">eat_dash</span> {
+        <span class="macro">macro_rules!</span> <span class="ident">eat_dash</span> {
             (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">s</span>:<span class="ident">ident</span>[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">i</span>:<span class="ident">ident</span>..]) <span class="op">=</span><span class="op">&gt;</span> {{
                 <span class="kw">match</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">s</span>.<span class="ident">as_bytes</span>()[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">i</span>] {
                     <span class="string">b&#39;-&#39;</span> <span class="op">=</span><span class="op">&gt;</span> {}
@@ -356,26 +356,26 @@
             }};
         }
 
-        <span class="ident">bytes</span>[<span class="number">0</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">1</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">2</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">3</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="macro">eat_dash</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">4</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">5</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="macro">eat_dash</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">6</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">7</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="macro">eat_dash</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">8</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">9</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="macro">eat_dash</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">10</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">11</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">12</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">13</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">14</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
-        <span class="ident">bytes</span>[<span class="number">15</span>] <span class="op">=</span> <span class="macro">eat_byte</span><span class="macro">!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">0</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">1</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">2</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">3</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="macro">eat_dash!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">4</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">5</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="macro">eat_dash!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">6</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">7</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="macro">eat_dash!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">8</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">9</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="macro">eat_dash!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">10</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">11</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">12</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">13</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">14</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
+        <span class="ident">bytes</span>[<span class="number">15</span>] <span class="op">=</span> <span class="macro">eat_byte!</span>(<span class="ident">s</span>[<span class="ident">index</span>..]);
 
         <span class="comment">// String must end here.</span>
         <span class="kw">if</span> <span class="ident">s</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">index</span> {
@@ -394,7 +394,7 @@
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Uuid16</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">uuid</span>: <span class="ident">Uuid16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">Uuid32</span>::<span class="ident">from</span>(<span class="ident">uuid</span>).<span class="ident">into</span>()
+        <span class="ident">Uuid32::from</span>(<span class="ident">uuid</span>).<span class="ident">into</span>()
     }
 }
 
@@ -427,14 +427,14 @@
 <span class="kw">impl</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Uuid16</span> {
     <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">read_array</span>()<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">Uuid16</span>(<span class="ident">u16</span>::<span class="ident">from_le_bytes</span>(<span class="ident">array</span>)))
+        <span class="prelude-val">Ok</span>(<span class="ident">Uuid16</span>(<span class="ident">u16::from_le_bytes</span>(<span class="ident">array</span>)))
     }
 }
 
 <span class="kw">impl</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Uuid32</span> {
     <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">array</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">read_array</span>()<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">Uuid32</span>(<span class="ident">u32</span>::<span class="ident">from_le_bytes</span>(<span class="ident">array</span>)))
+        <span class="prelude-val">Ok</span>(<span class="ident">Uuid32</span>(<span class="ident">u32::from_le_bytes</span>(<span class="ident">array</span>)))
     }
 }
 
@@ -445,28 +445,28 @@
     }
 }
 
-<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Uuid16</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
-        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Uuid16({:04x})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>)
+<span class="kw">impl</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">Uuid16</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+        <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;Uuid16({:04x})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>)
     }
 }
 
-<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Uuid32</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
-        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Uuid32({:08x})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>)
+<span class="kw">impl</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">Uuid32</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+        <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;Uuid32({:08x})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>)
     }
 }
 
-<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
-    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">many_single_char_names</span>, <span class="ident">clippy</span>::<span class="ident">just_underscores_and_digits</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+<span class="kw">impl</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::many_single_char_names</span>, <span class="ident">clippy::just_underscores_and_digits</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
         <span class="kw">let</span> [<span class="ident">_0</span>, <span class="ident">_1</span>, <span class="ident">_2</span>, <span class="ident">_3</span>, <span class="ident">_4</span>, <span class="ident">_5</span>, <span class="ident">_6</span>, <span class="ident">_7</span>, <span class="ident">_8</span>, <span class="ident">_9</span>, <span class="ident">_10</span>, <span class="ident">_11</span>, <span class="ident">_12</span>, <span class="ident">_13</span>, <span class="ident">_14</span>, <span class="ident">_15</span>] <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>;
-        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">u32</span>::<span class="ident">from_be_bytes</span>([<span class="ident">_0</span>, <span class="ident">_1</span>, <span class="ident">_2</span>, <span class="ident">_3</span>]);
-        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">u16</span>::<span class="ident">from_be_bytes</span>([<span class="ident">_4</span>, <span class="ident">_5</span>]);
-        <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="ident">u16</span>::<span class="ident">from_be_bytes</span>([<span class="ident">_6</span>, <span class="ident">_7</span>]);
-        <span class="kw">let</span> <span class="ident">d</span> <span class="op">=</span> <span class="ident">u16</span>::<span class="ident">from_be_bytes</span>([<span class="ident">_8</span>, <span class="ident">_9</span>]);
-        <span class="kw">let</span> <span class="ident">e</span> <span class="op">=</span> <span class="ident">u64</span>::<span class="ident">from_be_bytes</span>([<span class="number">0</span>, <span class="number">0</span>, <span class="ident">_10</span>, <span class="ident">_11</span>, <span class="ident">_12</span>, <span class="ident">_13</span>, <span class="ident">_14</span>, <span class="ident">_15</span>]);
-        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:08x}-{:04x}-{:04x}-{:04x}-{:012x}&quot;</span>, <span class="ident">a</span>, <span class="ident">b</span>, <span class="ident">c</span>, <span class="ident">d</span>, <span class="ident">e</span>)
+        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">u32::from_be_bytes</span>([<span class="ident">_0</span>, <span class="ident">_1</span>, <span class="ident">_2</span>, <span class="ident">_3</span>]);
+        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">u16::from_be_bytes</span>([<span class="ident">_4</span>, <span class="ident">_5</span>]);
+        <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="ident">u16::from_be_bytes</span>([<span class="ident">_6</span>, <span class="ident">_7</span>]);
+        <span class="kw">let</span> <span class="ident">d</span> <span class="op">=</span> <span class="ident">u16::from_be_bytes</span>([<span class="ident">_8</span>, <span class="ident">_9</span>]);
+        <span class="kw">let</span> <span class="ident">e</span> <span class="op">=</span> <span class="ident">u64::from_be_bytes</span>([<span class="number">0</span>, <span class="number">0</span>, <span class="ident">_10</span>, <span class="ident">_11</span>, <span class="ident">_12</span>, <span class="ident">_13</span>, <span class="ident">_14</span>, <span class="ident">_15</span>]);
+        <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;{:08x}-{:04x}-{:04x}-{:04x}-{:012x}&quot;</span>, <span class="ident">a</span>, <span class="ident">b</span>, <span class="ident">c</span>, <span class="ident">d</span>, <span class="ident">e</span>)
     }
 }
 
@@ -488,15 +488,15 @@
 }
 
 <span class="kw">impl</span> <span class="ident">IsUuid</span> <span class="kw">for</span> <span class="ident">Uuid16</span> {
-    <span class="kw">const</span> <span class="ident">KIND</span>: <span class="ident">UuidKind</span> <span class="op">=</span> <span class="ident">UuidKind</span>::<span class="ident">Uuid16</span>;
+    <span class="kw">const</span> <span class="ident">KIND</span>: <span class="ident">UuidKind</span> <span class="op">=</span> <span class="ident">UuidKind::Uuid16</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">IsUuid</span> <span class="kw">for</span> <span class="ident">Uuid32</span> {
-    <span class="kw">const</span> <span class="ident">KIND</span>: <span class="ident">UuidKind</span> <span class="op">=</span> <span class="ident">UuidKind</span>::<span class="ident">Uuid32</span>;
+    <span class="kw">const</span> <span class="ident">KIND</span>: <span class="ident">UuidKind</span> <span class="op">=</span> <span class="ident">UuidKind::Uuid32</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">IsUuid</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
-    <span class="kw">const</span> <span class="ident">KIND</span>: <span class="ident">UuidKind</span> <span class="op">=</span> <span class="ident">UuidKind</span>::<span class="ident">Uuid128</span>;
+    <span class="kw">const</span> <span class="ident">KIND</span>: <span class="ident">UuidKind</span> <span class="op">=</span> <span class="ident">UuidKind::Uuid128</span>;
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
@@ -506,13 +506,13 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">fmt</span>() {
         <span class="comment">// Check that all leading 0s are printed.</span>
-        <span class="kw">let</span> <span class="ident">uuid</span> <span class="op">=</span> <span class="ident">Uuid128</span>::<span class="ident">from_bytes</span>([
+        <span class="kw">let</span> <span class="ident">uuid</span> <span class="op">=</span> <span class="ident">Uuid128::from_bytes</span>([
             <span class="number">0x02</span>, <span class="number">0x3e</span>, <span class="number">0x45</span>, <span class="number">0x67</span>, <span class="number">0x08</span>, <span class="number">0x9b</span>, <span class="number">0x02</span>, <span class="number">0xd3</span>, <span class="number">0x04</span>, <span class="number">0x56</span>, <span class="number">0x00</span>, <span class="number">0x66</span>, <span class="number">0x14</span>, <span class="number">0x17</span>,
             <span class="number">0x40</span>, <span class="number">0x00</span>,
         ]);
 
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">uuid</span>),
+        <span class="macro">assert_eq!</span>(
+            <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">uuid</span>),
             <span class="string">&quot;023e4567-089b-02d3-0456-006614174000&quot;</span>
         );
     }
@@ -520,10 +520,10 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">convert</span>() {
         <span class="kw">let</span> <span class="ident">uuid</span> <span class="op">=</span> <span class="number">0xfd6f</span>; <span class="comment">// Apple Inc. / Exposure Notification Service</span>
-        <span class="kw">let</span> <span class="ident">uuid</span> <span class="op">=</span> <span class="ident">Uuid128</span>::<span class="ident">from</span>(<span class="ident">Uuid16</span>(<span class="ident">uuid</span>));
+        <span class="kw">let</span> <span class="ident">uuid</span> <span class="op">=</span> <span class="ident">Uuid128::from</span>(<span class="ident">Uuid16</span>(<span class="ident">uuid</span>));
 
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">uuid</span>),
+        <span class="macro">assert_eq!</span>(
+            <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">uuid</span>),
             <span class="string">&quot;0000fd6f-0000-1000-8000-00805f9b34fb&quot;</span>
         );
     }
@@ -531,8 +531,9 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">parse</span>() {
         <span class="kw">let</span> <span class="ident">uuid</span> <span class="op">=</span> <span class="string">&quot;0000fd6f-0000-1000-8000-00805f9b34fb&quot;</span>;
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">Uuid128</span>::<span class="ident">parse_static</span>(<span class="ident">uuid</span>)), <span class="ident">uuid</span>);
+        <span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">Uuid128::parse_static</span>(<span class="ident">uuid</span>)), <span class="ident">uuid</span>);
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "rubble";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="rubble" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>

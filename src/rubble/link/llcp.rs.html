@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/link/llcp.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>llcp.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/link/llcp.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>llcp.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -479,9 +479,9 @@
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Defines packet structures used by the Link Layer Control Protocol.</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::{<span class="ident">channel_map</span>::<span class="ident">ChannelMap</span>, <span class="ident">comp_id</span>::<span class="ident">CompanyId</span>, <span class="ident">features</span>::<span class="ident">FeatureSet</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">time</span>::<span class="ident">Duration</span>, <span class="ident">utils</span>::<span class="ident">Hex</span>, <span class="ident">Error</span>};
-<span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cmp</span>, <span class="ident">convert</span>::<span class="ident">TryInto</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link</span>::{<span class="ident">channel_map::ChannelMap</span>, <span class="ident">comp_id::CompanyId</span>, <span class="ident">features::FeatureSet</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">time::Duration</span>, <span class="ident">utils::Hex</span>, <span class="ident">Error</span>};
+<span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cmp</span>, <span class="ident">convert::TryInto</span>};
 
 <span class="doccomment">/// A connection parameter update request or response (`LL_CONNECTION_PARAM_REQ`/</span>
 <span class="doccomment">/// `LL_CONNECTION_PARAM_RSP`).</span>
@@ -531,28 +531,28 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This will panic if `min &gt; max`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_conn_interval</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">min</span>: <span class="ident">Duration</span>, <span class="ident">max</span>: <span class="ident">Duration</span>) {
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">min</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">max</span>);
+        <span class="macro">assert!</span>(<span class="ident">min</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">max</span>);
 
         <span class="comment">// Convert and round to units of 1.25 ms.</span>
         <span class="kw">let</span> <span class="ident">max</span> <span class="op">=</span> <span class="ident">max</span>.<span class="ident">as_micros</span>() <span class="op">/</span> <span class="number">1_250</span>;
         <span class="kw">let</span> <span class="ident">min</span> <span class="op">=</span> <span class="ident">min</span>.<span class="ident">as_micros</span>() <span class="op">/</span> <span class="number">1_250</span>;
 
         <span class="comment">// Clamp to valid range of 6..=3200</span>
-        <span class="kw">let</span> <span class="ident">min</span> <span class="op">=</span> <span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">min</span>, <span class="number">6</span>), <span class="number">3200</span>);
-        <span class="kw">let</span> <span class="ident">max</span> <span class="op">=</span> <span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">max</span>, <span class="number">6</span>), <span class="number">3200</span>);
-        <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">min</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">max</span>);
+        <span class="kw">let</span> <span class="ident">min</span> <span class="op">=</span> <span class="ident">cmp::min</span>(<span class="ident">cmp::max</span>(<span class="ident">min</span>, <span class="number">6</span>), <span class="number">3200</span>);
+        <span class="kw">let</span> <span class="ident">max</span> <span class="op">=</span> <span class="ident">cmp::min</span>(<span class="ident">cmp::max</span>(<span class="ident">max</span>, <span class="number">6</span>), <span class="number">3200</span>);
+        <span class="macro">debug_assert!</span>(<span class="ident">min</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">max</span>);
         <span class="self">self</span>.<span class="ident">interval_min</span> <span class="op">=</span> <span class="ident">min</span> <span class="kw">as</span> <span class="ident">u16</span>;
         <span class="self">self</span>.<span class="ident">interval_max</span> <span class="op">=</span> <span class="ident">max</span> <span class="kw">as</span> <span class="ident">u16</span>;
     }
 
     <span class="doccomment">/// Returns the minimum requested connection interval.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">min_conn_interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
-        <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">interval_min</span>) <span class="op">*</span> <span class="number">1_250</span>)
+        <span class="ident">Duration::from_micros</span>(<span class="ident">u32::from</span>(<span class="self">self</span>.<span class="ident">interval_min</span>) <span class="op">*</span> <span class="number">1_250</span>)
     }
 
     <span class="doccomment">/// Returns the maximum requested connection interval.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">max_conn_interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
-        <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">interval_max</span>) <span class="op">*</span> <span class="number">1_250</span>)
+        <span class="ident">Duration::from_micros</span>(<span class="ident">u32::from</span>(<span class="self">self</span>.<span class="ident">interval_max</span>) <span class="op">*</span> <span class="number">1_250</span>)
     }
 
     <span class="doccomment">/// Returns the slave latency in number of connection events.</span>
@@ -562,7 +562,7 @@
 
     <span class="doccomment">/// Returns the supervision timeout.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">supervision_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
-        <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="self">self</span>.<span class="ident">supervision_timeout</span> <span class="op">*</span> <span class="number">10</span>)
+        <span class="ident">Duration::from_millis</span>(<span class="self">self</span>.<span class="ident">supervision_timeout</span> <span class="op">*</span> <span class="number">10</span>)
     }
 }
 
@@ -617,17 +617,17 @@
 <span class="kw">impl</span> <span class="ident">ConnectionUpdateData</span> {
     <span class="doccomment">/// Returns the size of the transmit window for the first PDU of the connection.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">win_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
-        <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">win_size</span>) <span class="op">*</span> <span class="number">1_250</span>)
+        <span class="ident">Duration::from_micros</span>(<span class="ident">u32::from</span>(<span class="self">self</span>.<span class="ident">win_size</span>) <span class="op">*</span> <span class="number">1_250</span>)
     }
 
     <span class="doccomment">/// Returns the offset of the transmit window, as a duration since the `instant`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">win_offset</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
-        <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">win_offset</span>) <span class="op">*</span> <span class="number">1_250</span>)
+        <span class="ident">Duration::from_micros</span>(<span class="ident">u32::from</span>(<span class="self">self</span>.<span class="ident">win_offset</span>) <span class="op">*</span> <span class="number">1_250</span>)
     }
 
     <span class="doccomment">/// Returns the duration between connection events.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
-        <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">interval</span>) <span class="op">*</span> <span class="number">1_250</span>)
+        <span class="ident">Duration::from_micros</span>(<span class="ident">u32::from</span>(<span class="self">self</span>.<span class="ident">interval</span>) <span class="op">*</span> <span class="number">1_250</span>)
     }
 
     <span class="doccomment">/// Returns the slave latency.</span>
@@ -637,7 +637,7 @@
 
     <span class="doccomment">/// Returns the connection supervision timeout (`connSupervisionTimeout`).</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
-        <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="ident">u32</span>::<span class="ident">from</span>(<span class="self">self</span>.<span class="ident">timeout</span>) <span class="op">*</span> <span class="number">10_000</span>)
+        <span class="ident">Duration::from_micros</span>(<span class="ident">u32::from</span>(<span class="self">self</span>.<span class="ident">timeout</span>) <span class="op">*</span> <span class="number">10_000</span>)
     }
 
     <span class="doccomment">/// Returns the instant at which these changes should take effect.</span>
@@ -718,22 +718,22 @@
     <span class="doccomment">/// Returns the opcode of this LL Control PDU.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">opcode</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionUpdateReq</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ChannelMapReq</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">TerminateInd</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">UnknownRsp</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">FeatureReq</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">FeatureRsp</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">VersionInd</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamReq</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionParamReq</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamRsp</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionParamRsp</span>,
-            <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> { <span class="ident">opcode</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">opcode</span>,
+            <span class="ident">ControlPdu::ConnectionUpdateReq</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode::ConnectionUpdateReq</span>,
+            <span class="ident">ControlPdu::ChannelMapReq</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode::ChannelMapReq</span>,
+            <span class="ident">ControlPdu::TerminateInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode::TerminateInd</span>,
+            <span class="ident">ControlPdu::UnknownRsp</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode::UnknownRsp</span>,
+            <span class="ident">ControlPdu::FeatureReq</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode::FeatureReq</span>,
+            <span class="ident">ControlPdu::FeatureRsp</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode::FeatureRsp</span>,
+            <span class="ident">ControlPdu::VersionInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode::VersionInd</span>,
+            <span class="ident">ControlPdu::ConnectionParamReq</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode::ConnectionParamReq</span>,
+            <span class="ident">ControlPdu::ConnectionParamRsp</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlOpcode::ConnectionParamRsp</span>,
+            <span class="ident">ControlPdu::Unknown</span> { <span class="ident">opcode</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">opcode</span>,
         }
     }
 
     <span class="doccomment">/// Returns the encoded size of this LLCPDU, including the opcode byte.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encoded_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
-        <span class="kw">use</span> <span class="self">self</span>::<span class="ident">ControlOpcode</span>::<span class="kw-2">*</span>;
+        <span class="kw">use</span> <span class="self">self</span><span class="ident">::ControlOpcode</span>::<span class="kw-2">*</span>;
 
         <span class="number">1</span> <span class="op">+</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">opcode</span>() {
             <span class="ident">ConnectionUpdateReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span>,
@@ -759,14 +759,14 @@
             <span class="ident">PingRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
             <span class="ident">LengthReq</span> <span class="op">|</span> <span class="ident">LengthRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span> <span class="op">+</span> <span class="number">2</span>,
             <span class="ident">Unknown</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">ControlPdu::Unknown</span> {
                     <span class="ident">ctr_data</span>,
                     <span class="ident">opcode</span>: <span class="kw">_</span>,
                 } <span class="op">=</span> <span class="self">self</span>
                 {
                     <span class="ident">ctr_data</span>.<span class="ident">len</span>().<span class="ident">try_into</span>().<span class="ident">unwrap</span>()
                 } <span class="kw">else</span> {
-                    <span class="macro">unreachable</span><span class="macro">!</span>()
+                    <span class="macro">unreachable!</span>()
                 }
             }
         }
@@ -775,10 +775,10 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">opcode</span> <span class="op">=</span> <span class="ident">ControlOpcode</span>::<span class="ident">from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>);
+        <span class="kw">let</span> <span class="ident">opcode</span> <span class="op">=</span> <span class="ident">ControlOpcode::from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>);
         <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">opcode</span> {
-            <span class="ident">ControlOpcode</span>::<span class="ident">ConnectionUpdateReq</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span>(<span class="ident">ConnectionUpdateData</span> {
+            <span class="ident">ControlOpcode::ConnectionUpdateReq</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">ControlPdu::ConnectionUpdateReq</span>(<span class="ident">ConnectionUpdateData</span> {
                     <span class="ident">win_size</span>: <span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>,
                     <span class="ident">win_offset</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
                     <span class="ident">interval</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
@@ -787,28 +787,28 @@
                     <span class="ident">instant</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
                 })
             }
-            <span class="ident">ControlOpcode</span>::<span class="ident">ChannelMapReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> {
-                <span class="ident">map</span>: <span class="ident">ChannelMap</span>::<span class="ident">from_raw</span>(<span class="ident">bytes</span>.<span class="ident">read_array</span>()<span class="question-mark">?</span>),
+            <span class="ident">ControlOpcode::ChannelMapReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::ChannelMapReq</span> {
+                <span class="ident">map</span>: <span class="ident">ChannelMap::from_raw</span>(<span class="ident">bytes</span>.<span class="ident">read_array</span>()<span class="question-mark">?</span>),
                 <span class="ident">instant</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
             },
-            <span class="ident">ControlOpcode</span>::<span class="ident">TerminateInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> {
+            <span class="ident">ControlOpcode::TerminateInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::TerminateInd</span> {
                 <span class="ident">error_code</span>: <span class="ident">Hex</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
             },
-            <span class="ident">ControlOpcode</span>::<span class="ident">UnknownRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> {
-                <span class="ident">unknown_type</span>: <span class="ident">ControlOpcode</span>::<span class="ident">from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
+            <span class="ident">ControlOpcode::UnknownRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::UnknownRsp</span> {
+                <span class="ident">unknown_type</span>: <span class="ident">ControlOpcode::from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
             },
-            <span class="ident">ControlOpcode</span>::<span class="ident">FeatureReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> {
-                <span class="ident">features_master</span>: <span class="ident">FeatureSet</span>::<span class="ident">from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>,
+            <span class="ident">ControlOpcode::FeatureReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::FeatureReq</span> {
+                <span class="ident">features_master</span>: <span class="ident">FeatureSet::from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>,
             },
-            <span class="ident">ControlOpcode</span>::<span class="ident">FeatureRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> {
-                <span class="ident">features_used</span>: <span class="ident">FeatureSet</span>::<span class="ident">from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>,
+            <span class="ident">ControlOpcode::FeatureRsp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::FeatureRsp</span> {
+                <span class="ident">features_used</span>: <span class="ident">FeatureSet::from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>,
             },
-            <span class="ident">ControlOpcode</span>::<span class="ident">VersionInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> {
-                <span class="ident">vers_nr</span>: <span class="ident">VersionNumber</span>::<span class="ident">from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
-                <span class="ident">comp_id</span>: <span class="ident">CompanyId</span>::<span class="ident">from_raw</span>(<span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>),
+            <span class="ident">ControlOpcode::VersionInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::VersionInd</span> {
+                <span class="ident">vers_nr</span>: <span class="ident">VersionNumber::from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
+                <span class="ident">comp_id</span>: <span class="ident">CompanyId::from_raw</span>(<span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>),
                 <span class="ident">sub_vers_nr</span>: <span class="ident">Hex</span>(<span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>),
             },
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> {
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::Unknown</span> {
                 <span class="ident">opcode</span>,
                 <span class="ident">ctr_data</span>: <span class="ident">bytes</span>.<span class="ident">read_rest</span>(),
             },
@@ -820,7 +820,7 @@
     <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">buffer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="self">self</span>.<span class="ident">opcode</span>().<span class="ident">into</span>())<span class="question-mark">?</span>;
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu::ConnectionUpdateReq</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="ident">data</span>.<span class="ident">win_size</span>)<span class="question-mark">?</span>;
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">data</span>.<span class="ident">win_offset</span>)<span class="question-mark">?</span>;
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">data</span>.<span class="ident">interval</span>)<span class="question-mark">?</span>;
@@ -829,35 +829,35 @@
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">data</span>.<span class="ident">instant</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> { <span class="ident">map</span>, <span class="ident">instant</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu::ChannelMapReq</span> { <span class="ident">map</span>, <span class="ident">instant</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">buffer</span>.<span class="ident">write_slice</span>(<span class="kw-2">&amp;</span><span class="ident">map</span>.<span class="ident">to_raw</span>())<span class="question-mark">?</span>;
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="kw-2">*</span><span class="ident">instant</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> { <span class="ident">error_code</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu::TerminateInd</span> { <span class="ident">error_code</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="ident">error_code</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> { <span class="ident">unknown_type</span> } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="ident">u8</span>::<span class="ident">from</span>(<span class="kw-2">*</span><span class="ident">unknown_type</span>))<span class="question-mark">?</span>;
+            <span class="ident">ControlPdu::UnknownRsp</span> { <span class="ident">unknown_type</span> } <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="ident">u8::from</span>(<span class="kw-2">*</span><span class="ident">unknown_type</span>))<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { <span class="ident">features_master</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">features_master</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
-            <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> { <span class="ident">features_used</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">features_used</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
-            <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> {
+            <span class="ident">ControlPdu::FeatureReq</span> { <span class="ident">features_master</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">features_master</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
+            <span class="ident">ControlPdu::FeatureRsp</span> { <span class="ident">features_used</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">features_used</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
+            <span class="ident">ControlPdu::VersionInd</span> {
                 <span class="ident">vers_nr</span>,
                 <span class="ident">comp_id</span>,
                 <span class="ident">sub_vers_nr</span>,
             } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="ident">u8</span>::<span class="ident">from</span>(<span class="kw-2">*</span><span class="ident">vers_nr</span>))<span class="question-mark">?</span>;
+                <span class="ident">buffer</span>.<span class="ident">write_u8</span>(<span class="ident">u8::from</span>(<span class="kw-2">*</span><span class="ident">vers_nr</span>))<span class="question-mark">?</span>;
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">comp_id</span>.<span class="ident">as_u16</span>())<span class="question-mark">?</span>;
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">sub_vers_nr</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamReq</span>(<span class="ident">data</span>) <span class="op">|</span> <span class="ident">ControlPdu</span>::<span class="ident">ConnectionParamRsp</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu::ConnectionParamReq</span>(<span class="ident">data</span>) <span class="op">|</span> <span class="ident">ControlPdu::ConnectionParamRsp</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">data</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>)
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">Unknown</span> { <span class="ident">ctr_data</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu::Unknown</span> { <span class="ident">ctr_data</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">buffer</span>.<span class="ident">write_slice</span>(<span class="ident">ctr_data</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
@@ -865,7 +865,7 @@
     }
 }
 
-<span class="macro">enum_with_unknown</span><span class="macro">!</span> {
+<span class="macro">enum_with_unknown!</span> {
     <span class="doccomment">/// Enumeration of all known LL Control PDU opcodes (not all of which might be supported).</span>
     <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ControlOpcode</span>(<span class="ident">u8</span>) {
@@ -894,7 +894,7 @@
     }
 }
 
-<span class="macro">enum_with_unknown</span><span class="macro">!</span> {
+<span class="macro">enum_with_unknown!</span> {
     <span class="doccomment">/// Enumeration of all possible `VersNr` for `LL_VERSION_IND` PDUs.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// According to https://www.bluetooth.com/specifications/assigned-numbers/link-layer</span>
@@ -915,7 +915,7 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">update_req_set_conn_interval</span>() {
         <span class="kw">fn</span> <span class="ident">set</span>(<span class="ident">min</span>: <span class="ident">Duration</span>, <span class="ident">max</span>: <span class="ident">Duration</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Duration</span>, <span class="ident">Duration</span>) {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">req</span> <span class="op">=</span> <span class="ident">ConnectionParamRequest</span>::<span class="ident">new</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">req</span> <span class="op">=</span> <span class="ident">ConnectionParamRequest::new</span>();
             <span class="ident">req</span>.<span class="ident">set_conn_interval</span>(<span class="ident">min</span>, <span class="ident">max</span>);
 
             (<span class="ident">req</span>.<span class="ident">min_conn_interval</span>(), <span class="ident">req</span>.<span class="ident">max_conn_interval</span>())
@@ -923,34 +923,35 @@
 
         <span class="kw">fn</span> <span class="ident">same</span>(<span class="ident">min</span>: <span class="ident">Duration</span>, <span class="ident">max</span>: <span class="ident">Duration</span>) {
             <span class="kw">let</span> (<span class="ident">min2</span>, <span class="ident">max2</span>) <span class="op">=</span> <span class="ident">set</span>(<span class="ident">min</span>, <span class="ident">max</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">min2</span>, <span class="ident">min</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">max2</span>, <span class="ident">max</span>);
+            <span class="macro">assert_eq!</span>(<span class="ident">min2</span>, <span class="ident">min</span>);
+            <span class="macro">assert_eq!</span>(<span class="ident">max2</span>, <span class="ident">max</span>);
         }
 
-        <span class="ident">same</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">1</span>), <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">1</span>));
-        <span class="ident">same</span>(<span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">7_500</span>), <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">7_500</span>));
-        <span class="ident">same</span>(<span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">7_500</span>), <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">4</span>));
-        <span class="ident">same</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">4</span>), <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">4</span>));
+        <span class="ident">same</span>(<span class="ident">Duration::from_secs</span>(<span class="number">1</span>), <span class="ident">Duration::from_secs</span>(<span class="number">1</span>));
+        <span class="ident">same</span>(<span class="ident">Duration::from_micros</span>(<span class="number">7_500</span>), <span class="ident">Duration::from_micros</span>(<span class="number">7_500</span>));
+        <span class="ident">same</span>(<span class="ident">Duration::from_micros</span>(<span class="number">7_500</span>), <span class="ident">Duration::from_secs</span>(<span class="number">4</span>));
+        <span class="ident">same</span>(<span class="ident">Duration::from_secs</span>(<span class="number">4</span>), <span class="ident">Duration::from_secs</span>(<span class="number">4</span>));
 
-        <span class="kw">let</span> (<span class="ident">min</span>, <span class="ident">max</span>) <span class="op">=</span> <span class="ident">set</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">8</span>), <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">8</span>));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">min</span>, <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">4</span>));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">max</span>, <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">4</span>));
+        <span class="kw">let</span> (<span class="ident">min</span>, <span class="ident">max</span>) <span class="op">=</span> <span class="ident">set</span>(<span class="ident">Duration::from_secs</span>(<span class="number">8</span>), <span class="ident">Duration::from_secs</span>(<span class="number">8</span>));
+        <span class="macro">assert_eq!</span>(<span class="ident">min</span>, <span class="ident">Duration::from_secs</span>(<span class="number">4</span>));
+        <span class="macro">assert_eq!</span>(<span class="ident">max</span>, <span class="ident">Duration::from_secs</span>(<span class="number">4</span>));
 
-        <span class="kw">let</span> (<span class="ident">min</span>, <span class="ident">max</span>) <span class="op">=</span> <span class="ident">set</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">0</span>), <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">8</span>));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">min</span>, <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">7_500</span>));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">max</span>, <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">4</span>));
+        <span class="kw">let</span> (<span class="ident">min</span>, <span class="ident">max</span>) <span class="op">=</span> <span class="ident">set</span>(<span class="ident">Duration::from_secs</span>(<span class="number">0</span>), <span class="ident">Duration::from_secs</span>(<span class="number">8</span>));
+        <span class="macro">assert_eq!</span>(<span class="ident">min</span>, <span class="ident">Duration::from_micros</span>(<span class="number">7_500</span>));
+        <span class="macro">assert_eq!</span>(<span class="ident">max</span>, <span class="ident">Duration::from_secs</span>(<span class="number">4</span>));
 
-        <span class="kw">let</span> (<span class="ident">min</span>, <span class="ident">max</span>) <span class="op">=</span> <span class="ident">set</span>(<span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">7_501</span>), <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">7_502</span>));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">min</span>, <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">7_500</span>));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">max</span>, <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">7_500</span>));
+        <span class="kw">let</span> (<span class="ident">min</span>, <span class="ident">max</span>) <span class="op">=</span> <span class="ident">set</span>(<span class="ident">Duration::from_micros</span>(<span class="number">7_501</span>), <span class="ident">Duration::from_micros</span>(<span class="number">7_502</span>));
+        <span class="macro">assert_eq!</span>(<span class="ident">min</span>, <span class="ident">Duration::from_micros</span>(<span class="number">7_500</span>));
+        <span class="macro">assert_eq!</span>(<span class="ident">max</span>, <span class="ident">Duration::from_micros</span>(<span class="number">7_500</span>));
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="attribute">#[<span class="ident">should_panic</span>(<span class="ident">expected</span> <span class="op">=</span> <span class="string">&quot;min &lt;= max&quot;</span>)]</span>
     <span class="kw">fn</span> <span class="ident">update_req_set_conn_interval_minmax</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">req</span> <span class="op">=</span> <span class="ident">ConnectionParamRequest</span>::<span class="ident">new</span>();
-        <span class="ident">req</span>.<span class="ident">set_conn_interval</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">8</span>), <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">7</span>));
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">req</span> <span class="op">=</span> <span class="ident">ConnectionParamRequest::new</span>();
+        <span class="ident">req</span>.<span class="ident">set_conn_interval</span>(<span class="ident">Duration::from_secs</span>(<span class="number">8</span>), <span class="ident">Duration::from_secs</span>(<span class="number">7</span>));
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "rubble";</script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="rubble" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>

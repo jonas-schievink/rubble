@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["rubble","rubble_nrf5x"];

@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/bytes.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>bytes.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/bytes.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>bytes.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -573,7 +573,7 @@
 <span class="doccomment">//! [`ByteReader`]: struct.ByteReader.html</span>
 <span class="doccomment">//! [`BytesOr`]: struct.BytesOr.html</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Error</span>;
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::Error</span>;
 <span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cmp</span>, <span class="ident">fmt</span>, <span class="ident">iter</span>, <span class="ident">mem</span>};
 
 <span class="doccomment">/// Reference to a `T`, or to a byte slice that can be decoded as a `T`.</span>
@@ -615,7 +615,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="question-mark">?</span><span class="ident">Sized</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">r</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">BytesOr</span>(<span class="ident">Inner</span>::<span class="ident">Or</span>(<span class="ident">r</span>))
+        <span class="ident">BytesOr</span>(<span class="ident">Inner::Or</span>(<span class="ident">r</span>))
     }
 }
 
@@ -627,8 +627,8 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="question-mark">?</span><span class="ident">Sized</span><span class="op">&gt;</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">Inner</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Inner</span>::<span class="ident">Bytes</span>(<span class="ident">b</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Inner</span>::<span class="ident">Bytes</span>(<span class="ident">b</span>),
-            <span class="ident">Inner</span>::<span class="ident">Or</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Inner</span>::<span class="ident">Or</span>(<span class="ident">t</span>),
+            <span class="ident">Inner::Bytes</span>(<span class="ident">b</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Inner::Bytes</span>(<span class="ident">b</span>),
+            <span class="ident">Inner::Or</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Inner::Or</span>(<span class="ident">t</span>),
         }
     }
 }
@@ -642,14 +642,14 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="question-mark">?</span><span class="ident">Sized</span><span class="op">&gt;</span> <span class="ident">Copy</span> <span class="kw">for</span> <span class="ident">BytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span><span class="op">&gt;</span> {}
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="question-mark">?</span><span class="ident">Sized</span><span class="op">&gt;</span> <span class="ident">Copy</span> <span class="kw">for</span> <span class="ident">Inner</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span><span class="op">&gt;</span> {}
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="op">+</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Copy</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">BytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="ident">fmt::Debug</span> <span class="op">+</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Copy</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">BytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
         <span class="self">self</span>.<span class="ident">read</span>().<span class="ident">fmt</span>(<span class="ident">f</span>)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="op">+</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Copy</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">BytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">T</span>]<span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="ident">fmt::Debug</span> <span class="op">+</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Copy</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">BytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">T</span>]<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
         <span class="ident">f</span>.<span class="ident">debug_list</span>().<span class="ident">entries</span>(<span class="self">self</span>.<span class="ident">iter</span>()).<span class="ident">finish</span>()
     }
 }
@@ -662,7 +662,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`FromBytes`]: trait.FromBytes.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_ref</span>(<span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">BytesOr</span>(<span class="ident">Inner</span>::<span class="ident">Or</span>(<span class="ident">value</span>))
+        <span class="ident">BytesOr</span>(<span class="ident">Inner::Or</span>(<span class="ident">value</span>))
     }
 }
 
@@ -678,10 +678,10 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">raw</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">as_raw_bytes</span>();
-        <span class="ident">T</span>::<span class="ident">from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
+        <span class="ident">T::from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">used</span> <span class="op">=</span> <span class="ident">raw</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="ident">bytes</span>.<span class="ident">bytes_left</span>();
 
-        <span class="prelude-val">Ok</span>(<span class="ident">BytesOr</span>(<span class="ident">Inner</span>::<span class="ident">Bytes</span>(<span class="kw-2">&amp;</span><span class="ident">raw</span>[..<span class="ident">used</span>])))
+        <span class="prelude-val">Ok</span>(<span class="ident">BytesOr</span>(<span class="ident">Inner::Bytes</span>(<span class="kw-2">&amp;</span><span class="ident">raw</span>[..<span class="ident">used</span>])))
     }
 }
 
@@ -699,18 +699,18 @@
     <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">raw</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">as_raw_bytes</span>();
         <span class="kw">while</span> <span class="op">!</span><span class="ident">bytes</span>.<span class="ident">is_empty</span>() {
-            <span class="ident">T</span>::<span class="ident">from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
+            <span class="ident">T::from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
         }
 
-        <span class="prelude-val">Ok</span>(<span class="ident">BytesOr</span>(<span class="ident">Inner</span>::<span class="ident">Bytes</span>(<span class="ident">raw</span>)))
+        <span class="prelude-val">Ok</span>(<span class="ident">BytesOr</span>(<span class="ident">Inner::Bytes</span>(<span class="ident">raw</span>)))
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="ident">ToBytes</span> <span class="op">+</span> <span class="question-mark">?</span><span class="ident">Sized</span><span class="op">&gt;</span> <span class="ident">ToBytes</span> <span class="kw">for</span> <span class="ident">BytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">buffer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteWriter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="number">0</span> {
-            <span class="ident">Inner</span>::<span class="ident">Bytes</span>(<span class="ident">b</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">buffer</span>.<span class="ident">write_slice</span>(<span class="ident">b</span>),
-            <span class="ident">Inner</span>::<span class="ident">Or</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">t</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
+            <span class="ident">Inner::Bytes</span>(<span class="ident">b</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">buffer</span>.<span class="ident">write_slice</span>(<span class="ident">b</span>),
+            <span class="ident">Inner::Or</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">t</span>.<span class="ident">to_bytes</span>(<span class="ident">buffer</span>),
         }
     }
 }
@@ -724,13 +724,13 @@
     <span class="doccomment">/// [`FromBytes`]: trait.FromBytes.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">read</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="number">0</span> {
-            <span class="ident">Inner</span>::<span class="ident">Bytes</span>(<span class="ident">b</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">ByteReader</span>::<span class="ident">new</span>(<span class="ident">b</span>);
-                <span class="kw">let</span> <span class="ident">t</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bytes</span>).<span class="ident">unwrap</span>();
-                <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">bytes</span>.<span class="ident">is_empty</span>());
+            <span class="ident">Inner::Bytes</span>(<span class="ident">b</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">ByteReader::new</span>(<span class="ident">b</span>);
+                <span class="kw">let</span> <span class="ident">t</span> <span class="op">=</span> <span class="ident">T::from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bytes</span>).<span class="ident">unwrap</span>();
+                <span class="macro">assert!</span>(<span class="ident">bytes</span>.<span class="ident">is_empty</span>());
                 <span class="ident">t</span>
             }
-            <span class="ident">Inner</span>::<span class="ident">Or</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">t</span>,
+            <span class="ident">Inner::Or</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">t</span>,
         }
     }
 }
@@ -740,7 +740,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This method exists to mirror its twin implemented for `BytesOr&lt;&#39;a, [T]&gt;`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span> {
-        <span class="ident">iter</span>::<span class="ident">once</span>(<span class="self">self</span>.<span class="ident">read</span>())
+        <span class="ident">iter::once</span>(<span class="self">self</span>.<span class="ident">read</span>())
     }
 }
 
@@ -761,20 +761,20 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>: <span class="ident">Copy</span> <span class="op">+</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">IterBytesOr</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span>;
 
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="ident">::Item</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="number">0</span> {
-            <span class="ident">Inner</span>::<span class="ident">Bytes</span>(<span class="ident">b</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Inner::Bytes</span>(<span class="ident">b</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="ident">b</span>.<span class="ident">is_empty</span>() {
                     <span class="prelude-val">None</span>
                 } <span class="kw">else</span> {
                     <span class="comment">// Read a `T` and overwrite our `b` with the left-over data</span>
-                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">ByteReader</span>::<span class="ident">new</span>(<span class="kw-2">*</span><span class="ident">b</span>);
-                    <span class="kw">let</span> <span class="ident">t</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">reader</span>).<span class="ident">unwrap</span>();
+                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">ByteReader::new</span>(<span class="kw-2">*</span><span class="ident">b</span>);
+                    <span class="kw">let</span> <span class="ident">t</span> <span class="op">=</span> <span class="ident">T::from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">reader</span>).<span class="ident">unwrap</span>();
                     <span class="kw-2">*</span><span class="ident">b</span> <span class="op">=</span> <span class="ident">reader</span>.<span class="ident">into_rest</span>();
                     <span class="prelude-val">Some</span>(<span class="ident">t</span>)
                 }
             }
-            <span class="ident">Inner</span>::<span class="ident">Or</span>(<span class="ident">slice</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Inner::Or</span>(<span class="ident">slice</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> (<span class="ident">first</span>, <span class="ident">rest</span>) <span class="op">=</span> <span class="ident">slice</span>.<span class="ident">split_first</span>()<span class="question-mark">?</span>;
                 <span class="kw-2">*</span><span class="ident">slice</span> <span class="op">=</span> <span class="ident">rest</span>;
                 <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">first</span>)
@@ -815,9 +815,9 @@
     <span class="doccomment">/// they will probably contain garbage data from an earlier use of the underlying buffer.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">skip</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">bytes</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">space_left</span>() <span class="op">&lt;</span> <span class="ident">bytes</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)
+            <span class="prelude-val">Err</span>(<span class="ident">Error::Eof</span>)
         } <span class="kw">else</span> {
-            <span class="kw">let</span> <span class="ident">this</span> <span class="op">=</span> <span class="ident">mem</span>::<span class="ident">replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> []);
+            <span class="kw">let</span> <span class="ident">this</span> <span class="op">=</span> <span class="ident">mem::replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> []);
             <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">this</span>[<span class="ident">bytes</span>..];
             <span class="prelude-val">Ok</span>(())
         }
@@ -834,12 +834,12 @@
     <span class="attribute">#[<span class="ident">must_use</span> <span class="op">=</span> <span class="string">&quot;data from ByteWriter will contain garbage if not used (use skip() if this is intended)&quot;</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">split_off</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">space_left</span>() <span class="op">&lt;</span> <span class="ident">len</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)
+            <span class="prelude-val">Err</span>(<span class="ident">Error::Eof</span>)
         } <span class="kw">else</span> {
-            <span class="kw">let</span> <span class="ident">this</span> <span class="op">=</span> <span class="ident">mem</span>::<span class="ident">replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> []);
+            <span class="kw">let</span> <span class="ident">this</span> <span class="op">=</span> <span class="ident">mem::replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> []);
             <span class="kw">let</span> (<span class="ident">head</span>, <span class="ident">tail</span>) <span class="op">=</span> <span class="ident">this</span>.<span class="ident">split_at_mut</span>(<span class="ident">len</span>);
             <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">tail</span>;
-            <span class="prelude-val">Ok</span>(<span class="ident">ByteWriter</span>::<span class="ident">new</span>(<span class="ident">head</span>))
+            <span class="prelude-val">Ok</span>(<span class="ident">ByteWriter::new</span>(<span class="ident">head</span>))
         }
     }
 
@@ -853,7 +853,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`split_off`]: #method.split_off</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">split_next_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">u8</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">this</span> <span class="op">=</span> <span class="ident">mem</span>::<span class="ident">replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> []);
+        <span class="kw">let</span> <span class="ident">this</span> <span class="op">=</span> <span class="ident">mem::replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> []);
         <span class="comment">// Slight contortion to please the borrow checker:</span>
         <span class="kw">if</span> <span class="ident">this</span>.<span class="ident">is_empty</span>() {
             <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">this</span>;
@@ -876,10 +876,10 @@
     <span class="doccomment">/// case, `self` will not be modified.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_slice</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">space_left</span>() <span class="op">&lt;</span> <span class="ident">other</span>.<span class="ident">len</span>() {
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)
+            <span class="prelude-val">Err</span>(<span class="ident">Error::Eof</span>)
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="number">0</span>[..<span class="ident">other</span>.<span class="ident">len</span>()].<span class="ident">copy_from_slice</span>(<span class="ident">other</span>);
-            <span class="kw">let</span> <span class="ident">this</span> <span class="op">=</span> <span class="ident">mem</span>::<span class="ident">replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> []);
+            <span class="kw">let</span> <span class="ident">this</span> <span class="op">=</span> <span class="ident">mem::replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> []);
             <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">this</span>[<span class="ident">other</span>.<span class="ident">len</span>()..];
             <span class="prelude-val">Ok</span>(())
         }
@@ -889,7 +889,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns the number of bytes written.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_slice_truncate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
-        <span class="kw">let</span> <span class="ident">num</span> <span class="op">=</span> <span class="ident">cmp</span>::<span class="ident">min</span>(<span class="self">self</span>.<span class="ident">space_left</span>(), <span class="ident">other</span>.<span class="ident">len</span>());
+        <span class="kw">let</span> <span class="ident">num</span> <span class="op">=</span> <span class="ident">cmp::min</span>(<span class="self">self</span>.<span class="ident">space_left</span>(), <span class="ident">other</span>.<span class="ident">len</span>());
         <span class="kw">let</span> <span class="ident">other</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">other</span>[..<span class="ident">num</span>];
         <span class="self">self</span>.<span class="ident">write_slice</span>(<span class="ident">other</span>).<span class="ident">unwrap</span>();
         <span class="ident">num</span>
@@ -899,7 +899,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns `Error::Eof` when no space is left.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_u8</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">byte</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">first</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">split_next_mut</span>().<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">first</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">split_next_mut</span>().<span class="ident">ok_or</span>(<span class="ident">Error::Eof</span>)<span class="question-mark">?</span>;
         <span class="kw-2">*</span><span class="ident">first</span> <span class="op">=</span> <span class="ident">byte</span>;
         <span class="prelude-val">Ok</span>(())
     }
@@ -956,7 +956,7 @@
     <span class="doccomment">/// not matter.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">skip</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">bytes</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">bytes_left</span>() <span class="op">&lt;</span> <span class="ident">bytes</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)
+            <span class="prelude-val">Err</span>(<span class="ident">Error::Eof</span>)
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[<span class="ident">bytes</span>..];
             <span class="prelude-val">Ok</span>(())
@@ -974,11 +974,11 @@
     <span class="attribute">#[<span class="ident">must_use</span> <span class="op">=</span> <span class="string">&quot;data from ByteReader will be ignored if not used (use skip() if this is intended)&quot;</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">split_off</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">bytes_left</span>() <span class="op">&lt;</span> <span class="ident">len</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)
+            <span class="prelude-val">Err</span>(<span class="ident">Error::Eof</span>)
         } <span class="kw">else</span> {
             <span class="kw">let</span> (<span class="ident">head</span>, <span class="ident">tail</span>) <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[..<span class="ident">len</span>], <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[<span class="ident">len</span>..]);
             <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">tail</span>;
-            <span class="prelude-val">Ok</span>(<span class="ident">ByteReader</span>::<span class="ident">new</span>(<span class="ident">head</span>))
+            <span class="prelude-val">Ok</span>(<span class="ident">ByteReader::new</span>(<span class="ident">head</span>))
         }
     }
 
@@ -1000,7 +1000,7 @@
     <span class="doccomment">/// be modified.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">read_slice</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>], <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">bytes_left</span>() <span class="op">&lt;</span> <span class="ident">len</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>)
+            <span class="prelude-val">Err</span>(<span class="ident">Error::Eof</span>)
         } <span class="kw">else</span> {
             <span class="kw">let</span> <span class="ident">slice</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[..<span class="ident">len</span>];
             <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[<span class="ident">len</span>..];
@@ -1016,10 +1016,10 @@
     <span class="kw">where</span>
         <span class="ident">S</span>: <span class="ident">Default</span> <span class="op">+</span> <span class="ident">AsMut</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
     {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">S</span>::<span class="ident">default</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">S::default</span>();
         <span class="kw">let</span> <span class="ident">slice</span> <span class="op">=</span> <span class="ident">buf</span>.<span class="ident">as_mut</span>();
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">bytes_left</span>() <span class="op">&lt;</span> <span class="ident">slice</span>.<span class="ident">len</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Eof</span>);
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::Eof</span>);
         }
 
         <span class="ident">slice</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[..<span class="ident">slice</span>.<span class="ident">len</span>()]);
@@ -1044,19 +1044,19 @@
     <span class="doccomment">/// Reads a `u16` from `self`, using Little Endian byte order.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">read_u16_le</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u16</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">arr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_array</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">2</span>]<span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">u16</span>::<span class="ident">from_le_bytes</span>(<span class="ident">arr</span>))
+        <span class="prelude-val">Ok</span>(<span class="ident">u16::from_le_bytes</span>(<span class="ident">arr</span>))
     }
 
     <span class="doccomment">/// Reads a `u32` from `self`, using Little Endian byte order.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">read_u32_le</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">arr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_array</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">u32</span>::<span class="ident">from_le_bytes</span>(<span class="ident">arr</span>))
+        <span class="prelude-val">Ok</span>(<span class="ident">u32::from_le_bytes</span>(<span class="ident">arr</span>))
     }
 
     <span class="doccomment">/// Reads a `u64` from `self`, using Little Endian byte order.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">read_u64_le</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">arr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_array</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">8</span>]<span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">u64</span>::<span class="ident">from_le_bytes</span>(<span class="ident">arr</span>))
+        <span class="prelude-val">Ok</span>(<span class="ident">u64::from_le_bytes</span>(<span class="ident">arr</span>))
     }
 }
 
@@ -1107,4 +1107,5 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "rubble";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="rubble" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>

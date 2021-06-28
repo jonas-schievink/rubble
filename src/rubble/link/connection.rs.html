@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/link/connection.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>connection.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble/src/link/connection.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>connection.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -567,17 +567,17 @@
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Link-Layer connection management and LLCP implementation.</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::<span class="ident">data</span>::{<span class="self">self</span>, <span class="ident">Header</span>, <span class="ident">Llid</span>, <span class="ident">Pdu</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::<span class="ident">llcp</span>::{<span class="ident">ConnectionUpdateData</span>, <span class="ident">ControlPdu</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::<span class="ident">queue</span>::{<span class="ident">Consume</span>, <span class="ident">Consumer</span>, <span class="ident">Producer</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">link</span>::{
-    <span class="ident">advertising</span>::<span class="ident">ConnectRequestData</span>, <span class="ident">channel_map</span>::<span class="ident">ChannelMap</span>, <span class="ident">Cmd</span>, <span class="ident">CompanyId</span>, <span class="ident">FeatureSet</span>,
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::data</span>::{<span class="self">self</span>, <span class="ident">Header</span>, <span class="ident">Llid</span>, <span class="ident">Pdu</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::llcp</span>::{<span class="ident">ConnectionUpdateData</span>, <span class="ident">ControlPdu</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::queue</span>::{<span class="ident">Consume</span>, <span class="ident">Consumer</span>, <span class="ident">Producer</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link</span>::{
+    <span class="ident">advertising::ConnectRequestData</span>, <span class="ident">channel_map::ChannelMap</span>, <span class="ident">Cmd</span>, <span class="ident">CompanyId</span>, <span class="ident">FeatureSet</span>,
     <span class="ident">NextUpdate</span>, <span class="ident">RadioCmd</span>, <span class="ident">SeqNum</span>, <span class="ident">Transmitter</span>,
 };
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>, <span class="ident">Timer</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">utils</span>::{<span class="ident">Hex</span>, <span class="ident">HexSlice</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">config</span>::<span class="kw-2">*</span>, <span class="ident">phy</span>::<span class="ident">DataChannel</span>, <span class="ident">Error</span>, <span class="ident">BLUETOOTH_VERSION</span>};
-<span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">marker</span>::<span class="ident">PhantomData</span>, <span class="ident">num</span>::<span class="ident">Wrapping</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>, <span class="ident">Timer</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::utils</span>::{<span class="ident">Hex</span>, <span class="ident">HexSlice</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">config</span>::<span class="kw-2">*</span>, <span class="ident">phy::DataChannel</span>, <span class="ident">Error</span>, <span class="ident">BLUETOOTH_VERSION</span>};
+<span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">marker::PhantomData</span>, <span class="ident">num::Wrapping</span>};
 
 <span class="doccomment">/// Connection state and parameters.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Connection</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
@@ -608,7 +608,7 @@
     <span class="ident">next_expected_seq_num</span>: <span class="ident">SeqNum</span>,
 
     <span class="doccomment">/// Header of the last transmitted packet, used for retransmission.</span>
-    <span class="ident">last_header</span>: <span class="ident">data</span>::<span class="ident">Header</span>,
+    <span class="ident">last_header</span>: <span class="ident">data::Header</span>,
 
     <span class="doccomment">/// Whether we have ever received a data packet in this connection.</span>
     <span class="ident">received_packet</span>: <span class="ident">bool</span>,
@@ -650,12 +650,12 @@
             <span class="ident">conn_interval</span>: <span class="ident">lldata</span>.<span class="ident">interval</span>(),
             <span class="ident">conn_event_count</span>: <span class="ident">Wrapping</span>(<span class="number">0</span>),
 
-            <span class="ident">unmapped_channel</span>: <span class="ident">DataChannel</span>::<span class="ident">new</span>(<span class="number">0</span>),
-            <span class="ident">channel</span>: <span class="ident">DataChannel</span>::<span class="ident">new</span>(<span class="number">0</span>),
+            <span class="ident">unmapped_channel</span>: <span class="ident">DataChannel::new</span>(<span class="number">0</span>),
+            <span class="ident">channel</span>: <span class="ident">DataChannel::new</span>(<span class="number">0</span>),
 
-            <span class="ident">transmit_seq_num</span>: <span class="ident">SeqNum</span>::<span class="ident">ZERO</span>,
-            <span class="ident">next_expected_seq_num</span>: <span class="ident">SeqNum</span>::<span class="ident">ZERO</span>,
-            <span class="ident">last_header</span>: <span class="ident">Header</span>::<span class="ident">new</span>(<span class="ident">Llid</span>::<span class="ident">DataCont</span>),
+            <span class="ident">transmit_seq_num</span>: <span class="ident">SeqNum::ZERO</span>,
+            <span class="ident">next_expected_seq_num</span>: <span class="ident">SeqNum::ZERO</span>,
+            <span class="ident">last_header</span>: <span class="ident">Header::new</span>(<span class="ident">Llid::DataCont</span>),
             <span class="ident">received_packet</span>: <span class="bool-val">false</span>,
 
             <span class="ident">tx</span>,
@@ -669,10 +669,10 @@
         <span class="ident">this</span>.<span class="ident">hop_channel</span>();
 
         <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="ident">Cmd</span> {
-            <span class="ident">next_update</span>: <span class="ident">NextUpdate</span>::<span class="ident">At</span>(
-                <span class="ident">rx_end</span> <span class="op">+</span> <span class="ident">lldata</span>.<span class="ident">end_of_tx_window</span>() <span class="op">+</span> <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">500</span>),
+            <span class="ident">next_update</span>: <span class="ident">NextUpdate::At</span>(
+                <span class="ident">rx_end</span> <span class="op">+</span> <span class="ident">lldata</span>.<span class="ident">end_of_tx_window</span>() <span class="op">+</span> <span class="ident">Duration::from_micros</span>(<span class="number">500</span>),
             ),
-            <span class="ident">radio</span>: <span class="ident">RadioCmd</span>::<span class="ident">ListenData</span> {
+            <span class="ident">radio</span>: <span class="ident">RadioCmd::ListenData</span> {
                 <span class="ident">channel</span>: <span class="ident">this</span>.<span class="ident">channel</span>,
                 <span class="ident">access_address</span>: <span class="ident">this</span>.<span class="ident">access_address</span>,
                 <span class="ident">crc_init</span>: <span class="ident">this</span>.<span class="ident">crc_init</span>,
@@ -690,8 +690,8 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">process_data_packet</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">rx_end</span>: <span class="ident">Instant</span>,
-        <span class="ident">tx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">C</span>::<span class="ident">Transmitter</span>,
-        <span class="ident">header</span>: <span class="ident">data</span>::<span class="ident">Header</span>,
+        <span class="ident">tx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">C::Transmitter</span>,
+        <span class="ident">header</span>: <span class="ident">data::Header</span>,
         <span class="ident">payload</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
         <span class="ident">crc_ok</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Cmd</span>, ()<span class="op">&gt;</span> {
@@ -704,13 +704,13 @@
         <span class="comment">// acknowledged our last packet (and is now expecting one with an incremented seq. num.).</span>
         <span class="comment">// However, if the CRC is bad, the bit might be flipped, so we cannot assume that the packet</span>
         <span class="comment">// was acknowledged and thus always retransmit.</span>
-        <span class="kw">let</span> <span class="ident">acknowledged</span> <span class="op">=</span> <span class="ident">header</span>.<span class="ident">nesn</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">transmit_seq_num</span> <span class="op">+</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span> <span class="op">&amp;&amp;</span> <span class="ident">crc_ok</span>;
+        <span class="kw">let</span> <span class="ident">acknowledged</span> <span class="op">=</span> <span class="ident">header</span>.<span class="ident">nesn</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">transmit_seq_num</span> <span class="op">+</span> <span class="ident">SeqNum::ONE</span> <span class="op">&amp;&amp;</span> <span class="ident">crc_ok</span>;
 
-        <span class="kw">let</span> <span class="ident">is_empty</span> <span class="op">=</span> <span class="ident">header</span>.<span class="ident">llid</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">Llid</span>::<span class="ident">DataCont</span> <span class="op">&amp;&amp;</span> <span class="ident">payload</span>.<span class="ident">is_empty</span>();
+        <span class="kw">let</span> <span class="ident">is_empty</span> <span class="op">=</span> <span class="ident">header</span>.<span class="ident">llid</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">Llid::DataCont</span> <span class="op">&amp;&amp;</span> <span class="ident">payload</span>.<span class="ident">is_empty</span>();
 
         <span class="kw">if</span> <span class="ident">acknowledged</span> {
             <span class="self">self</span>.<span class="ident">received_packet</span> <span class="op">=</span> <span class="bool-val">true</span>;
-            <span class="self">self</span>.<span class="ident">transmit_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
+            <span class="self">self</span>.<span class="ident">transmit_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum::ONE</span>;
         }
 
         <span class="comment">// Whether we&#39;ve already sent a response packet.</span>
@@ -721,12 +721,12 @@
         <span class="kw">if</span> <span class="ident">is_new</span> {
             <span class="kw">if</span> <span class="ident">is_empty</span> {
                 <span class="comment">// Always acknowledge empty packets, no need to process them</span>
-                <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">header</span>.<span class="ident">llid</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">Llid</span>::<span class="ident">Control</span> {
+                <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum::ONE</span>;
+            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">header</span>.<span class="ident">llid</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">Llid::Control</span> {
                 <span class="comment">// LLCP message, try to process it immediately. Certain LLCPDUs might be put in the</span>
                 <span class="comment">// channel instead and answered by the non-real-time part.</span>
 
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">pdu</span>) <span class="op">=</span> <span class="ident">ControlPdu</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span>::<span class="ident">new</span>(<span class="ident">payload</span>)) {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">pdu</span>) <span class="op">=</span> <span class="ident">ControlPdu::from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader::new</span>(<span class="ident">payload</span>)) {
                     <span class="comment">// Some LLCPDUs don&#39;t need a response, those can always be processed and</span>
                     <span class="comment">// ACKed. For those that do, the other device must have ACKed the last</span>
                     <span class="comment">// packet we sent, because we&#39;ll directly use the radio&#39;s TX buffer to send</span>
@@ -734,32 +734,32 @@
 
                     <span class="kw">match</span> <span class="self">self</span>.<span class="ident">process_control_pdu</span>(<span class="ident">pdu</span>, <span class="ident">acknowledged</span>) {
                         <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">response</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-                            <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
+                            <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum::ONE</span>;
 
-                            <span class="kw">let</span> <span class="ident">rsp</span> <span class="op">=</span> <span class="ident">Pdu</span>::<span class="ident">from</span>(<span class="kw-2">&amp;</span><span class="ident">response</span>);
-                            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload_writer</span> <span class="op">=</span> <span class="ident">ByteWriter</span>::<span class="ident">new</span>(<span class="ident">tx</span>.<span class="ident">tx_payload_buf</span>());
+                            <span class="kw">let</span> <span class="ident">rsp</span> <span class="op">=</span> <span class="ident">Pdu::from</span>(<span class="kw-2">&amp;</span><span class="ident">response</span>);
+                            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload_writer</span> <span class="op">=</span> <span class="ident">ByteWriter::new</span>(<span class="ident">tx</span>.<span class="ident">tx_payload_buf</span>());
                             <span class="kw">let</span> <span class="ident">left</span> <span class="op">=</span> <span class="ident">payload_writer</span>.<span class="ident">space_left</span>();
                             <span class="ident">rsp</span>.<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">payload_writer</span>).<span class="ident">unwrap</span>();
 
-                            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">header</span> <span class="op">=</span> <span class="ident">Header</span>::<span class="ident">new</span>(<span class="ident">Llid</span>::<span class="ident">Control</span>);
+                            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">header</span> <span class="op">=</span> <span class="ident">Header::new</span>(<span class="ident">Llid::Control</span>);
                             <span class="kw">let</span> <span class="ident">pl_len</span> <span class="op">=</span> (<span class="ident">left</span> <span class="op">-</span> <span class="ident">payload_writer</span>.<span class="ident">space_left</span>()) <span class="kw">as</span> <span class="ident">u8</span>;
                             <span class="ident">header</span>.<span class="ident">set_payload_length</span>(<span class="ident">pl_len</span>);
                             <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">header</span>, <span class="ident">tx</span>);
                             <span class="ident">responded</span> <span class="op">=</span> <span class="bool-val">true</span>;
 
-                            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;LLCP&lt;- {:?}&quot;</span>, <span class="ident">pdu</span>);
-                            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;LLCP-&gt; {:?}&quot;</span>, <span class="ident">response</span>);
+                            <span class="macro">info!</span>(<span class="string">&quot;LLCP&lt;- {:?}&quot;</span>, <span class="ident">pdu</span>);
+                            <span class="macro">info!</span>(<span class="string">&quot;LLCP-&gt; {:?}&quot;</span>, <span class="ident">response</span>);
                         }
                         <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                            <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
+                            <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum::ONE</span>;
 
-                            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;LLCP&lt;- {:?}&quot;</span>, <span class="ident">pdu</span>);
-                            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;LLCP-&gt; (no response)&quot;</span>);
+                            <span class="macro">info!</span>(<span class="string">&quot;LLCP&lt;- {:?}&quot;</span>, <span class="ident">pdu</span>);
+                            <span class="macro">info!</span>(<span class="string">&quot;LLCP-&gt; (no response)&quot;</span>);
                         }
-                        <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">ConnectionLost</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="prelude-val">Err</span>(<span class="ident">LlcpError::ConnectionLost</span>) <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="kw">return</span> <span class="prelude-val">Err</span>(());
                         }
-                        <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">NoSpace</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="prelude-val">Err</span>(<span class="ident">LlcpError::NoSpace</span>) <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="comment">// Do not acknowledge the PDU</span>
                         }
                     }
@@ -778,10 +778,10 @@
 
                 <span class="kw">if</span> <span class="ident">result</span>.<span class="ident">is_ok</span>() {
                     <span class="comment">// Acknowledge the packet</span>
-                    <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum</span>::<span class="ident">ONE</span>;
+                    <span class="self">self</span>.<span class="ident">next_expected_seq_num</span> <span class="op">+</span><span class="op">=</span> <span class="ident">SeqNum::ONE</span>;
                     <span class="ident">queued_work</span> <span class="op">=</span> <span class="bool-val">true</span>;
                 } <span class="kw">else</span> {
-                    <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;NACK (no space in rx buffer)&quot;</span>);
+                    <span class="macro">trace!</span>(<span class="string">&quot;NACK (no space in rx buffer)&quot;</span>);
                 }
             }
         }
@@ -791,13 +791,13 @@
                 <span class="comment">// Send a new data packet.</span>
 
                 <span class="comment">// Try to acquire PDU from the tx queue, fall back to an empty PDU.</span>
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload_writer</span> <span class="op">=</span> <span class="ident">ByteWriter</span>::<span class="ident">new</span>(<span class="ident">tx</span>.<span class="ident">tx_payload_buf</span>());
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload_writer</span> <span class="op">=</span> <span class="ident">ByteWriter::new</span>(<span class="ident">tx</span>.<span class="ident">tx_payload_buf</span>());
                 <span class="kw">let</span> <span class="ident">header</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">tx</span>.<span class="ident">consume_raw_with</span>(<span class="op">|</span><span class="ident">header</span>, <span class="ident">pl</span><span class="op">|</span> {
                     <span class="ident">payload_writer</span>.<span class="ident">write_slice</span>(<span class="ident">pl</span>).<span class="ident">expect</span>(<span class="string">&quot;TX buf out of space&quot;</span>);
-                    <span class="ident">Consume</span>::<span class="ident">always</span>(<span class="prelude-val">Ok</span>(<span class="ident">header</span>))
+                    <span class="ident">Consume::always</span>(<span class="prelude-val">Ok</span>(<span class="ident">header</span>))
                 }) {
                     <span class="prelude-val">Ok</span>(<span class="ident">h</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">h</span>,
-                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Header</span>::<span class="ident">new</span>(<span class="ident">Llid</span>::<span class="ident">DataCont</span>),
+                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Header::new</span>(<span class="ident">Llid::DataCont</span>),
                 };
 
                 <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">header</span>, <span class="ident">tx</span>);
@@ -813,17 +813,17 @@
                     <span class="self">self</span>.<span class="ident">last_header</span>,
                     <span class="self">self</span>.<span class="ident">channel</span>,
                 );
-                <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;&lt;&lt;RESENT&gt;&gt;&quot;</span>);
+                <span class="macro">trace!</span>(<span class="string">&quot;&lt;&lt;RESENT&gt;&gt;&quot;</span>);
             } <span class="kw">else</span> {
                 <span class="comment">// We&#39;ve never received (and thus sent) a data packet before, so we can&#39;t</span>
                 <span class="comment">// *re*transmit anything. Send empty PDU instead.</span>
                 <span class="comment">// (this should not really happen, though!)</span>
                 <span class="self">self</span>.<span class="ident">received_packet</span> <span class="op">=</span> <span class="bool-val">true</span>;
 
-                <span class="kw">let</span> <span class="ident">pdu</span> <span class="op">=</span> <span class="ident">Pdu</span>::<span class="ident">empty</span>();
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload_writer</span> <span class="op">=</span> <span class="ident">ByteWriter</span>::<span class="ident">new</span>(<span class="ident">tx</span>.<span class="ident">tx_payload_buf</span>());
+                <span class="kw">let</span> <span class="ident">pdu</span> <span class="op">=</span> <span class="ident">Pdu::empty</span>();
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload_writer</span> <span class="op">=</span> <span class="ident">ByteWriter::new</span>(<span class="ident">tx</span>.<span class="ident">tx_payload_buf</span>());
                 <span class="ident">pdu</span>.<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">payload_writer</span>).<span class="ident">unwrap</span>();
-                <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">Header</span>::<span class="ident">new</span>(<span class="ident">pdu</span>.<span class="ident">llid</span>()), <span class="ident">tx</span>);
+                <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">Header::new</span>(<span class="ident">pdu</span>.<span class="ident">llid</span>()), <span class="ident">tx</span>);
             }
         }
 
@@ -838,7 +838,7 @@
                 <span class="kw">if</span> <span class="ident">update</span>.<span class="ident">instant</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">conn_event_count</span>.<span class="number">0</span> {
                     <span class="comment">// Next conn event will the the first one with these parameters.</span>
                     <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">apply_llcp_update</span>(<span class="ident">update</span>, <span class="ident">rx_end</span>);
-                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;LLCP patch applied: {:?} -&gt; {:?}&quot;</span>, <span class="ident">update</span>, <span class="ident">result</span>);
+                    <span class="macro">info!</span>(<span class="string">&quot;LLCP patch applied: {:?} -&gt; {:?}&quot;</span>, <span class="ident">update</span>, <span class="ident">result</span>);
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">cmd</span>) <span class="op">=</span> <span class="ident">result</span> {
                         <span class="ident">cmd</span>.<span class="ident">queued_work</span> <span class="op">=</span> <span class="ident">queued_work</span>;
                         <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">cmd</span>);
@@ -854,7 +854,7 @@
             <span class="self">self</span>.<span class="ident">hop_channel</span>();
         }
 
-        <span class="macro">trace</span><span class="macro">!</span>(
+        <span class="macro">trace!</span>(
             <span class="string">&quot;#{} DATA({}-&gt;{})&lt;- {}{:?}, {:?}&quot;</span>,
             <span class="self">self</span>.<span class="ident">conn_event_count</span>,
             <span class="ident">last_channel</span>.<span class="ident">index</span>(),
@@ -865,8 +865,8 @@
         );
 
         <span class="prelude-val">Ok</span>(<span class="ident">Cmd</span> {
-            <span class="ident">next_update</span>: <span class="ident">NextUpdate</span>::<span class="ident">At</span>(<span class="ident">rx_end</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">conn_event_timeout</span>()),
-            <span class="ident">radio</span>: <span class="ident">RadioCmd</span>::<span class="ident">ListenData</span> {
+            <span class="ident">next_update</span>: <span class="ident">NextUpdate::At</span>(<span class="ident">rx_end</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">conn_event_timeout</span>()),
+            <span class="ident">radio</span>: <span class="ident">RadioCmd::ListenData</span> {
                 <span class="ident">channel</span>: <span class="self">self</span>.<span class="ident">channel</span>,
                 <span class="ident">access_address</span>: <span class="self">self</span>.<span class="ident">access_address</span>,
                 <span class="ident">crc_init</span>: <span class="self">self</span>.<span class="ident">crc_init</span>,
@@ -881,14 +881,14 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns `Err(())` when the connection is closed or lost. In that case, the Link-Layer will</span>
     <span class="doccomment">/// return to standby state.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">timer_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">timer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">C</span>::<span class="ident">Timer</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Cmd</span>, ()<span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">timer_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">timer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">C::Timer</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Cmd</span>, ()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">received_packet</span> {
             <span class="comment">// No packet from master, skip this connection event and listen on the next channel</span>
 
             <span class="kw">let</span> <span class="ident">last_channel</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">channel</span>;
             <span class="self">self</span>.<span class="ident">hop_channel</span>();
             <span class="self">self</span>.<span class="ident">conn_event_count</span> <span class="op">+</span><span class="op">=</span> <span class="ident">Wrapping</span>(<span class="number">1</span>);
-            <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="macro">trace!</span>(
                 <span class="string">&quot;DATA({}-&gt;{}): missed conn event #{}&quot;</span>,
                 <span class="ident">last_channel</span>.<span class="ident">index</span>(),
                 <span class="self">self</span>.<span class="ident">channel</span>.<span class="ident">index</span>(),
@@ -896,8 +896,8 @@
             );
 
             <span class="prelude-val">Ok</span>(<span class="ident">Cmd</span> {
-                <span class="ident">next_update</span>: <span class="ident">NextUpdate</span>::<span class="ident">At</span>(<span class="ident">timer</span>.<span class="ident">now</span>() <span class="op">+</span> <span class="self">self</span>.<span class="ident">conn_event_timeout</span>()),
-                <span class="ident">radio</span>: <span class="ident">RadioCmd</span>::<span class="ident">ListenData</span> {
+                <span class="ident">next_update</span>: <span class="ident">NextUpdate::At</span>(<span class="ident">timer</span>.<span class="ident">now</span>() <span class="op">+</span> <span class="self">self</span>.<span class="ident">conn_event_timeout</span>()),
+                <span class="ident">radio</span>: <span class="ident">RadioCmd::ListenData</span> {
                     <span class="ident">channel</span>: <span class="self">self</span>.<span class="ident">channel</span>,
                     <span class="ident">access_address</span>: <span class="self">self</span>.<span class="ident">access_address</span>,
                     <span class="ident">crc_init</span>: <span class="self">self</span>.<span class="ident">crc_init</span>,
@@ -912,14 +912,14 @@
             <span class="comment">// (do we also need to hop channels here?)</span>
 
             <span class="self">self</span>.<span class="ident">conn_event_count</span> <span class="op">+</span><span class="op">=</span> <span class="ident">Wrapping</span>(<span class="number">1</span>);
-            <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;missed transmit window&quot;</span>);
+            <span class="macro">trace!</span>(<span class="string">&quot;missed transmit window&quot;</span>);
             <span class="prelude-val">Err</span>(())
         }
     }
 
     <span class="kw">fn</span> <span class="ident">conn_event_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
         <span class="comment">// Time out ~500µs after the anchor point of the next conn event.</span>
-        <span class="self">self</span>.<span class="ident">conn_interval</span> <span class="op">+</span> <span class="ident">Duration</span>::<span class="ident">from_micros</span>(<span class="number">500</span>)
+        <span class="self">self</span>.<span class="ident">conn_interval</span> <span class="op">+</span> <span class="ident">Duration::from_micros</span>(<span class="number">500</span>)
     }
 
     <span class="doccomment">/// Whether we want to send more data during this connection event.</span>
@@ -935,7 +935,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// According to: `4.5.8.2 Channel Selection`.</span>
     <span class="kw">fn</span> <span class="ident">hop_channel</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="ident">unmapped_channel</span> <span class="op">=</span> <span class="ident">DataChannel</span>::<span class="ident">new</span>((<span class="self">self</span>.<span class="ident">unmapped_channel</span>.<span class="ident">index</span>() <span class="op">+</span> <span class="self">self</span>.<span class="ident">hop</span>) <span class="op">%</span> <span class="number">37</span>);
+        <span class="kw">let</span> <span class="ident">unmapped_channel</span> <span class="op">=</span> <span class="ident">DataChannel::new</span>((<span class="self">self</span>.<span class="ident">unmapped_channel</span>.<span class="ident">index</span>() <span class="op">+</span> <span class="self">self</span>.<span class="ident">hop</span>) <span class="op">%</span> <span class="number">37</span>);
 
         <span class="self">self</span>.<span class="ident">unmapped_channel</span> <span class="op">=</span> <span class="ident">unmapped_channel</span>;
         <span class="self">self</span>.<span class="ident">channel</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">channel_map</span>.<span class="ident">is_used</span>(<span class="ident">unmapped_channel</span>) {
@@ -948,7 +948,7 @@
     }
 
     <span class="doccomment">/// Sends a new PDU to the connected device (ie. a non-retransmitted PDU).</span>
-    <span class="kw">fn</span> <span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">header</span>: <span class="ident">Header</span>, <span class="ident">tx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">C</span>::<span class="ident">Transmitter</span>) {
+    <span class="kw">fn</span> <span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">header</span>: <span class="ident">Header</span>, <span class="ident">tx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">C::Transmitter</span>) {
         <span class="ident">header</span>.<span class="ident">set_md</span>(<span class="self">self</span>.<span class="ident">has_more_data</span>());
         <span class="ident">header</span>.<span class="ident">set_nesn</span>(<span class="self">self</span>.<span class="ident">next_expected_seq_num</span>);
         <span class="ident">header</span>.<span class="ident">set_sn</span>(<span class="self">self</span>.<span class="ident">transmit_seq_num</span>);
@@ -956,8 +956,8 @@
 
         <span class="ident">tx</span>.<span class="ident">transmit_data</span>(<span class="self">self</span>.<span class="ident">access_address</span>, <span class="self">self</span>.<span class="ident">crc_init</span>, <span class="ident">header</span>, <span class="self">self</span>.<span class="ident">channel</span>);
 
-        <span class="kw">let</span> <span class="ident">pl</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">tx</span>.<span class="ident">tx_payload_buf</span>()[..<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>())];
-        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;DATA-&gt;{:?}, {:?}&quot;</span>, <span class="ident">header</span>, <span class="ident">HexSlice</span>(<span class="ident">pl</span>));
+        <span class="kw">let</span> <span class="ident">pl</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">tx</span>.<span class="ident">tx_payload_buf</span>()[..<span class="ident">usize::from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>())];
+        <span class="macro">trace!</span>(<span class="string">&quot;DATA-&gt;{:?}, {:?}&quot;</span>, <span class="ident">header</span>, <span class="ident">HexSlice</span>(<span class="ident">pl</span>));
     }
 
     <span class="doccomment">/// Tries to process and acknowledge an LL Control PDU.</span>
@@ -980,37 +980,37 @@
         <span class="ident">can_respond</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">LlcpError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">pdu</span> {
-            <span class="ident">ControlPdu</span>::<span class="ident">ConnectionUpdateReq</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="self">self</span>.<span class="ident">prepare_llcp_update</span>(<span class="ident">LlcpUpdate</span>::<span class="ident">ConnUpdate</span>(<span class="ident">data</span>))<span class="question-mark">?</span>;
+            <span class="ident">ControlPdu::ConnectionUpdateReq</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="self">self</span>.<span class="ident">prepare_llcp_update</span>(<span class="ident">LlcpUpdate::ConnUpdate</span>(<span class="ident">data</span>))<span class="question-mark">?</span>;
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">ChannelMapReq</span> { <span class="ident">map</span>, <span class="ident">instant</span> } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="self">self</span>.<span class="ident">prepare_llcp_update</span>(<span class="ident">LlcpUpdate</span>::<span class="ident">ChannelMap</span> { <span class="ident">map</span>, <span class="ident">instant</span> })<span class="question-mark">?</span>;
+            <span class="ident">ControlPdu::ChannelMapReq</span> { <span class="ident">map</span>, <span class="ident">instant</span> } <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="self">self</span>.<span class="ident">prepare_llcp_update</span>(<span class="ident">LlcpUpdate::ChannelMap</span> { <span class="ident">map</span>, <span class="ident">instant</span> })<span class="question-mark">?</span>;
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">TerminateInd</span> { <span class="ident">error_code</span> } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">info</span><span class="macro">!</span>(
+            <span class="ident">ControlPdu::TerminateInd</span> { <span class="ident">error_code</span> } <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">info!</span>(
                     <span class="string">&quot;closing connection due to termination request: code {:?}&quot;</span>,
                     <span class="ident">error_code</span>
                 );
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">ConnectionLost</span>);
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">LlcpError::ConnectionLost</span>);
             }
-            <span class="ident">ControlPdu</span>::<span class="ident">FeatureReq</span> { <span class="ident">features_master</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">FeatureRsp</span> {
-                <span class="ident">features_used</span>: <span class="ident">features_master</span> <span class="op">&amp;</span> <span class="ident">FeatureSet</span>::<span class="ident">supported</span>(),
+            <span class="ident">ControlPdu::FeatureReq</span> { <span class="ident">features_master</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::FeatureRsp</span> {
+                <span class="ident">features_used</span>: <span class="ident">features_master</span> <span class="op">&amp;</span> <span class="ident">FeatureSet::supported</span>(),
             },
-            <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ControlPdu::VersionInd</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="comment">// FIXME this should be something real, and defined somewhere else</span>
                 <span class="kw">let</span> <span class="ident">comp_id</span> <span class="op">=</span> <span class="number">0xFFFF</span>;
                 <span class="comment">// FIXME this should correlate with the Cargo package version</span>
                 <span class="kw">let</span> <span class="ident">sub_vers_nr</span> <span class="op">=</span> <span class="number">0x0000</span>;
 
-                <span class="ident">ControlPdu</span>::<span class="ident">VersionInd</span> {
+                <span class="ident">ControlPdu::VersionInd</span> {
                     <span class="ident">vers_nr</span>: <span class="ident">BLUETOOTH_VERSION</span>,
-                    <span class="ident">comp_id</span>: <span class="ident">CompanyId</span>::<span class="ident">from_raw</span>(<span class="ident">comp_id</span>),
+                    <span class="ident">comp_id</span>: <span class="ident">CompanyId::from_raw</span>(<span class="ident">comp_id</span>),
                     <span class="ident">sub_vers_nr</span>: <span class="ident">Hex</span>(<span class="ident">sub_vers_nr</span>),
                 }
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu</span>::<span class="ident">UnknownRsp</span> {
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::UnknownRsp</span> {
                 <span class="ident">unknown_type</span>: <span class="ident">pdu</span>.<span class="ident">opcode</span>(),
             },
         };
@@ -1019,7 +1019,7 @@
         <span class="kw">if</span> <span class="ident">can_respond</span> {
             <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">response</span>))
         } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">NoSpace</span>)
+            <span class="prelude-val">Err</span>(<span class="ident">LlcpError::NoSpace</span>)
         }
     }
 
@@ -1028,11 +1028,11 @@
     <span class="kw">fn</span> <span class="ident">prepare_llcp_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">update</span>: <span class="ident">LlcpUpdate</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">LlcpError</span><span class="op">&gt;</span> {
         <span class="comment">// TODO: check that instant is &lt;32767 in the future</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">data</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">update_data</span> {
-            <span class="macro">error</span><span class="macro">!</span>(
+            <span class="macro">error!</span>(
                 <span class="string">&quot;got update data {:?} while update {:?} is already queued&quot;</span>,
                 <span class="ident">update</span>, <span class="ident">data</span>
             );
-            <span class="prelude-val">Err</span>(<span class="ident">LlcpError</span>::<span class="ident">ConnectionLost</span>)
+            <span class="prelude-val">Err</span>(<span class="ident">LlcpError::ConnectionLost</span>)
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="ident">update_data</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">update</span>);
             <span class="prelude-val">Ok</span>(())
@@ -1045,7 +1045,7 @@
     <span class="doccomment">/// method must also perform channel hopping.</span>
     <span class="kw">fn</span> <span class="ident">apply_llcp_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">update</span>: <span class="ident">LlcpUpdate</span>, <span class="ident">rx_end</span>: <span class="ident">Instant</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Cmd</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="ident">update</span> {
-            <span class="ident">LlcpUpdate</span>::<span class="ident">ConnUpdate</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">LlcpUpdate::ConnUpdate</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">old_conn_interval</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">conn_interval</span>;
                 <span class="self">self</span>.<span class="ident">conn_interval</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">interval</span>();
 
@@ -1053,11 +1053,11 @@
 
                 <span class="prelude-val">Some</span>(<span class="ident">Cmd</span> {
                     <span class="comment">// Next update after the tx window ends (= missed it)</span>
-                    <span class="ident">next_update</span>: <span class="ident">NextUpdate</span>::<span class="ident">At</span>(
+                    <span class="ident">next_update</span>: <span class="ident">NextUpdate::At</span>(
                         <span class="ident">rx_end</span> <span class="op">+</span> <span class="ident">old_conn_interval</span> <span class="op">+</span> <span class="ident">data</span>.<span class="ident">win_offset</span>() <span class="op">+</span> <span class="ident">data</span>.<span class="ident">win_size</span>(),
                     ),
                     <span class="comment">// Listen for the transmit window</span>
-                    <span class="ident">radio</span>: <span class="ident">RadioCmd</span>::<span class="ident">ListenData</span> {
+                    <span class="ident">radio</span>: <span class="ident">RadioCmd::ListenData</span> {
                         <span class="ident">channel</span>: <span class="self">self</span>.<span class="ident">channel</span>,
                         <span class="ident">access_address</span>: <span class="self">self</span>.<span class="ident">access_address</span>,
                         <span class="ident">crc_init</span>: <span class="self">self</span>.<span class="ident">crc_init</span>,
@@ -1067,7 +1067,7 @@
                     <span class="ident">queued_work</span>: <span class="bool-val">false</span>,
                 })
             }
-            <span class="ident">LlcpUpdate</span>::<span class="ident">ChannelMap</span> { <span class="ident">map</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">LlcpUpdate::ChannelMap</span> { <span class="ident">map</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">channel_map</span> <span class="op">=</span> <span class="ident">map</span>;
                 <span class="prelude-val">None</span>
             }
@@ -1123,10 +1123,11 @@
     <span class="doccomment">/// Returns the connection event number at which this update should be applied.</span>
     <span class="kw">fn</span> <span class="ident">instant</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">LlcpUpdate</span>::<span class="ident">ConnUpdate</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">data</span>.<span class="ident">instant</span>(),
-            <span class="ident">LlcpUpdate</span>::<span class="ident">ChannelMap</span> { <span class="ident">instant</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">instant</span>,
+            <span class="ident">LlcpUpdate::ConnUpdate</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">data</span>.<span class="ident">instant</span>(),
+            <span class="ident">LlcpUpdate::ChannelMap</span> { <span class="ident">instant</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">instant</span>,
         }
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "rubble";</script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="rubble" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>

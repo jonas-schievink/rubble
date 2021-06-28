@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble-nrf5x/src/timer.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>timer.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble-nrf5x/src/timer.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>timer.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../rubble_nrf5x/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../rubble_nrf5x/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -204,26 +204,26 @@
 <span class="doccomment">//! Generic `Timer` implementation that works with all 3 timers on the chip.</span>
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;51&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf51_hal</span>::<span class="ident">pac</span>;
+<span class="kw">use</span> <span class="ident">nrf51_hal::pac</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52810&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52810_hal</span>::<span class="ident">pac</span>;
+<span class="kw">use</span> <span class="ident">nrf52810_hal::pac</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52811&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52811_hal</span>::<span class="ident">pac</span>;
+<span class="kw">use</span> <span class="ident">nrf52811_hal::pac</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52832&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52832_hal</span>::<span class="ident">pac</span>;
+<span class="kw">use</span> <span class="ident">nrf52832_hal::pac</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52833&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52833_hal</span>::<span class="ident">pac</span>;
+<span class="kw">use</span> <span class="ident">nrf52833_hal::pac</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52840&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52840_hal</span>::<span class="ident">pac</span>;
+<span class="kw">use</span> <span class="ident">nrf52840_hal::pac</span>;
 
-<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">mem</span>;
+<span class="kw">use</span> <span class="ident">core::mem</span>;
 <span class="kw">use</span> <span class="ident">rubble</span>::{
-    <span class="ident">link</span>::<span class="ident">NextUpdate</span>,
+    <span class="ident">link::NextUpdate</span>,
     <span class="ident">time</span>::{<span class="ident">Instant</span>, <span class="ident">Timer</span>},
 };
 
@@ -242,7 +242,7 @@
         <span class="ident">peripheral</span>.<span class="ident">init</span>();
         <span class="self">Self</span> {
             <span class="ident">inner</span>: <span class="ident">peripheral</span>,
-            <span class="ident">next</span>: <span class="ident">Instant</span>::<span class="ident">from_raw_micros</span>(<span class="number">0</span>),
+            <span class="ident">next</span>: <span class="ident">Instant::from_raw_micros</span>(<span class="number">0</span>),
             <span class="ident">interrupt_enabled</span>: <span class="bool-val">false</span>,
         }
     }
@@ -250,7 +250,7 @@
     <span class="doccomment">/// Configures the timer interrupt to fire according to `next`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">configure_interrupt</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">next</span>: <span class="ident">NextUpdate</span>) {
         <span class="kw">match</span> <span class="ident">next</span> {
-            <span class="ident">NextUpdate</span>::<span class="ident">Keep</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">NextUpdate::Keep</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="comment">// Don&#39;t call `set_interrupt` when the interrupt is already configured, since that</span>
                 <span class="comment">// might result in races (it resets the event)</span>
                 <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">interrupt_enabled</span> {
@@ -258,11 +258,11 @@
                     <span class="self">self</span>.<span class="ident">interrupt_enabled</span> <span class="op">=</span> <span class="bool-val">true</span>;
                 }
             }
-            <span class="ident">NextUpdate</span>::<span class="ident">Disable</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">NextUpdate::Disable</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">clear_interrupt</span>();
                 <span class="self">self</span>.<span class="ident">interrupt_enabled</span> <span class="op">=</span> <span class="bool-val">false</span>;
             }
-            <span class="ident">NextUpdate</span>::<span class="ident">At</span>(<span class="ident">instant</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">NextUpdate::At</span>(<span class="ident">instant</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">set_interrupt</span>(<span class="ident">instant</span>);
                 <span class="self">self</span>.<span class="ident">interrupt_enabled</span> <span class="op">=</span> <span class="bool-val">true</span>;
             }
@@ -326,7 +326,7 @@
 <span class="doccomment">/// Extension trait implemented for the nRF timer peripherals.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// We use `CC[0]` to read the counter value, and `CC[1]` to set timer interrupts.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">NrfTimerExt</span>: <span class="ident">sealed</span>::<span class="ident">Sealed</span> {
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">NrfTimerExt</span>: <span class="ident">sealed::Sealed</span> {
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">duplicate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>;
 
     <span class="doccomment">/// Initialize the timer so that it counts at a rate of 1 MHz.</span>
@@ -347,12 +347,12 @@
     <span class="kw">fn</span> <span class="ident">now</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Instant</span>;
 }
 
-<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">impl_timer</span> {
+<span class="macro">macro_rules!</span> <span class="ident">impl_timer</span> {
     ( $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ty</span>),<span class="op">+</span> ) <span class="op">=</span><span class="op">&gt;</span> {
         $(
             <span class="kw">impl</span> <span class="ident">NrfTimerExt</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span> {
                 <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">duplicate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-                    <span class="ident">mem</span>::<span class="ident">transmute_copy</span>(<span class="self">self</span>)
+                    <span class="ident">mem::transmute_copy</span>(<span class="self">self</span>)
                 }
 
                 <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
@@ -386,19 +386,20 @@
                 <span class="kw">fn</span> <span class="ident">now</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Instant</span> {
                     <span class="self">self</span>.<span class="ident">tasks_capture</span>[<span class="number">0</span>].<span class="ident">write</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="kw">unsafe</span> { <span class="ident">w</span>.<span class="ident">bits</span>(<span class="number">1</span>) });
                     <span class="kw">let</span> <span class="ident">micros</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">cc</span>[<span class="number">0</span>].<span class="ident">read</span>().<span class="ident">bits</span>();
-                    <span class="ident">Instant</span>::<span class="ident">from_raw_micros</span>(<span class="ident">micros</span>)
+                    <span class="ident">Instant::from_raw_micros</span>(<span class="ident">micros</span>)
                 }
             }
 
-            <span class="kw">impl</span> <span class="ident">sealed</span>::<span class="ident">Sealed</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span> {}
+            <span class="kw">impl</span> <span class="ident">sealed::Sealed</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span> {}
         )<span class="op">+</span>
     };
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;51&quot;</span>))]</span>
-<span class="macro">impl_timer</span><span class="macro">!</span>(<span class="ident">pac</span>::<span class="ident">TIMER0</span>, <span class="ident">pac</span>::<span class="ident">TIMER1</span>, <span class="ident">pac</span>::<span class="ident">TIMER2</span>);
+<span class="macro">impl_timer!</span>(<span class="ident">pac::TIMER0</span>, <span class="ident">pac::TIMER1</span>, <span class="ident">pac::TIMER2</span>);
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;51&quot;</span>)]</span>
-<span class="macro">impl_timer</span><span class="macro">!</span>(<span class="ident">pac</span>::<span class="ident">TIMER0</span>);
+<span class="macro">impl_timer!</span>(<span class="ident">pac::TIMER0</span>);
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "rubble_nrf5x";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="rubble_nrf5x" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>
