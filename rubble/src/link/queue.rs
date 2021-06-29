@@ -22,8 +22,7 @@
 use crate::link::data::{self, Llid};
 use crate::link::{MIN_DATA_PAYLOAD_BUF, MIN_DATA_PDU_BUF};
 use crate::{bytes::*, Error};
-use heapless::consts::U1;
-use heapless::spsc::{self, MultiCore};
+use heapless::spsc;
 
 /// A splittable SPSC queue for data channel PDUs.
 ///
@@ -218,14 +217,14 @@ impl<T> Consume<T> {
 /// This queue also minimizes RAM usage: In addition to the raw buffer space, only minimal space is
 /// needed for housekeeping.
 pub struct SimpleQueue {
-    inner: spsc::Queue<[u8; MIN_DATA_PDU_BUF], U1, u8, MultiCore>,
+    inner: spsc::Queue<[u8; MIN_DATA_PDU_BUF], 2>,
 }
 
 impl SimpleQueue {
     /// Creates a new, empty queue.
     pub const fn new() -> Self {
         Self {
-            inner: spsc::Queue(heapless::i::Queue::u8()),
+            inner: spsc::Queue::new(),
         }
     }
 }
@@ -243,7 +242,7 @@ impl<'a> PacketQueue for &'a mut SimpleQueue {
 
 /// Producer (writer) half returned by `SimpleQueue::split`.
 pub struct SimpleProducer<'a> {
-    inner: spsc::Producer<'a, [u8; MIN_DATA_PDU_BUF], U1, u8, MultiCore>,
+    inner: spsc::Producer<'a, [u8; MIN_DATA_PDU_BUF], 2>,
 }
 
 impl<'a> Producer for SimpleProducer<'a> {
@@ -284,7 +283,7 @@ impl<'a> Producer for SimpleProducer<'a> {
 
 /// Consumer (reader) half returned by `SimpleQueue::split`.
 pub struct SimpleConsumer<'a> {
-    inner: spsc::Consumer<'a, [u8; MIN_DATA_PDU_BUF], U1, u8, MultiCore>,
+    inner: spsc::Consumer<'a, [u8; MIN_DATA_PDU_BUF], 2>,
 }
 
 impl<'a> Consumer for SimpleConsumer<'a> {
