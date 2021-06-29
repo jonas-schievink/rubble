@@ -13,11 +13,11 @@ edition = "2018"
 [dependencies]
 bitflags = "1.2.1"
 heapless = "0.5.1"
-rand_core = "0.5.1"
+rand_core = "0.6.3"
 sha2 = { version = "0.9.0", default-features = false }
 
 [dependencies.p256]
-version = "0.7.1"
+version = "0.9.0"
 default-features = false
 features = ["arithmetic"]
 
@@ -37,6 +37,6 @@ optional = true
 ring = "0.16.9"
 
 [dev-dependencies.p256]
-version = "0.7.1"
+version = "0.9.0"
 default-features = false
 features = ["arithmetic"]
