@@ -6,11 +6,11 @@ keywords = ["ble", "nrf", "bluetooth", "low", "energy"]
 repository = "https://github.com/jonas-schievink/rubble/"
 license = "0BSD"
 name = "rubble-nrf5x"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2018"
 
 [dependencies]
-rubble = { path = "../rubble", version = "0.0.3", default-features = false }
+rubble = { path = "../rubble", version = "0.0.4", default-features = false }
 nrf51-hal = { version = "0.12", optional = true, default-features = false }
 nrf52810-hal = { version = "0.12", optional = true, default-features = false }
 nrf52811-hal = { version = "0.12", optional = true, default-features = false }
