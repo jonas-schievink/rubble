@@ -461,7 +461,6 @@
 <span id="458">458</span>
 <span id="459">459</span>
 <span id="460">460</span>
-<span id="461">461</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! An SPSC queue for data channel PDUs.</span>
 <span class="doccomment">//!</span>
@@ -487,8 +486,7 @@
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::data</span>::{<span class="self">self</span>, <span class="ident">Llid</span>};
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link</span>::{<span class="ident">MIN_DATA_PAYLOAD_BUF</span>, <span class="ident">MIN_DATA_PDU_BUF</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">Error</span>};
-<span class="kw">use</span> <span class="ident">heapless::consts::U1</span>;
-<span class="kw">use</span> <span class="ident">heapless::spsc</span>::{<span class="self">self</span>, <span class="ident">MultiCore</span>};
+<span class="kw">use</span> <span class="ident">heapless::spsc</span>;
 
 <span class="doccomment">/// A splittable SPSC queue for data channel PDUs.</span>
 <span class="doccomment">///</span>
@@ -683,14 +681,14 @@
 <span class="doccomment">/// This queue also minimizes RAM usage: In addition to the raw buffer space, only minimal space is</span>
 <span class="doccomment">/// needed for housekeeping.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SimpleQueue</span> {
-    <span class="ident">inner</span>: <span class="ident">spsc::Queue</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="ident">U1</span>, <span class="ident">u8</span>, <span class="ident">MultiCore</span><span class="op">&gt;</span>,
+    <span class="ident">inner</span>: <span class="ident">spsc::Queue</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="number">2</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">SimpleQueue</span> {
     <span class="doccomment">/// Creates a new, empty queue.</span>
     <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">inner</span>: <span class="ident">spsc::Queue</span>(<span class="ident">heapless::i::Queue::u8</span>()),
+            <span class="ident">inner</span>: <span class="ident">spsc::Queue::new</span>(),
         }
     }
 }
@@ -708,7 +706,7 @@
 
 <span class="doccomment">/// Producer (writer) half returned by `SimpleQueue::split`.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SimpleProducer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="ident">inner</span>: <span class="ident">spsc::Producer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="ident">U1</span>, <span class="ident">u8</span>, <span class="ident">MultiCore</span><span class="op">&gt;</span>,
+    <span class="ident">inner</span>: <span class="ident">spsc::Producer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="number">2</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Producer</span> <span class="kw">for</span> <span class="ident">SimpleProducer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
@@ -749,7 +747,7 @@
 
 <span class="doccomment">/// Consumer (reader) half returned by `SimpleQueue::split`.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SimpleConsumer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="ident">inner</span>: <span class="ident">spsc::Consumer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="ident">U1</span>, <span class="ident">u8</span>, <span class="ident">MultiCore</span><span class="op">&gt;</span>,
+    <span class="ident">inner</span>: <span class="ident">spsc::Consumer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="number">2</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Consumer</span> <span class="kw">for</span> <span class="ident">SimpleConsumer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
