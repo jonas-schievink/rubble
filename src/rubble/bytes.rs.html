@@ -553,6 +553,61 @@
 <span id="550">550</span>
 <span id="551">551</span>
 <span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Utilities for decoding from and encoding into bytes.</span>
 <span class="doccomment">//!</span>
@@ -573,7 +628,10 @@
 <span class="doccomment">//! [`ByteReader`]: struct.ByteReader.html</span>
 <span class="doccomment">//! [`BytesOr`]: struct.BytesOr.html</span>
 
+<span class="kw">use</span> <span class="ident">zerocopy::LayoutVerified</span>;
+
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::Error</span>;
+<span class="kw">use</span> <span class="ident">core::marker::PhantomData</span>;
 <span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cmp</span>, <span class="ident">fmt</span>, <span class="ident">iter</span>, <span class="ident">mem</span>};
 
 <span class="doccomment">/// Reference to a `T`, or to a byte slice that can be decoded as a `T`.</span>
@@ -994,6 +1052,17 @@
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">is_empty</span>()
     }
 
+    <span class="doccomment">/// Reads a `zerocopy`-supported object from the stream by transmuting an appropriate number of</span>
+    <span class="doccomment">/// bytes.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">read_obj</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">zerocopy::FromBytes</span> <span class="op">+</span> <span class="ident">zerocopy::Unaligned</span><span class="op">&gt;</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">T</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> (<span class="ident">obj</span>, <span class="ident">rest</span>): (<span class="ident">LayoutVerified</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>], <span class="ident">T</span><span class="op">&gt;</span>, <span class="kw">_</span>) <span class="op">=</span>
+            <span class="ident">zerocopy::LayoutVerified::new_unaligned_from_prefix</span>(<span class="self">self</span>.<span class="number">0</span>).<span class="ident">ok_or</span>(<span class="ident">Error::Eof</span>)<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">rest</span>;
+        <span class="prelude-val">Ok</span>(<span class="ident">obj</span>.<span class="ident">into_ref</span>())
+    }
+
     <span class="doccomment">/// Reads a byte slice of length `len` from `self`.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// If `self` contains less than `len` bytes, `Error::Eof` will be returned and `self` will not</span>
@@ -1104,6 +1173,47 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">u8</span> {
     <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="ident">bytes</span>.<span class="ident">read_u8</span>()
+    }
+}
+
+<span class="doccomment">/// A zerocopy-compatible field of type `T`, but represented as `PRIM`.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">zerocopy::FromBytes</span>, <span class="ident">zerocopy::Unaligned</span>)]</span>
+<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">transparent</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Field</span><span class="op">&lt;</span><span class="ident">PRIM</span>: <span class="ident">zerocopy::FromBytes</span> <span class="op">+</span> <span class="ident">zerocopy::Unaligned</span>, <span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="ident">prim</span>: <span class="ident">PRIM</span>,
+    <span class="ident">_p</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">PRIM</span>: <span class="ident">zerocopy::FromBytes</span> <span class="op">+</span> <span class="ident">zerocopy::Unaligned</span> <span class="op">+</span> <span class="ident">Copy</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="ident">Copy</span> <span class="kw">for</span> <span class="ident">Field</span><span class="op">&lt;</span><span class="ident">PRIM</span>, <span class="ident">T</span><span class="op">&gt;</span> {}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">PRIM</span>: <span class="ident">zerocopy::FromBytes</span> <span class="op">+</span> <span class="ident">zerocopy::Unaligned</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">Field</span><span class="op">&lt;</span><span class="ident">PRIM</span>, <span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">prim</span>: <span class="self">self</span>.<span class="ident">prim</span>.<span class="ident">clone</span>(),
+            <span class="ident">_p</span>: <span class="ident">PhantomData</span>,
+        }
+    }
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">PRIM</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="ident">Field</span><span class="op">&lt;</span><span class="ident">PRIM</span>, <span class="ident">T</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">PRIM</span>: <span class="ident">zerocopy::FromBytes</span> <span class="op">+</span> <span class="ident">zerocopy::Unaligned</span> <span class="op">+</span> <span class="ident">Copy</span>,
+    <span class="ident">T</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">PRIM</span><span class="op">&gt;</span>,
+{
+    <span class="doccomment">/// Extracts the typed representation of `self`.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">typed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span> {
+        <span class="self">self</span>.<span class="ident">prim</span>.<span class="ident">into</span>()
+    }
+}
+
+<span class="doccomment">/// The debug representation is that of `T`.</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">PRIM</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">Field</span><span class="op">&lt;</span><span class="ident">PRIM</span>, <span class="ident">T</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">PRIM</span>: <span class="ident">zerocopy::FromBytes</span> <span class="op">+</span> <span class="ident">zerocopy::Unaligned</span> <span class="op">+</span> <span class="ident">Copy</span>,
+    <span class="ident">T</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">PRIM</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">fmt::Debug</span>,
+{
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+        <span class="self">self</span>.<span class="ident">typed</span>().<span class="ident">fmt</span>(<span class="ident">f</span>)
     }
 }
 </pre></div>

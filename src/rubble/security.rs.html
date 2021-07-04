@@ -349,6 +349,20 @@
 <span id="346">346</span>
 <span id="347">347</span>
 <span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The LE Security Manager protocol.</span>
 <span class="doccomment">//!</span>
@@ -451,6 +465,7 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">utils::HexSlice</span>, <span class="ident">Error</span>};
 <span class="kw">use</span> <span class="ident">bitflags::bitflags</span>;
 <span class="kw">use</span> <span class="ident">core::fmt</span>;
+<span class="kw">use</span> <span class="ident">zerocopy::Unaligned</span>;
 
 <span class="doccomment">/// Supported security levels.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">SecurityLevel</span> {
@@ -495,7 +510,7 @@
         <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="ident">Command::from_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader::new</span>(<span class="ident">message</span>))<span class="question-mark">?</span>;
         <span class="macro">trace!</span>(<span class="string">&quot;SMP cmd {:?}, {:?}&quot;</span>, <span class="ident">cmd</span>, <span class="ident">HexSlice</span>(<span class="ident">message</span>));
         <span class="kw">match</span> <span class="ident">cmd</span> {
-            <span class="ident">Command::PairingRequest</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Command::PairingRequest</span>(<span class="ident">_req</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">warn!</span>(<span class="string">&quot;pairing request NYI&quot;</span>);
             }
             <span class="ident">Command::Unknown</span> {
@@ -519,47 +534,40 @@
     <span class="kw">const</span> <span class="ident">RSP_PDU_SIZE</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="ident">S::MTU</span>;
 }
 
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Unaligned</span>, <span class="ident">zerocopy::FromBytes</span>)]</span>
+<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">C</span>)]</span>
+<span class="kw">struct</span> <span class="ident">PairingRequest</span> {
+    <span class="doccomment">/// The I/O capabilities of the initiator.</span>
+    <span class="ident">io</span>: <span class="ident">Field</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">IoCapabilities</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Whether the initiator has OOB pairing data available.</span>
+    <span class="ident">oob</span>: <span class="ident">Field</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">Oob</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Initiator authentication requirements.</span>
+    <span class="ident">auth_req</span>: <span class="ident">Field</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">AuthReq</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Maximum supported encryption key size in range 7..=16 Bytes.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// For BLE, this is always 16, since it always uses AES-128-CCM (even with the broken</span>
+    <span class="doccomment">/// *LE Legacy Pairing*). We consider anything smaller than 16 to be as insecure as a plain</span>
+    <span class="doccomment">/// text connection.</span>
+    <span class="ident">max_keysize</span>: <span class="ident">u8</span>,
+    <span class="doccomment">/// Set of keys the initiator (the device sending this request) wants to distribute to the</span>
+    <span class="doccomment">/// responder (the device receiving this request).</span>
+    <span class="ident">initiator_dist</span>: <span class="ident">Field</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">KeyDistribution</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Set of keys the initiator requests the responder to generate and distribute.</span>
+    <span class="ident">responder_dist</span>: <span class="ident">Field</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">KeyDistribution</span><span class="op">&gt;</span>,
+}
+
 <span class="doccomment">/// An SMP command.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">enum</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// `0x01` Pairing request</span>
-    <span class="ident">PairingRequest</span> {
-        <span class="doccomment">/// The I/O capabilities of the initiator.</span>
-        <span class="ident">io</span>: <span class="ident">IoCapabilities</span>,
-        <span class="doccomment">/// Whether the initiator has OOB pairing data available.</span>
-        <span class="ident">oob</span>: <span class="ident">bool</span>,
-        <span class="doccomment">/// Initiator authentication requirements.</span>
-        <span class="ident">auth_req</span>: <span class="ident">AuthReq</span>,
-        <span class="doccomment">/// Maximum supported encryption key size in range 7..=16 Bytes.</span>
-        <span class="doccomment">///</span>
-        <span class="doccomment">/// For BLE, this is always 16, since it always uses AES-128-CCM (even with the broken</span>
-        <span class="doccomment">/// *LE Legacy Pairing*). We consider anything smaller than 16 to be as insecure as a plain</span>
-        <span class="doccomment">/// text connection.</span>
-        <span class="ident">max_keysize</span>: <span class="ident">u8</span>,
-        <span class="doccomment">/// Set of keys the initiator (the device sending this request) wants to distribute to the</span>
-        <span class="doccomment">/// responder (the device receiving this request).</span>
-        <span class="ident">initiator_dist</span>: <span class="ident">KeyDistribution</span>,
-        <span class="doccomment">/// Set of keys the initiator requests the responder to generate and distribute.</span>
-        <span class="ident">responder_dist</span>: <span class="ident">KeyDistribution</span>,
-    },
-    <span class="ident">Unknown</span> {
-        <span class="ident">code</span>: <span class="ident">CommandCode</span>,
-        <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
-    },
+    <span class="ident">PairingRequest</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PairingRequest</span>),
+    <span class="ident">Unknown</span> { <span class="ident">code</span>: <span class="ident">CommandCode</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>] },
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="ident">CommandCode::from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>);
         <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">code</span> {
-            <span class="ident">CommandCode::PairingRequest</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Command::PairingRequest</span> {
-                <span class="ident">io</span>: <span class="ident">IoCapabilities::from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
-                <span class="ident">oob</span>: <span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span> <span class="op">=</span><span class="op">=</span> <span class="number">0x01</span>,
-                <span class="ident">auth_req</span>: <span class="ident">AuthReq</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
-                <span class="ident">max_keysize</span>: <span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>,
-                <span class="ident">initiator_dist</span>: <span class="ident">KeyDistribution::from_bits_truncate</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
-                <span class="ident">responder_dist</span>: <span class="ident">KeyDistribution::from_bits_truncate</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
-            },
+            <span class="ident">CommandCode::PairingRequest</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Command::PairingRequest</span>(<span class="ident">bytes</span>.<span class="ident">read_obj</span>()<span class="question-mark">?</span>),
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Command::Unknown</span> {
                 <span class="ident">code</span>,
                 <span class="ident">data</span>: <span class="ident">bytes</span>.<span class="ident">read_rest</span>(),
@@ -606,6 +614,14 @@
 
         <span class="doccomment">/// Device can display a 6-digit passcode and allows passcode entry via a keyboard.</span>
         <span class="ident">KeyboardDisplay</span> <span class="op">=</span> <span class="number">0x04</span>,
+    }
+}
+
+<span class="macro">enum_with_unknown!</span> {
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+    <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Oob</span>(<span class="ident">u8</span>) {
+        <span class="ident">NotPresent</span> <span class="op">=</span> <span class="number">0x00</span>,
+        <span class="ident">Present</span> <span class="op">=</span> <span class="number">0x01</span>,
     }
 }
 
@@ -671,6 +687,12 @@
     }
 }
 
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AuthReq</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">raw</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span>(<span class="ident">raw</span>)
+    }
+}
+
 <span class="macro">enum_with_unknown!</span> {
     <span class="doccomment">/// Whether to perform bonding in addition to pairing.</span>
     <span class="doccomment">///</span>
@@ -696,6 +718,12 @@
         <span class="kw">const</span> <span class="ident">ID_KEY</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">1</span>);
         <span class="kw">const</span> <span class="ident">SIGN_KEY</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">2</span>);
         <span class="kw">const</span> <span class="ident">LINK_KEY</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">3</span>);
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">KeyDistribution</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">raw</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span><span class="ident">::from_bits_truncate</span>(<span class="ident">raw</span>)
     }
 }
 </pre></div>
