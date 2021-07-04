@@ -17,7 +17,10 @@
 //! [`ByteReader`]: struct.ByteReader.html
 //! [`BytesOr`]: struct.BytesOr.html
 
+use zerocopy::LayoutVerified;
+
 use crate::Error;
+use core::marker::PhantomData;
 use core::{cmp, fmt, iter, mem};
 
 /// Reference to a `T`, or to a byte slice that can be decoded as a `T`.
@@ -438,6 +441,17 @@ impl<'a> ByteReader<'a> {
         self.0.is_empty()
     }
 
+    /// Reads a `zerocopy`-supported object from the stream by transmuting an appropriate number of
+    /// bytes.
+    pub fn read_obj<T: zerocopy::FromBytes + zerocopy::Unaligned>(
+        &mut self,
+    ) -> Result<&'a T, Error> {
+        let (obj, rest): (LayoutVerified<&'a [u8], T>, _) =
+            zerocopy::LayoutVerified::new_unaligned_from_prefix(self.0).ok_or(Error::Eof)?;
+        self.0 = rest;
+        Ok(obj.into_ref())
+    }
+
     /// Reads a byte slice of length `len` from `self`.
     ///
     /// If `self` contains less than `len` bytes, `Error::Eof` will be returned and `self` will not
@@ -548,5 +562,46 @@ impl<'a> FromBytes<'a> for &'a [u8] {
 impl<'a> FromBytes<'a> for u8 {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         bytes.read_u8()
+    }
+}
+
+/// A zerocopy-compatible field of type `T`, but represented as `PRIM`.
+#[derive(zerocopy::FromBytes, zerocopy::Unaligned)]
+#[repr(transparent)]
+pub struct Field<PRIM: zerocopy::FromBytes + zerocopy::Unaligned, T> {
+    prim: PRIM,
+    _p: PhantomData<T>,
+}
+
+impl<PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Copy, T> Copy for Field<PRIM, T> {}
+
+impl<PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Clone, T> Clone for Field<PRIM, T> {
+    fn clone(&self) -> Self {
+        Self {
+            prim: self.prim.clone(),
+            _p: PhantomData,
+        }
+    }
+}
+
+impl<PRIM, T> Field<PRIM, T>
+where
+    PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Copy,
+    T: From<PRIM>,
+{
+    /// Extracts the typed representation of `self`.
+    pub fn typed(&self) -> T {
+        self.prim.into()
+    }
+}
+
+/// The debug representation is that of `T`.
+impl<PRIM, T> fmt::Debug for Field<PRIM, T>
+where
+    PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Copy,
+    T: From<PRIM> + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.typed().fmt(f)
     }
 }

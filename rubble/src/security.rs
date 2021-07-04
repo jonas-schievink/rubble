@@ -99,6 +99,7 @@ use crate::l2cap::{Protocol, ProtocolObj, Sender};
 use crate::{bytes::*, utils::HexSlice, Error};
 use bitflags::bitflags;
 use core::fmt;
+use zerocopy::Unaligned;
 
 /// Supported security levels.
 pub trait SecurityLevel {
@@ -143,7 +144,7 @@ impl<S: SecurityLevel> ProtocolObj for SecurityManager<S> {
         let cmd = Command::from_bytes(&mut ByteReader::new(message))?;
         trace!("SMP cmd {:?}, {:?}", cmd, HexSlice(message));
         match cmd {
-            Command::PairingRequest { .. } => {
+            Command::PairingRequest(_req) => {
                 warn!("pairing request NYI");
             }
             Command::Unknown {
@@ -167,47 +168,40 @@ impl<S: SecurityLevel> Protocol for SecurityManager<S> {
     const RSP_PDU_SIZE: u8 = S::MTU;
 }
 
+#[derive(Debug, Copy, Clone, Unaligned, zerocopy::FromBytes)]
+#[repr(C)]
+struct PairingRequest {
+    /// The I/O capabilities of the initiator.
+    io: Field<u8, IoCapabilities>,
+    /// Whether the initiator has OOB pairing data available.
+    oob: Field<u8, Oob>,
+    /// Initiator authentication requirements.
+    auth_req: Field<u8, AuthReq>,
+    /// Maximum supported encryption key size in range 7..=16 Bytes.
+    ///
+    /// For BLE, this is always 16, since it always uses AES-128-CCM (even with the broken
+    /// *LE Legacy Pairing*). We consider anything smaller than 16 to be as insecure as a plain
+    /// text connection.
+    max_keysize: u8,
+    /// Set of keys the initiator (the device sending this request) wants to distribute to the
+    /// responder (the device receiving this request).
+    initiator_dist: Field<u8, KeyDistribution>,
+    /// Set of keys the initiator requests the responder to generate and distribute.
+    responder_dist: Field<u8, KeyDistribution>,
+}
+
 /// An SMP command.
 #[derive(Debug, Copy, Clone)]
 enum Command<'a> {
-    /// `0x01` Pairing request
-    PairingRequest {
-        /// The I/O capabilities of the initiator.
-        io: IoCapabilities,
-        /// Whether the initiator has OOB pairing data available.
-        oob: bool,
-        /// Initiator authentication requirements.
-        auth_req: AuthReq,
-        /// Maximum supported encryption key size in range 7..=16 Bytes.
-        ///
-        /// For BLE, this is always 16, since it always uses AES-128-CCM (even with the broken
-        /// *LE Legacy Pairing*). We consider anything smaller than 16 to be as insecure as a plain
-        /// text connection.
-        max_keysize: u8,
-        /// Set of keys the initiator (the device sending this request) wants to distribute to the
-        /// responder (the device receiving this request).
-        initiator_dist: KeyDistribution,
-        /// Set of keys the initiator requests the responder to generate and distribute.
-        responder_dist: KeyDistribution,
-    },
-    Unknown {
-        code: CommandCode,
-        data: &'a [u8],
-    },
+    PairingRequest(&'a PairingRequest),
+    Unknown { code: CommandCode, data: &'a [u8] },
 }
 
 impl<'a> FromBytes<'a> for Command<'a> {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let code = CommandCode::from(bytes.read_u8()?);
         Ok(match code {
-            CommandCode::PairingRequest => Command::PairingRequest {
-                io: IoCapabilities::from(bytes.read_u8()?),
-                oob: bytes.read_u8()? == 0x01,
-                auth_req: AuthReq(bytes.read_u8()?),
-                max_keysize: bytes.read_u8()?,
-                initiator_dist: KeyDistribution::from_bits_truncate(bytes.read_u8()?),
-                responder_dist: KeyDistribution::from_bits_truncate(bytes.read_u8()?),
-            },
+            CommandCode::PairingRequest => Command::PairingRequest(bytes.read_obj()?),
             _ => Command::Unknown {
                 code,
                 data: bytes.read_rest(),
@@ -254,6 +248,14 @@ enum_with_unknown! {
 
         /// Device can display a 6-digit passcode and allows passcode entry via a keyboard.
         KeyboardDisplay = 0x04,
+    }
+}
+
+enum_with_unknown! {
+    #[derive(Debug, Copy, Clone)]
+    pub enum Oob(u8) {
+        NotPresent = 0x00,
+        Present = 0x01,
     }
 }
 
@@ -319,6 +321,12 @@ impl fmt::Debug for AuthReq {
     }
 }
 
+impl From<u8> for AuthReq {
+    fn from(raw: u8) -> Self {
+        Self(raw)
+    }
+}
+
 enum_with_unknown! {
     /// Whether to perform bonding in addition to pairing.
     ///
@@ -344,5 +352,11 @@ bitflags! {
         const ID_KEY = (1 << 1);
         const SIGN_KEY = (1 << 2);
         const LINK_KEY = (1 << 3);
+    }
+}
+
+impl From<u8> for KeyDistribution {
+    fn from(raw: u8) -> Self {
+        Self::from_bits_truncate(raw)
     }
 }
