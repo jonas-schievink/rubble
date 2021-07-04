@@ -28,6 +28,12 @@ impl fmt::Debug for SeqNum {
     }
 }
 
+impl defmt::Format for SeqNum {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "{=char}", if self.0 { '1' } else { '0' });
+    }
+}
+
 impl Add for SeqNum {
     type Output = Self;
 

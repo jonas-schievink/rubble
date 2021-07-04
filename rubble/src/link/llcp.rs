@@ -388,7 +388,7 @@ impl<'a> ToBytes for ControlPdu<'a> {
 
 enum_with_unknown! {
     /// Enumeration of all known LL Control PDU opcodes (not all of which might be supported).
-    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    #[derive(Debug, Copy, Clone, PartialEq, Eq, defmt::Format)]
     pub enum ControlOpcode(u8) {
         ConnectionUpdateReq = 0x00,
         ChannelMapReq = 0x01,
@@ -419,7 +419,7 @@ enum_with_unknown! {
     /// Enumeration of all possible `VersNr` for `LL_VERSION_IND` PDUs.
     ///
     /// According to https://www.bluetooth.com/specifications/assigned-numbers/link-layer
-    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    #[derive(Debug, Copy, Clone, PartialEq, Eq, defmt::Format)]
     pub enum VersionNumber(u8) {
         V4_0 = 6,
         V4_1 = 7,

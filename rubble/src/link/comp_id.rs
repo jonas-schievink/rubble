@@ -12,6 +12,12 @@ impl fmt::Debug for CompanyId {
     }
 }
 
+impl defmt::Format for CompanyId {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "CompanyId(0x{=u16:X})", self.as_u16());
+    }
+}
+
 impl CompanyId {
     /// Create a company ID from a raw `u16`.
     pub fn from_raw(raw: u16) -> Self {

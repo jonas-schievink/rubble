@@ -128,6 +128,12 @@ impl fmt::Debug for Duration {
     }
 }
 
+impl defmt::Format for Duration {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "{=u32:µs}", self.0);
+    }
+}
+
 /// A point in time, relative to an unspecfied epoch.
 ///
 /// This has microsecond resolution and may wrap around after >1 hour. Apart from the wraparound, it

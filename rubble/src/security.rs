@@ -232,7 +232,7 @@ enum_with_unknown! {
 
 enum_with_unknown! {
     /// Describes the I/O capabilities of a device that can be used for the pairing process.
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, defmt::Format)]
     pub enum IoCapabilities(u8) {
         /// Device can display a 6-digit number, but has no input capabilities.
         DisplayOnly = 0x00,
@@ -252,7 +252,7 @@ enum_with_unknown! {
 }
 
 enum_with_unknown! {
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, defmt::Format)]
     pub enum Oob(u8) {
         NotPresent = 0x00,
         Present = 0x01,
@@ -332,7 +332,7 @@ enum_with_unknown! {
     ///
     /// If `Bonding` is selected, the exchanged keys are permanently stored on both devices. This
     /// is usually what you want.
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, defmt::Format)]
     pub enum BondingType(u8) {
         /// No bonding should be performed; the exchanged keys should not be permanently stored.
         ///
@@ -347,7 +347,7 @@ enum_with_unknown! {
 
 bitflags! {
     /// Indicates which types of keys a device requests for distribution.
-    pub struct KeyDistribution: u8 {
+    struct KeyDistribution: u8 {
         const ENC_KEY = (1 << 0);
         const ID_KEY = (1 << 1);
         const SIGN_KEY = (1 << 2);

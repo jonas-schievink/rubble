@@ -1,7 +1,7 @@
 use core::fmt;
 
 /// Errors returned by the BLE stack.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, defmt::Format)]
 #[non_exhaustive]
 pub enum Error {
     /// Packet specified an invalid length value or was too short.

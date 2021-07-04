@@ -200,8 +200,41 @@ impl fmt::Debug for Uuid128 {
     }
 }
 
+impl defmt::Format for Uuid16 {
+    fn format(&self, f: defmt::Formatter<'_>) {
+        defmt::write!(f, "Uuid16({=u16:04x})", self.0);
+    }
+}
+
+impl defmt::Format for Uuid32 {
+    fn format(&self, f: defmt::Formatter<'_>) {
+        defmt::write!(f, "Uuid32({=u32:08x})", self.0);
+    }
+}
+
+impl defmt::Format for Uuid128 {
+    #[allow(clippy::many_single_char_names, clippy::just_underscores_and_digits)]
+    fn format(&self, f: defmt::Formatter<'_>) {
+        let [_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15] = self.0;
+        let a = u32::from_be_bytes([_0, _1, _2, _3]);
+        let b = u16::from_be_bytes([_4, _5]);
+        let c = u16::from_be_bytes([_6, _7]);
+        let d = u16::from_be_bytes([_8, _9]);
+        let e = u64::from_be_bytes([0, 0, _10, _11, _12, _13, _14, _15]);
+        defmt::write!(
+            f,
+            "{=u32:08x}-{=u16:04x}-{=u16:04x}-{=u16:04x}-{=u64:012x}",
+            a,
+            b,
+            c,
+            d,
+            e
+        );
+    }
+}
+
 /// List of the supported UUID types.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, defmt::Format)]
 pub enum UuidKind {
     Uuid16,
     Uuid32,

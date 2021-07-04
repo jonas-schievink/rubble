@@ -64,6 +64,12 @@ impl<T: AsRef<[u8]>> fmt::Debug for HexSlice<T> {
     }
 }
 
+impl<T: AsRef<[u8]>> defmt::Format for HexSlice<T> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "{=[u8]:x}", self.0.as_ref());
+    }
+}
+
 impl<T: AsRef<[u8]>> AsRef<T> for HexSlice<T> {
     fn as_ref(&self) -> &T {
         &self.0
@@ -72,12 +78,16 @@ impl<T: AsRef<[u8]>> AsRef<T> for HexSlice<T> {
 
 /// `Debug`-formats its contents in hexadecimal.
 #[derive(Copy, Clone)]
-pub struct Hex<T>(pub T)
-where
-    T: fmt::LowerHex;
+pub struct Hex<T>(pub T);
 
 impl<T: fmt::LowerHex> fmt::Debug for Hex<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:#x}", self.0)
+    }
+}
+
+impl<T: defmt::Format> defmt::Format for Hex<T> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "{:x}", self.0);
     }
 }

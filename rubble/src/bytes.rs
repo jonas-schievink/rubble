@@ -605,3 +605,13 @@ where
         self.typed().fmt(f)
     }
 }
+
+impl<PRIM, T> defmt::Format for Field<PRIM, T>
+where
+    PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Copy,
+    T: From<PRIM> + defmt::Format,
+{
+    fn format(&self, f: defmt::Formatter<'_>) {
+        self.typed().format(f);
+    }
+}

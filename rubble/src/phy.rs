@@ -21,7 +21,7 @@ fn whitening_iv(channel_idx: u8) -> u8 {
 }
 
 /// One of the three advertising channels (channel indices 37, 38 or 39).
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, defmt::Format)]
 pub struct AdvertisingChannel(u8);
 
 impl AdvertisingChannel {
@@ -90,7 +90,7 @@ impl AdvertisingChannel {
 /// One of 37 data channels on which data channel PDUs are sent between connected devices.
 ///
 /// (channel indices 0..=36)
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, defmt::Format)]
 pub struct DataChannel(u8);
 
 impl DataChannel {
