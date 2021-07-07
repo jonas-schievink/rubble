@@ -867,7 +867,7 @@
 
 <span class="macro">enum_with_unknown!</span> {
     <span class="doccomment">/// Enumeration of all known LL Control PDU opcodes (not all of which might be supported).</span>
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">defmt::Format</span>)]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ControlOpcode</span>(<span class="ident">u8</span>) {
         <span class="ident">ConnectionUpdateReq</span> <span class="op">=</span> <span class="number">0x00</span>,
         <span class="ident">ChannelMapReq</span> <span class="op">=</span> <span class="number">0x01</span>,
@@ -898,7 +898,7 @@
     <span class="doccomment">/// Enumeration of all possible `VersNr` for `LL_VERSION_IND` PDUs.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// According to https://www.bluetooth.com/specifications/assigned-numbers/link-layer</span>
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">defmt::Format</span>)]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">VersionNumber</span>(<span class="ident">u8</span>) {
         <span class="ident">V4_0</span> <span class="op">=</span> <span class="number">6</span>,
         <span class="ident">V4_1</span> <span class="op">=</span> <span class="number">7</span>,

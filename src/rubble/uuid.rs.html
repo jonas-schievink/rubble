@@ -267,6 +267,39 @@
 <span id="264">264</span>
 <span id="265">265</span>
 <span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! BLE UUIDs (16, 32 or 128 bits).</span>
 <span class="doccomment">//!</span>
@@ -470,8 +503,41 @@
     }
 }
 
+<span class="kw">impl</span> <span class="ident">defmt::Format</span> <span class="kw">for</span> <span class="ident">Uuid16</span> {
+    <span class="kw">fn</span> <span class="ident">format</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="ident">defmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) {
+        <span class="macro">defmt::write!</span>(<span class="ident">f</span>, <span class="string">&quot;Uuid16({=u16:04x})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>);
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">defmt::Format</span> <span class="kw">for</span> <span class="ident">Uuid32</span> {
+    <span class="kw">fn</span> <span class="ident">format</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="ident">defmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) {
+        <span class="macro">defmt::write!</span>(<span class="ident">f</span>, <span class="string">&quot;Uuid32({=u32:08x})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>);
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">defmt::Format</span> <span class="kw">for</span> <span class="ident">Uuid128</span> {
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::many_single_char_names</span>, <span class="ident">clippy::just_underscores_and_digits</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">format</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="ident">defmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) {
+        <span class="kw">let</span> [<span class="ident">_0</span>, <span class="ident">_1</span>, <span class="ident">_2</span>, <span class="ident">_3</span>, <span class="ident">_4</span>, <span class="ident">_5</span>, <span class="ident">_6</span>, <span class="ident">_7</span>, <span class="ident">_8</span>, <span class="ident">_9</span>, <span class="ident">_10</span>, <span class="ident">_11</span>, <span class="ident">_12</span>, <span class="ident">_13</span>, <span class="ident">_14</span>, <span class="ident">_15</span>] <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>;
+        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">u32::from_be_bytes</span>([<span class="ident">_0</span>, <span class="ident">_1</span>, <span class="ident">_2</span>, <span class="ident">_3</span>]);
+        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">u16::from_be_bytes</span>([<span class="ident">_4</span>, <span class="ident">_5</span>]);
+        <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="ident">u16::from_be_bytes</span>([<span class="ident">_6</span>, <span class="ident">_7</span>]);
+        <span class="kw">let</span> <span class="ident">d</span> <span class="op">=</span> <span class="ident">u16::from_be_bytes</span>([<span class="ident">_8</span>, <span class="ident">_9</span>]);
+        <span class="kw">let</span> <span class="ident">e</span> <span class="op">=</span> <span class="ident">u64::from_be_bytes</span>([<span class="number">0</span>, <span class="number">0</span>, <span class="ident">_10</span>, <span class="ident">_11</span>, <span class="ident">_12</span>, <span class="ident">_13</span>, <span class="ident">_14</span>, <span class="ident">_15</span>]);
+        <span class="macro">defmt::write!</span>(
+            <span class="ident">f</span>,
+            <span class="string">&quot;{=u32:08x}-{=u16:04x}-{=u16:04x}-{=u16:04x}-{=u64:012x}&quot;</span>,
+            <span class="ident">a</span>,
+            <span class="ident">b</span>,
+            <span class="ident">c</span>,
+            <span class="ident">d</span>,
+            <span class="ident">e</span>
+        );
+    }
+}
+
 <span class="doccomment">/// List of the supported UUID types.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">defmt::Format</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">UuidKind</span> {
     <span class="ident">Uuid16</span>,
     <span class="ident">Uuid32</span>,

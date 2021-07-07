@@ -1970,6 +1970,12 @@
 <span id="1967">1967</span>
 <span id="1968">1968</span>
 <span id="1969">1969</span>
+<span id="1970">1970</span>
+<span id="1971">1971</span>
+<span id="1972">1972</span>
+<span id="1973">1973</span>
+<span id="1974">1974</span>
+<span id="1975">1975</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Company identifier implementation</span>
 
@@ -1982,6 +1988,12 @@
 <span class="kw">impl</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">CompanyId</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
         <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;CompanyId(0x{:X})&quot;</span>, <span class="self">self</span>.<span class="ident">as_u16</span>())
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">defmt::Format</span> <span class="kw">for</span> <span class="ident">CompanyId</span> {
+    <span class="kw">fn</span> <span class="ident">format</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="ident">defmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) {
+        <span class="macro">defmt::write!</span>(<span class="ident">fmt</span>, <span class="string">&quot;CompanyId(0x{=u16:X})&quot;</span>, <span class="self">self</span>.<span class="ident">as_u16</span>());
     }
 }
 

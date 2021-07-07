@@ -598,7 +598,7 @@
 
 <span class="macro">enum_with_unknown!</span> {
     <span class="doccomment">/// Describes the I/O capabilities of a device that can be used for the pairing process.</span>
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">defmt::Format</span>)]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">IoCapabilities</span>(<span class="ident">u8</span>) {
         <span class="doccomment">/// Device can display a 6-digit number, but has no input capabilities.</span>
         <span class="ident">DisplayOnly</span> <span class="op">=</span> <span class="number">0x00</span>,
@@ -618,7 +618,7 @@
 }
 
 <span class="macro">enum_with_unknown!</span> {
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">defmt::Format</span>)]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Oob</span>(<span class="ident">u8</span>) {
         <span class="ident">NotPresent</span> <span class="op">=</span> <span class="number">0x00</span>,
         <span class="ident">Present</span> <span class="op">=</span> <span class="number">0x01</span>,
@@ -698,7 +698,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// If `Bonding` is selected, the exchanged keys are permanently stored on both devices. This</span>
     <span class="doccomment">/// is usually what you want.</span>
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">defmt::Format</span>)]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">BondingType</span>(<span class="ident">u8</span>) {
         <span class="doccomment">/// No bonding should be performed; the exchanged keys should not be permanently stored.</span>
         <span class="doccomment">///</span>
@@ -713,7 +713,7 @@
 
 <span class="macro">bitflags!</span> {
     <span class="doccomment">/// Indicates which types of keys a device requests for distribution.</span>
-    <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">KeyDistribution</span>: <span class="ident">u8</span> {
+    <span class="kw">struct</span> <span class="ident">KeyDistribution</span>: <span class="ident">u8</span> {
         <span class="kw">const</span> <span class="ident">ENC_KEY</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">0</span>);
         <span class="kw">const</span> <span class="ident">ID_KEY</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">1</span>);
         <span class="kw">const</span> <span class="ident">SIGN_KEY</span> <span class="op">=</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">2</span>);
