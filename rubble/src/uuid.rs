@@ -17,12 +17,6 @@
 use crate::{bytes::*, Error};
 use core::fmt;
 
-// FIXME this could be more readable
-const BASE_UUID: [u8; 16] = [
-    0x00, 0x00, 0x00, 0x00, /*-*/ 0x00, 0x00, /*-*/ 0x10, 00, /*-*/ 0x80, 0x00,
-    /*-*/ 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB,
-];
-
 /// A 16-bit UUID alias.
 ///
 /// Can be converted to its 32- and 128-bit equivalents via `.into()`.
@@ -40,6 +34,8 @@ pub struct Uuid32(pub u32);
 pub struct Uuid128([u8; 16]);
 
 impl Uuid128 {
+    const BASE_UUID: Self = Self::parse_static("00000000-0000-1000-8000-00805f9b34fb");
+
     /// Creates a 128-bit UUID from 16 raw bytes (encoded in big-endian).
     pub const fn from_bytes(bytes: [u8; 16]) -> Self {
         Self(bytes)
@@ -130,7 +126,7 @@ impl From<Uuid16> for Uuid128 {
 
 impl From<Uuid32> for Uuid128 {
     fn from(uuid: Uuid32) -> Self {
-        let mut buf = BASE_UUID;
+        let mut buf = Self::BASE_UUID.0;
         buf[..4].copy_from_slice(&uuid.0.to_be_bytes());
         Uuid128(buf)
     }
