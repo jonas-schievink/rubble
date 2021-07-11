@@ -413,7 +413,7 @@ enum_with_unknown! {
 enum_with_unknown! {
     /// Enumeration of all possible `VersNr` for `LL_VERSION_IND` PDUs.
     ///
-    /// According to https://www.bluetooth.com/specifications/assigned-numbers/link-layer
+    /// According to <https://www.bluetooth.com/specifications/assigned-numbers/link-layer>.
     #[derive(Debug, Copy, Clone, PartialEq, Eq, defmt::Format)]
     pub enum VersionNumber(u8) {
         V4_0 = 6,

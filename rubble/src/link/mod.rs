@@ -225,7 +225,7 @@ enum State<C: Config> {
 /// Implementation of the real-time BLE Link-Layer logic.
 ///
 /// Users of this struct must provide an interface to the platform's hardware by implementing
-/// `HardwareInterface`.
+/// [`Config`].
 pub struct LinkLayer<C: Config> {
     dev_addr: DeviceAddress,
     state: State<C>,

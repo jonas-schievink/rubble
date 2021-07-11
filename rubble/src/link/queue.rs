@@ -11,13 +11,6 @@
 //!   splitting a [`PacketQueue`].
 //! * The [`SimpleQueue`], [`SimpleProducer`] and [`SimpleConsumer`] types, a minimal implementation
 //!   of the queue interface defined by [`PacketQueue`], [`Producer`] and [`Consumer`].
-//!
-//! [`PacketQueue`]: trait.PacketQueue.html
-//! [`Producer`]: trait.Producer.html
-//! [`Consumer`]: trait.Consumer.html
-//! [`SimpleQueue`]: struct.SimpleQueue.html
-//! [`SimpleProducer`]: struct.SimpleProducer.html
-//! [`SimpleConsumer`]: struct.SimpleConsumer.html
 
 use crate::link::data::{self, Llid};
 use crate::link::{MIN_DATA_PAYLOAD_BUF, MIN_DATA_PDU_BUF};
@@ -27,7 +20,7 @@ use heapless::spsc;
 /// A splittable SPSC queue for data channel PDUs.
 ///
 /// Implementations of this trait must fit at least one data channel packet with a total size of
-/// `MIN_DATA_PDU_BUF` bytes (header and payload).
+/// [`MIN_DATA_PDU_BUF`] bytes (header and payload).
 pub trait PacketQueue {
     /// Producing (writing) half of the queue.
     type Producer: Producer;
@@ -120,10 +113,10 @@ pub trait Consumer {
 
     /// Passes the next raw packet in the queue to a closure.
     ///
-    /// The closure returns a `Consume` value to indicate whether the packet should remain in the
+    /// The closure returns a [`Consume`] value to indicate whether the packet should remain in the
     /// queue or be removed.
     ///
-    /// If the queue is empty, `Error::Eof` is returned.
+    /// If the queue is empty, [`Error::Eof`] is returned.
     fn consume_raw_with<R>(
         &mut self,
         f: impl FnOnce(data::Header, &[u8]) -> Consume<R>,
@@ -131,10 +124,10 @@ pub trait Consumer {
 
     /// Passes the next packet in the queue to a closure.
     ///
-    /// The closure returns a `Consume` value to indicate whether the packet should remain in the
+    /// The closure returns a [`Consume`] value to indicate whether the packet should remain in the
     /// queue or be removed.
     ///
-    /// If the queue is empty, `Error::Eof` is returned.
+    /// If the queue is empty, [`Error::Eof`] is returned.
     fn consume_pdu_with<R>(
         &mut self,
         f: impl FnOnce(data::Header, data::Pdu<'_, &[u8]>) -> Consume<R>,
@@ -213,10 +206,8 @@ impl<T> Consume<T> {
 ///
 /// This type is compatible with thumbv6 cores, which lack atomic operations that might be needed
 /// for other queue implementations.
-///
-/// This queue also minimizes RAM usage: In addition to the raw buffer space, only minimal space is
-/// needed for housekeeping.
 pub struct SimpleQueue {
+    // FIXME this uses 2 PDUs worth of space, but should only use 1
     inner: spsc::Queue<[u8; MIN_DATA_PDU_BUF], 2>,
 }
 

@@ -26,8 +26,6 @@
 //! by indicating the *Group End Handle* to the client, which is the handle of the last attribute in
 //! the group. The *Group End Handle* isn't known by the ATT server and must be provided by the
 //! higher-level protocol (GATT).
-//!
-//! [`Handle`]: struct.Handle.html
 
 mod handle;
 mod pdus;

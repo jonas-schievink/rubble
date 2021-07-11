@@ -53,7 +53,7 @@ impl Beacon {
     }
 }
 
-/// Callback for the `BeaconScanner`.
+/// Callback for the [`BeaconScanner`].
 pub trait ScanCallback {
     /// Called when a beacon is received and has passed the configured device address filter.
     ///

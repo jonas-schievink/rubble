@@ -1,4 +1,4 @@
-//! Company identifier implementation
+//! Company identifiers.
 
 use core::fmt;
 

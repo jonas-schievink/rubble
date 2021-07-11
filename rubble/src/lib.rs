@@ -10,14 +10,10 @@
 //!
 //! The only part that interacts directly with platform-specific interfaces is [`link`], Rubble's
 //! BLE Link-Layer implementation. You have to provide it with a few hardware-specific services:
-//! * A microsecond-precision [`Timer`].
-//! * A [`Transmitter`] that can send data and advertising channel packets.
-//! * A processor for `link::Cmd`, which tells the support code when to call Rubble's functions
+//! * A microsecond-precision [`Timer`][time::Timer].
+//! * A [`Transmitter`][link::Transmitter] that can send data and advertising channel packets.
+//! * A processor for [`link::Cmd`], which tells the support code when to call Rubble's functions
 //!   again.
-//!
-//! [`link`]: link/index.html
-//! [`Timer`]: time/trait.Timer.html
-//! [`Transmitter`]: link/trait.Transmitter.html
 
 // We're `#[no_std]`, except when we're testing
 #![cfg_attr(not(test), no_std)]

@@ -3,7 +3,7 @@ use core::{cmp::PartialEq, fmt};
 
 /// ATT protocol UUID (either a 16 or a 128-bit UUID).
 ///
-/// 32-bit UUIDs are not supported by ATT are must be converted to 128-bit UUIDs.
+/// 32-bit UUIDs are not supported by ATT and must be converted to 128-bit UUIDs.
 #[derive(Copy, Clone, Eq)]
 pub enum AttUuid {
     Uuid16(Uuid16),

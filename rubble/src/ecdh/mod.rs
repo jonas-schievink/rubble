@@ -13,12 +13,7 @@
 //!   [*ring*][ring] library to provide the operations. Note that *ring* does not support
 //!   `#![no_std]` operation, so this is mostly useful for tests and other non-embedded usage.
 //!
-//! [`security`]: ../security/index.html
-//! [`EcdhProvider`]: trait.EcdhProvider.html
-//! [`P256Provider`]: struct.P256Provider.html
-//! [`P256SecretKey`]: struct.P256SecretKey.html
-//! [`RingProvider`]: struct.RingProvider.html
-//! [`RingSecretKey`]: struct.RingSecretKey.html
+//! [`security`]: crate::security
 //! [ring]: https://github.com/briansmith/ring
 //! [`p256`]: https://docs.rs/p256
 

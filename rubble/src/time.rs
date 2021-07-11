@@ -17,17 +17,17 @@ impl Duration {
     /// The duration of the interframe spacing between BLE packets.
     pub const T_IFS: Self = Duration(150);
 
-    /// Creates a `Duration` from a number of microseconds.
+    /// Creates a [`Duration`] from a number of microseconds.
     pub fn from_micros(micros: u32) -> Self {
         Duration(micros)
     }
 
-    /// Creates a `Duration` representing the given number of milliseconds.
+    /// Creates a [`Duration`] representing the given number of milliseconds.
     pub fn from_millis(millis: u16) -> Self {
         Duration(u32::from(millis) * 1_000)
     }
 
-    /// Creates a `Duration` representing a number of seconds.
+    /// Creates a [`Duration`] representing a number of seconds.
     pub fn from_secs(secs: u16) -> Self {
         Duration(u32::from(secs) * 1_000_000)
     }
@@ -143,14 +143,11 @@ impl defmt::Format for Duration {
 /// [`Timer`] instances (even when using the same implementation) are not compatible, and mixing
 /// them in operations causes unspecified results. [`Duration`]s are independent of the [`Timer`]
 /// implementation and thus can be mixed freely.
-///
-/// [`Duration`]: struct.Duration.html
-/// [`Timer`]: trait.Timer.html
 #[derive(Copy, Clone)]
 pub struct Instant(u32);
 
 impl Instant {
-    /// The maximum time between two `Instant`s that can be handled by `Instant::duration_since`.
+    /// The maximum time between two `Instant`s that can be handled by [`Instant::duration_since`].
     ///
     /// This is defined to be a value of a few minutes, intended to be sufficient for the BLE stack.
     pub const MAX_TIME_BETWEEN: Duration = Duration(1_000_000 * 60 * 5); // 5 minutes
@@ -176,16 +173,14 @@ impl Instant {
 
     /// Calculates the duration of time that has passed between `earlier` and `self`.
     ///
-    /// The maximum duration that can be calculated by this method is defined as `MAX_TIME_BETWEEN`.
-    /// Calling this method when the `Instant`s are further apart is an error and may panic. This is
-    /// done as a safeguard, since `Instant`s can wrap around, which can cause the result of this
-    /// function to be incorrect. It does not prevent that from happening, but makes unexpected
-    /// durations show up much earlier.
+    /// The maximum duration that can be calculated by this method is defined as
+    /// [`Instant::MAX_TIME_BETWEEN`]. Calling this method when the `Instant`s are further apart is
+    /// an error and may panic. This is done as a safeguard, since `Instant`s can wrap around,
+    /// which can cause the result of this function to be incorrect. It does not prevent that
+    /// from happening, but makes unexpected durations show up much earlier.
     ///
     /// Both `self` and `earlier` must have been created by the same [`Timer`], or the result of
     /// this function will be unspecified.
-    ///
-    /// [`Timer`]: trait.Timer.html
     pub fn duration_since(&self, earlier: Instant) -> Duration {
         let micros_passed = self.0.wrapping_sub(earlier.0);
         debug_assert!(
@@ -200,10 +195,8 @@ impl Instant {
     }
 }
 
-/// `Instant`s can be subtracted, which computes the `Duration` between the rhs and lhs using
+/// [`Instant`]s can be subtracted, which computes the [`Duration`] between the rhs and lhs using
 /// [`Instant::duration_since`].
-///
-/// [`Instant::duration_since`]: struct.Instant.html#method.duration_since
 impl Sub<Instant> for Instant {
     type Output = Duration;
 
@@ -212,7 +205,7 @@ impl Sub<Instant> for Instant {
     }
 }
 
-/// A `Duration` can be added to an `Instant`, moving the `Instant` forwards in time.
+/// A [`Duration`] can be added to an [`Instant`], moving the [`Instant`] forwards in time.
 impl Add<Duration> for Instant {
     type Output = Self;
 
@@ -227,7 +220,7 @@ impl AddAssign<Duration> for Instant {
     }
 }
 
-/// A `Duration` can be subtracted from an `Instant`, moving the `Instant` backwards in time.
+/// A [`Duration`] can be subtracted from an [`Instant`], moving the [`Instant`] backwards in time.
 impl Sub<Duration> for Instant {
     type Output = Self;
 
@@ -236,7 +229,7 @@ impl Sub<Duration> for Instant {
     }
 }
 
-/// Subtracts a `Duration` from `self`.
+/// Subtracts a [`Duration`] from `self`.
 impl SubAssign<Duration> for Instant {
     fn sub_assign(&mut self, d: Duration) {
         *self = *self - d;
@@ -281,9 +274,9 @@ impl fmt::Debug for Instant {
 ///
 /// This trait can also be implemented by a mock timer for testing.
 pub trait Timer {
-    /// Obtain the current time as an `Instant`.
+    /// Obtain the current time as an [`Instant`].
     ///
-    /// The `Instant`s returned by this function must never move backwards in time, except when the
-    /// underlying value wraps around.
+    /// The [`Instant`]s returned by this function must never move backwards in time, except when
+    /// the underlying value wraps around.
     fn now(&self) -> Instant;
 }

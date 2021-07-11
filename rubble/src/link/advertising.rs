@@ -791,9 +791,6 @@ enum_with_unknown! {
     /// 4-bit PDU type in [`Header`].
     ///
     /// For more details, see [`PduBuf`].
-    ///
-    /// [`Header`]: struct.Header.html
-    /// [`PduBuf`]: struct.PduBuf.html
     #[derive(Debug, PartialEq, Eq)]
     pub enum PduType(u8) {
         /// Connectable undirected advertising event (`ADV_IND`).

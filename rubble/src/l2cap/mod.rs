@@ -18,7 +18,6 @@
 //! Bluetooth SIG or allocated dynamically for use with the Service Discovery Protocol (SDP). The
 //! preallocated numbers are hosted online [here][l2c].
 //!
-//! [`Channel`]: struct.Channel.html
 //! [l2c]: https://www.bluetooth.com/specifications/assigned-numbers/logical-link-control
 
 mod signaling;

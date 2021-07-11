@@ -82,7 +82,7 @@ impl AttributeProvider for BatteryServiceAttrs {
 
 /// A demo `AttributeProvider` that will enumerate as a *Midi Service*.
 ///
-/// Also refer to https://www.midi.org/specifications-old/item/bluetooth-le-midi
+/// Also refer to <https://www.midi.org/specifications-old/item/bluetooth-le-midi>.
 pub struct MidiServiceAttrs {
     attributes: [Attribute<&'static [u8]>; 4],
 }
