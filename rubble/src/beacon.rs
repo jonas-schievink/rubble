@@ -40,9 +40,9 @@ impl Beacon {
         // The spec says that we have to broadcast on all 3 channels in sequence, so that the total
         // time of this broadcast ("advertising event") is <10ms.
 
-        // FIXME: Do we have to write the payload again every time we send (ie.
-        // is the transmitter allowed to overwrite it)?
-
+        // The transmitter retains the old transmit buffer, but it might be used for other purposes
+        // (like sending multiple beacon payloads), so we always copy our payload into the tx
+        // buffer here.
         let payload = self.pdu.payload();
         let buf = tx.tx_payload_buf();
         buf[..payload.len()].copy_from_slice(payload);
