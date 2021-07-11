@@ -8,7 +8,7 @@ enum_with_unknown! {
     /// Error codes that can be sent from the ATT server to the client in response to a request.
     ///
     /// Used as the payload of `ErrorRsp` PDUs.
-    #[derive(Copy, Clone, Debug)]
+    #[derive(Copy, Clone, Debug, defmt::Format)]
     pub enum ErrorCode(u8) {
         /// Attempted to use an `Handle` that isn't valid on this server.
         InvalidHandle = 0x01,

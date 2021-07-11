@@ -316,7 +316,7 @@ impl<'a> From<Flags> for AdStructure<'a> {
 
 /// Data Type constants.
 ///
-/// https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
+/// <https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile>
 enum Type {}
 
 #[allow(unused)]

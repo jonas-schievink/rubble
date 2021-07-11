@@ -32,6 +32,12 @@ impl fmt::Debug for Handle {
     }
 }
 
+impl defmt::Format for Handle {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "{:#06X}", self.0)
+    }
+}
+
 impl FromBytes<'_> for Handle {
     fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         Ok(Handle(bytes.read_u16_le()?))
