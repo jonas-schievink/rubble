@@ -10,7 +10,7 @@ Currently, Rubble supports Nordic's nRF52-series of MCUs. However, it was
 designed to be hardware-independent, so support crates for other MCU families
 are always welcome.
 
-[API documentation (master)](https://jonas-schievink.github.io/rubble/)
+[Internal API documentation (master)][docs-master]
 
 **NOTE: None of this has passed the Bluetooth® Qualification Process, so it
 must not be used in commercial products!**

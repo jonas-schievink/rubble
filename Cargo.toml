@@ -3,7 +3,6 @@ members = [
     "rubble",
     "rubble-nrf5x",
     "rubble-tests",
-    "rubble-docs",
     "demos/*/",
 ]
 exclude = [

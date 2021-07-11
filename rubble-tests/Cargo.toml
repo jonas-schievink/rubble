@@ -6,4 +6,7 @@ publish = false
 edition = "2018"
 
 [dependencies]
+# enable the 52840 feature in this Cargo workspace, so that `cargo build` and `cargo test` can
+# compile it (its build script panics when no device feature is enabled)
+rubble-nrf5x = { path = "../rubble-nrf5x", features = ["52840"] }
 glob = "0.3.0"

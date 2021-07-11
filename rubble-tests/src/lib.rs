@@ -69,10 +69,22 @@ fn additional_tests() {
     cargo("fmt --all -- --check", ".");
 
     // Generate documentation as part of the test suite. This ensures they always build.
-    cargo("doc --no-deps -p rubble -p rubble-nrf5x", "rubble-docs");
+    doc("rubble", "--all-features");
+    doc("rubble-nrf5x", "--features 52840");
+
     fs::write(
         "target/doc/index.html",
-        "<meta http-equiv=refresh content=0;url=rubble/index.html>",
+        r#"<meta http-equiv="refresh" content="0;url=rubble/index.html">"#,
     )
     .unwrap();
+}
+
+fn doc(package: &str, cargo_args: &str) {
+    cargo(
+        format!(
+            "doc --no-deps --document-private-items -p {} {}",
+            package, cargo_args
+        ),
+        ".",
+    );
 }
