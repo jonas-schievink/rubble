@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Code","LE Signaling Channel opcodes."],["RejectReason","Reasons for a `CommandReject` response."]],"struct":[["SignalingState","The `Protocol` implementor listening on the LE Signaling Channel `0x0005`."]]});

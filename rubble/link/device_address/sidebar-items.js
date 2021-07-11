@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["AddressKind","Specifies whether a device address is randomly generated or a LAN MAC address."]],"struct":[["DeviceAddress","A Bluetooth device address."]]});

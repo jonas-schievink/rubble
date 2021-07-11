@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["Config","Trait for Rubble stack configurations."]]});
+initSidebarItems({"trait":[["Config","Trait for Rubble stack configurations."]],"type":[["ConfConsumer",""],["ConfProducer",""]]});

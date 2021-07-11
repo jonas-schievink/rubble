@@ -183,44 +183,10 @@
 <span id="180">180</span>
 <span id="181">181</span>
 <span id="182">182</span>
-<span id="183">183</span>
-<span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
-<span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
-<span id="198">198</span>
-<span id="199">199</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Generic `Timer` implementation that works with all 3 timers on the chip.</span>
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;51&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf51_hal::pac</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52810&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52810_hal::pac</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52811&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52811_hal::pac</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52832&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52832_hal::pac</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52833&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52833_hal::pac</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52840&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52840_hal::pac</span>;
-
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::pac</span>;
 <span class="kw">use</span> <span class="ident">core::mem</span>;
 <span class="kw">use</span> <span class="ident">rubble</span>::{
     <span class="ident">link::NextUpdate</span>,

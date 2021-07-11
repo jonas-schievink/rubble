@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["SeqNum","A 1-bit data packet sequence number."]]});

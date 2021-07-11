@@ -471,11 +471,6 @@
 <span id="468">468</span>
 <span id="469">469</span>
 <span id="470">470</span>
-<span id="471">471</span>
-<span id="472">472</span>
-<span id="473">473</span>
-<span id="474">474</span>
-<span id="475">475</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Defines packet structures used by the Link Layer Control Protocol.</span>
 
@@ -604,7 +599,8 @@
 
 <span class="doccomment">/// Data transmitted with an `LL_CONNECTION_UPDATE_REQ` Control PDU, containing a new set of</span>
 <span class="doccomment">/// connection parameters.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">zerocopy::FromBytes</span>, <span class="ident">zerocopy::Unaligned</span>)]</span>
+<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">packed</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ConnectionUpdateData</span> {
     <span class="ident">win_size</span>: <span class="ident">u8</span>,
     <span class="ident">win_offset</span>: <span class="ident">u16</span>,
@@ -646,21 +642,25 @@
     }
 }
 
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">zerocopy::FromBytes</span>, <span class="ident">zerocopy::Unaligned</span>)]</span>
+<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">packed</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ChannelMapReq</span> {
+    <span class="kw">pub</span> <span class="ident">map</span>: <span class="ident">Field</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">5</span>], <span class="ident">ChannelMap</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">instant</span>: <span class="ident">u16</span>,
+}
+
 <span class="doccomment">/// A structured representation of an LL Control PDU used by the Link Layer Control Protocol (LLCP).</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ControlPdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="doccomment">/// `0x00`/`LL_CONNECTION_UPDATE_REQ` - Update connection parameters.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Sent by the master. The slave does not send a response back.</span>
-    <span class="ident">ConnectionUpdateReq</span>(<span class="ident">ConnectionUpdateData</span>),
+    <span class="ident">ConnectionUpdateReq</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">ConnectionUpdateData</span>),
 
     <span class="doccomment">/// `0x01`/`LL_CHANNEL_MAP_REQ` - Update the channel map.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Sent by the master. The slave does not send a response back.</span>
-    <span class="ident">ChannelMapReq</span> {
-        <span class="ident">map</span>: <span class="ident">ChannelMap</span>,
-        <span class="ident">instant</span>: <span class="ident">u16</span>,
-    },
+    <span class="ident">ChannelMapReq</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">ChannelMapReq</span>),
 
     <span class="doccomment">/// `0x02`/`LL_TERMINATE_IND` - Close the connection.</span>
     <span class="doccomment">///</span>
@@ -778,19 +778,9 @@
         <span class="kw">let</span> <span class="ident">opcode</span> <span class="op">=</span> <span class="ident">ControlOpcode::from</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>);
         <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">opcode</span> {
             <span class="ident">ControlOpcode::ConnectionUpdateReq</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">ControlPdu::ConnectionUpdateReq</span>(<span class="ident">ConnectionUpdateData</span> {
-                    <span class="ident">win_size</span>: <span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>,
-                    <span class="ident">win_offset</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
-                    <span class="ident">interval</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
-                    <span class="ident">latency</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
-                    <span class="ident">timeout</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
-                    <span class="ident">instant</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
-                })
+                <span class="ident">ControlPdu::ConnectionUpdateReq</span>(<span class="ident">bytes</span>.<span class="ident">read_obj</span>()<span class="question-mark">?</span>)
             }
-            <span class="ident">ControlOpcode::ChannelMapReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::ChannelMapReq</span> {
-                <span class="ident">map</span>: <span class="ident">ChannelMap::from_raw</span>(<span class="ident">bytes</span>.<span class="ident">read_array</span>()<span class="question-mark">?</span>),
-                <span class="ident">instant</span>: <span class="ident">bytes</span>.<span class="ident">read_u16_le</span>()<span class="question-mark">?</span>,
-            },
+            <span class="ident">ControlOpcode::ChannelMapReq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::ChannelMapReq</span>(<span class="ident">bytes</span>.<span class="ident">read_obj</span>()<span class="question-mark">?</span>),
             <span class="ident">ControlOpcode::TerminateInd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ControlPdu::TerminateInd</span> {
                 <span class="ident">error_code</span>: <span class="ident">Hex</span>(<span class="ident">bytes</span>.<span class="ident">read_u8</span>()<span class="question-mark">?</span>),
             },
@@ -829,9 +819,9 @@
                 <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">data</span>.<span class="ident">instant</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="ident">ControlPdu::ChannelMapReq</span> { <span class="ident">map</span>, <span class="ident">instant</span> } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">buffer</span>.<span class="ident">write_slice</span>(<span class="kw-2">&amp;</span><span class="ident">map</span>.<span class="ident">to_raw</span>())<span class="question-mark">?</span>;
-                <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="kw-2">*</span><span class="ident">instant</span>)<span class="question-mark">?</span>;
+            <span class="ident">ControlPdu::ChannelMapReq</span>(<span class="ident">req</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">buffer</span>.<span class="ident">write_slice</span>(<span class="ident">req</span>.<span class="ident">map</span>.<span class="ident">raw</span>())<span class="question-mark">?</span>;
+                <span class="ident">buffer</span>.<span class="ident">write_u16_le</span>(<span class="ident">req</span>.<span class="ident">instant</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>(())
             }
             <span class="ident">ControlPdu::TerminateInd</span> { <span class="ident">error_code</span> } <span class="op">=</span><span class="op">&gt;</span> {

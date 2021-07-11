@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["ChannelMap","A map marking data channels as used or unused."]]});

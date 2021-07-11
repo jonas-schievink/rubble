@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["CompanyId","Company identifier for use in link layer Control PDUs."]]});

@@ -509,23 +509,6 @@
 <span id="506">506</span>
 <span id="507">507</span>
 <span id="508">508</span>
-<span id="509">509</span>
-<span id="510">510</span>
-<span id="511">511</span>
-<span id="512">512</span>
-<span id="513">513</span>
-<span id="514">514</span>
-<span id="515">515</span>
-<span id="516">516</span>
-<span id="517">517</span>
-<span id="518">518</span>
-<span id="519">519</span>
-<span id="520">520</span>
-<span id="521">521</span>
-<span id="522">522</span>
-<span id="523">523</span>
-<span id="524">524</span>
-<span id="525">525</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Integrated 2.4 GHz radio with BLE support.</span>
 <span class="doccomment">//!</span>
@@ -570,27 +553,10 @@
 <span class="doccomment">//! length), the `Length` field, and the `S1` field (which just contains 2 unused bits, but they</span>
 <span class="doccomment">//! must still be sent, of course).</span>
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;51&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf51_hal::pac</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52810&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52810_hal::pac</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52811&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52811_hal::pac</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52832&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52832_hal::pac</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52833&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52833_hal::pac</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;52840&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">nrf52840_hal::pac</span>;
-
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::pac</span>;
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::pac</span>::{<span class="ident">radio::state::STATE_R</span>, <span class="ident">RADIO</span>};
 <span class="kw">use</span> <span class="ident">core::cmp</span>;
 <span class="kw">use</span> <span class="ident">core::sync::atomic</span>::{<span class="ident">compiler_fence</span>, <span class="ident">Ordering</span>};
-<span class="kw">use</span> <span class="ident">pac</span>::{<span class="ident">radio::state::STATE_R</span>, <span class="ident">RADIO</span>};
 <span class="kw">use</span> <span class="ident">rubble::config::Config</span>;
 <span class="kw">use</span> <span class="ident">rubble::link</span>::{
     <span class="ident">advertising</span>, <span class="ident">data</span>, <span class="ident">Cmd</span>, <span class="ident">LinkLayer</span>, <span class="ident">RadioCmd</span>, <span class="ident">Transmitter</span>, <span class="ident">CRC_POLY</span>, <span class="ident">MIN_PDU_BUF</span>,
