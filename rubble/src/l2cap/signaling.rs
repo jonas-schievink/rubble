@@ -5,7 +5,7 @@ use crate::Error;
 
 enum_with_unknown! {
     /// LE Signaling Channel opcodes.
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, defmt::Format)]
     enum Code(u8) {
         CommandReject = 0x01,
         DisconnectionReq = 0x06,
@@ -20,7 +20,7 @@ enum_with_unknown! {
 
 enum_with_unknown! {
     /// Reasons for a `CommandReject` response.
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, defmt::Format)]
     enum RejectReason(u16) {
         CommandNotUnderstood = 0x0000,
         SignalingMtuExceeded = 0x0001,

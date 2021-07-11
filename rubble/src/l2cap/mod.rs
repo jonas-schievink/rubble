@@ -97,6 +97,12 @@ impl fmt::Debug for Channel {
     }
 }
 
+impl defmt::Format for Channel {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "{:#06X}", self.0)
+    }
+}
+
 impl FromBytes<'_> for Channel {
     fn from_bytes(bytes: &mut ByteReader<'_>) -> Result<Self, Error> {
         Ok(Channel(bytes.read_u16_le()?))
