@@ -816,7 +816,7 @@
 <span class="doccomment">/// Implementation of the real-time BLE Link-Layer logic.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Users of this struct must provide an interface to the platform&#39;s hardware by implementing</span>
-<span class="doccomment">/// `HardwareInterface`.</span>
+<span class="doccomment">/// [`Config`].</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LinkLayer</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
     <span class="ident">dev_addr</span>: <span class="ident">DeviceAddress</span>,
     <span class="ident">state</span>: <span class="ident">State</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,

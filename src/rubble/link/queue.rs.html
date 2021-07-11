@@ -452,15 +452,6 @@
 <span id="449">449</span>
 <span id="450">450</span>
 <span id="451">451</span>
-<span id="452">452</span>
-<span id="453">453</span>
-<span id="454">454</span>
-<span id="455">455</span>
-<span id="456">456</span>
-<span id="457">457</span>
-<span id="458">458</span>
-<span id="459">459</span>
-<span id="460">460</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! An SPSC queue for data channel PDUs.</span>
 <span class="doccomment">//!</span>
@@ -475,13 +466,6 @@
 <span class="doccomment">//!   splitting a [`PacketQueue`].</span>
 <span class="doccomment">//! * The [`SimpleQueue`], [`SimpleProducer`] and [`SimpleConsumer`] types, a minimal implementation</span>
 <span class="doccomment">//!   of the queue interface defined by [`PacketQueue`], [`Producer`] and [`Consumer`].</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! [`PacketQueue`]: trait.PacketQueue.html</span>
-<span class="doccomment">//! [`Producer`]: trait.Producer.html</span>
-<span class="doccomment">//! [`Consumer`]: trait.Consumer.html</span>
-<span class="doccomment">//! [`SimpleQueue`]: struct.SimpleQueue.html</span>
-<span class="doccomment">//! [`SimpleProducer`]: struct.SimpleProducer.html</span>
-<span class="doccomment">//! [`SimpleConsumer`]: struct.SimpleConsumer.html</span>
 
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::data</span>::{<span class="self">self</span>, <span class="ident">Llid</span>};
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link</span>::{<span class="ident">MIN_DATA_PAYLOAD_BUF</span>, <span class="ident">MIN_DATA_PDU_BUF</span>};
@@ -491,7 +475,7 @@
 <span class="doccomment">/// A splittable SPSC queue for data channel PDUs.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Implementations of this trait must fit at least one data channel packet with a total size of</span>
-<span class="doccomment">/// `MIN_DATA_PDU_BUF` bytes (header and payload).</span>
+<span class="doccomment">/// [`MIN_DATA_PDU_BUF`] bytes (header and payload).</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">PacketQueue</span> {
     <span class="doccomment">/// Producing (writing) half of the queue.</span>
     <span class="kw">type</span> <span class="ident">Producer</span>: <span class="ident">Producer</span>;
@@ -584,10 +568,10 @@
 
     <span class="doccomment">/// Passes the next raw packet in the queue to a closure.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// The closure returns a `Consume` value to indicate whether the packet should remain in the</span>
+    <span class="doccomment">/// The closure returns a [`Consume`] value to indicate whether the packet should remain in the</span>
     <span class="doccomment">/// queue or be removed.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// If the queue is empty, `Error::Eof` is returned.</span>
+    <span class="doccomment">/// If the queue is empty, [`Error::Eof`] is returned.</span>
     <span class="kw">fn</span> <span class="ident">consume_raw_with</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">data::Header</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
@@ -595,10 +579,10 @@
 
     <span class="doccomment">/// Passes the next packet in the queue to a closure.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// The closure returns a `Consume` value to indicate whether the packet should remain in the</span>
+    <span class="doccomment">/// The closure returns a [`Consume`] value to indicate whether the packet should remain in the</span>
     <span class="doccomment">/// queue or be removed.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// If the queue is empty, `Error::Eof` is returned.</span>
+    <span class="doccomment">/// If the queue is empty, [`Error::Eof`] is returned.</span>
     <span class="kw">fn</span> <span class="ident">consume_pdu_with</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">data::Header</span>, <span class="ident">data::Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Consume</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
@@ -677,10 +661,8 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// This type is compatible with thumbv6 cores, which lack atomic operations that might be needed</span>
 <span class="doccomment">/// for other queue implementations.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This queue also minimizes RAM usage: In addition to the raw buffer space, only minimal space is</span>
-<span class="doccomment">/// needed for housekeeping.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SimpleQueue</span> {
+    <span class="comment">// FIXME this uses 2 PDUs worth of space, but should only use 1</span>
     <span class="ident">inner</span>: <span class="ident">spsc::Queue</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="ident">MIN_DATA_PDU_BUF</span>], <span class="number">2</span><span class="op">&gt;</span>,
 }
 

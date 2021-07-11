@@ -283,13 +283,6 @@
 <span id="280">280</span>
 <span id="281">281</span>
 <span id="282">282</span>
-<span id="283">283</span>
-<span id="284">284</span>
-<span id="285">285</span>
-<span id="286">286</span>
-<span id="287">287</span>
-<span id="288">288</span>
-<span id="289">289</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Time APIs for obtaining the current time and calculating with points in time and durations.</span>
 <span class="doccomment">//!</span>
@@ -310,17 +303,17 @@
     <span class="doccomment">/// The duration of the interframe spacing between BLE packets.</span>
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">T_IFS</span>: <span class="self">Self</span> <span class="op">=</span> <span class="ident">Duration</span>(<span class="number">150</span>);
 
-    <span class="doccomment">/// Creates a `Duration` from a number of microseconds.</span>
+    <span class="doccomment">/// Creates a [`Duration`] from a number of microseconds.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_micros</span>(<span class="ident">micros</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">Duration</span>(<span class="ident">micros</span>)
     }
 
-    <span class="doccomment">/// Creates a `Duration` representing the given number of milliseconds.</span>
+    <span class="doccomment">/// Creates a [`Duration`] representing the given number of milliseconds.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_millis</span>(<span class="ident">millis</span>: <span class="ident">u16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">Duration</span>(<span class="ident">u32::from</span>(<span class="ident">millis</span>) <span class="op">*</span> <span class="number">1_000</span>)
     }
 
-    <span class="doccomment">/// Creates a `Duration` representing a number of seconds.</span>
+    <span class="doccomment">/// Creates a [`Duration`] representing a number of seconds.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_secs</span>(<span class="ident">secs</span>: <span class="ident">u16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">Duration</span>(<span class="ident">u32::from</span>(<span class="ident">secs</span>) <span class="op">*</span> <span class="number">1_000_000</span>)
     }
@@ -436,14 +429,11 @@
 <span class="doccomment">/// [`Timer`] instances (even when using the same implementation) are not compatible, and mixing</span>
 <span class="doccomment">/// them in operations causes unspecified results. [`Duration`]s are independent of the [`Timer`]</span>
 <span class="doccomment">/// implementation and thus can be mixed freely.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [`Duration`]: struct.Duration.html</span>
-<span class="doccomment">/// [`Timer`]: trait.Timer.html</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Instant</span>(<span class="ident">u32</span>);
 
 <span class="kw">impl</span> <span class="ident">Instant</span> {
-    <span class="doccomment">/// The maximum time between two `Instant`s that can be handled by `Instant::duration_since`.</span>
+    <span class="doccomment">/// The maximum time between two `Instant`s that can be handled by [`Instant::duration_since`].</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This is defined to be a value of a few minutes, intended to be sufficient for the BLE stack.</span>
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAX_TIME_BETWEEN</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration</span>(<span class="number">1_000_000</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">5</span>); <span class="comment">// 5 minutes</span>
@@ -469,16 +459,14 @@
 
     <span class="doccomment">/// Calculates the duration of time that has passed between `earlier` and `self`.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// The maximum duration that can be calculated by this method is defined as `MAX_TIME_BETWEEN`.</span>
-    <span class="doccomment">/// Calling this method when the `Instant`s are further apart is an error and may panic. This is</span>
-    <span class="doccomment">/// done as a safeguard, since `Instant`s can wrap around, which can cause the result of this</span>
-    <span class="doccomment">/// function to be incorrect. It does not prevent that from happening, but makes unexpected</span>
-    <span class="doccomment">/// durations show up much earlier.</span>
+    <span class="doccomment">/// The maximum duration that can be calculated by this method is defined as</span>
+    <span class="doccomment">/// [`Instant::MAX_TIME_BETWEEN`]. Calling this method when the `Instant`s are further apart is</span>
+    <span class="doccomment">/// an error and may panic. This is done as a safeguard, since `Instant`s can wrap around,</span>
+    <span class="doccomment">/// which can cause the result of this function to be incorrect. It does not prevent that</span>
+    <span class="doccomment">/// from happening, but makes unexpected durations show up much earlier.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Both `self` and `earlier` must have been created by the same [`Timer`], or the result of</span>
     <span class="doccomment">/// this function will be unspecified.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// [`Timer`]: trait.Timer.html</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">duration_since</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">earlier</span>: <span class="ident">Instant</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
         <span class="kw">let</span> <span class="ident">micros_passed</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">wrapping_sub</span>(<span class="ident">earlier</span>.<span class="number">0</span>);
         <span class="macro">debug_assert!</span>(
@@ -493,10 +481,8 @@
     }
 }
 
-<span class="doccomment">/// `Instant`s can be subtracted, which computes the `Duration` between the rhs and lhs using</span>
+<span class="doccomment">/// [`Instant`]s can be subtracted, which computes the [`Duration`] between the rhs and lhs using</span>
 <span class="doccomment">/// [`Instant::duration_since`].</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [`Instant::duration_since`]: struct.Instant.html#method.duration_since</span>
 <span class="kw">impl</span> <span class="ident">Sub</span><span class="op">&lt;</span><span class="ident">Instant</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Instant</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Duration</span>;
 
@@ -505,7 +491,7 @@
     }
 }
 
-<span class="doccomment">/// A `Duration` can be added to an `Instant`, moving the `Instant` forwards in time.</span>
+<span class="doccomment">/// A [`Duration`] can be added to an [`Instant`], moving the [`Instant`] forwards in time.</span>
 <span class="kw">impl</span> <span class="ident">Add</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Instant</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="self">Self</span>;
 
@@ -520,7 +506,7 @@
     }
 }
 
-<span class="doccomment">/// A `Duration` can be subtracted from an `Instant`, moving the `Instant` backwards in time.</span>
+<span class="doccomment">/// A [`Duration`] can be subtracted from an [`Instant`], moving the [`Instant`] backwards in time.</span>
 <span class="kw">impl</span> <span class="ident">Sub</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Instant</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="self">Self</span>;
 
@@ -529,7 +515,7 @@
     }
 }
 
-<span class="doccomment">/// Subtracts a `Duration` from `self`.</span>
+<span class="doccomment">/// Subtracts a [`Duration`] from `self`.</span>
 <span class="kw">impl</span> <span class="ident">SubAssign</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Instant</span> {
     <span class="kw">fn</span> <span class="ident">sub_assign</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">d</span>: <span class="ident">Duration</span>) {
         <span class="kw-2">*</span><span class="self">self</span> <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span> <span class="op">-</span> <span class="ident">d</span>;
@@ -574,10 +560,10 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// This trait can also be implemented by a mock timer for testing.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Timer</span> {
-    <span class="doccomment">/// Obtain the current time as an `Instant`.</span>
+    <span class="doccomment">/// Obtain the current time as an [`Instant`].</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// The `Instant`s returned by this function must never move backwards in time, except when the</span>
-    <span class="doccomment">/// underlying value wraps around.</span>
+    <span class="doccomment">/// The [`Instant`]s returned by this function must never move backwards in time, except when</span>
+    <span class="doccomment">/// the underlying value wraps around.</span>
     <span class="kw">fn</span> <span class="ident">now</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Instant</span>;
 }
 </pre></div>

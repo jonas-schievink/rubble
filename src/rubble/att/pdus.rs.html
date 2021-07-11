@@ -689,7 +689,7 @@
     <span class="doccomment">/// Error codes that can be sent from the ATT server to the client in response to a request.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Used as the payload of `ErrorRsp` PDUs.</span>
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">defmt::Format</span>)]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ErrorCode</span>(<span class="ident">u8</span>) {
         <span class="doccomment">/// Attempted to use an `Handle` that isn&#39;t valid on this server.</span>
         <span class="ident">InvalidHandle</span> <span class="op">=</span> <span class="number">0x01</span>,

@@ -50,10 +50,6 @@
 <span id="47">47</span>
 <span id="48">48</span>
 <span id="49">49</span>
-<span id="50">50</span>
-<span id="51">51</span>
-<span id="52">52</span>
-<span id="53">53</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! An experimental BLE stack.</span>
 <span class="doccomment">//!</span>
@@ -67,14 +63,10 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The only part that interacts directly with platform-specific interfaces is [`link`], Rubble&#39;s</span>
 <span class="doccomment">//! BLE Link-Layer implementation. You have to provide it with a few hardware-specific services:</span>
-<span class="doccomment">//! * A microsecond-precision [`Timer`].</span>
-<span class="doccomment">//! * A [`Transmitter`] that can send data and advertising channel packets.</span>
-<span class="doccomment">//! * A processor for `link::Cmd`, which tells the support code when to call Rubble&#39;s functions</span>
+<span class="doccomment">//! * A microsecond-precision [`Timer`][time::Timer].</span>
+<span class="doccomment">//! * A [`Transmitter`][link::Transmitter] that can send data and advertising channel packets.</span>
+<span class="doccomment">//! * A processor for [`link::Cmd`], which tells the support code when to call Rubble&#39;s functions</span>
 <span class="doccomment">//!   again.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! [`link`]: link/index.html</span>
-<span class="doccomment">//! [`Timer`]: time/trait.Timer.html</span>
-<span class="doccomment">//! [`Transmitter`]: link/trait.Transmitter.html</span>
 
 <span class="comment">// We&#39;re `#[no_std]`, except when we&#39;re testing</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">test</span>), <span class="ident">no_std</span>)]</span>

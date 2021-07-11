@@ -201,9 +201,9 @@
         <span class="comment">// The spec says that we have to broadcast on all 3 channels in sequence, so that the total</span>
         <span class="comment">// time of this broadcast (&quot;advertising event&quot;) is &lt;10ms.</span>
 
-        <span class="comment">// FIXME: Do we have to write the payload again every time we send (ie.</span>
-        <span class="comment">// is the transmitter allowed to overwrite it)?</span>
-
+        <span class="comment">// The transmitter retains the old transmit buffer, but it might be used for other purposes</span>
+        <span class="comment">// (like sending multiple beacon payloads), so we always copy our payload into the tx</span>
+        <span class="comment">// buffer here.</span>
         <span class="kw">let</span> <span class="ident">payload</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pdu</span>.<span class="ident">payload</span>();
         <span class="kw">let</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">tx</span>.<span class="ident">tx_payload_buf</span>();
         <span class="ident">buf</span>[..<span class="ident">payload</span>.<span class="ident">len</span>()].<span class="ident">copy_from_slice</span>(<span class="ident">payload</span>);
@@ -214,7 +214,7 @@
     }
 }
 
-<span class="doccomment">/// Callback for the `BeaconScanner`.</span>
+<span class="doccomment">/// Callback for the [`BeaconScanner`].</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ScanCallback</span> {
     <span class="doccomment">/// Called when a beacon is received and has passed the configured device address filter.</span>
     <span class="doccomment">///</span>
