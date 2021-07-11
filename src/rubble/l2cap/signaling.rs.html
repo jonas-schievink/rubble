@@ -58,7 +58,7 @@
 
 <span class="macro">enum_with_unknown!</span> {
     <span class="doccomment">/// LE Signaling Channel opcodes.</span>
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">defmt::Format</span>)]</span>
     <span class="kw">enum</span> <span class="ident">Code</span>(<span class="ident">u8</span>) {
         <span class="ident">CommandReject</span> <span class="op">=</span> <span class="number">0x01</span>,
         <span class="ident">DisconnectionReq</span> <span class="op">=</span> <span class="number">0x06</span>,
@@ -73,7 +73,7 @@
 
 <span class="macro">enum_with_unknown!</span> {
     <span class="doccomment">/// Reasons for a `CommandReject` response.</span>
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">defmt::Format</span>)]</span>
     <span class="kw">enum</span> <span class="ident">RejectReason</span>(<span class="ident">u16</span>) {
         <span class="ident">CommandNotUnderstood</span> <span class="op">=</span> <span class="number">0x0000</span>,
         <span class="ident">SignalingMtuExceeded</span> <span class="op">=</span> <span class="number">0x0001</span>,
