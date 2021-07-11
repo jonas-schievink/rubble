@@ -41,27 +41,10 @@
 //! length), the `Length` field, and the `S1` field (which just contains 2 unused bits, but they
 //! must still be sent, of course).
 
-#[cfg(feature = "51")]
-use nrf51_hal::pac;
-
-#[cfg(feature = "52810")]
-use nrf52810_hal::pac;
-
-#[cfg(feature = "52811")]
-use nrf52811_hal::pac;
-
-#[cfg(feature = "52832")]
-use nrf52832_hal::pac;
-
-#[cfg(feature = "52833")]
-use nrf52833_hal::pac;
-
-#[cfg(feature = "52840")]
-use nrf52840_hal::pac;
-
+use crate::pac;
+use crate::pac::{radio::state::STATE_R, RADIO};
 use core::cmp;
 use core::sync::atomic::{compiler_fence, Ordering};
-use pac::{radio::state::STATE_R, RADIO};
 use rubble::config::Config;
 use rubble::link::{
     advertising, data, Cmd, LinkLayer, RadioCmd, Transmitter, CRC_POLY, MIN_PDU_BUF,
