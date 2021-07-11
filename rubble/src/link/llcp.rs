@@ -125,7 +125,8 @@ impl ToBytes for ConnectionParamRequest {
 
 /// Data transmitted with an `LL_CONNECTION_UPDATE_REQ` Control PDU, containing a new set of
 /// connection parameters.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, zerocopy::FromBytes, zerocopy::Unaligned)]
+#[repr(packed)]
 pub struct ConnectionUpdateData {
     win_size: u8,
     win_offset: u16,
@@ -167,21 +168,25 @@ impl ConnectionUpdateData {
     }
 }
 
+#[derive(Debug, Copy, Clone, zerocopy::FromBytes, zerocopy::Unaligned)]
+#[repr(packed)]
+pub struct ChannelMapReq {
+    pub map: Field<[u8; 5], ChannelMap>,
+    pub instant: u16,
+}
+
 /// A structured representation of an LL Control PDU used by the Link Layer Control Protocol (LLCP).
 #[derive(Debug, Copy, Clone)]
 pub enum ControlPdu<'a> {
     /// `0x00`/`LL_CONNECTION_UPDATE_REQ` - Update connection parameters.
     ///
     /// Sent by the master. The slave does not send a response back.
-    ConnectionUpdateReq(ConnectionUpdateData),
+    ConnectionUpdateReq(&'a ConnectionUpdateData),
 
     /// `0x01`/`LL_CHANNEL_MAP_REQ` - Update the channel map.
     ///
     /// Sent by the master. The slave does not send a response back.
-    ChannelMapReq {
-        map: ChannelMap,
-        instant: u16,
-    },
+    ChannelMapReq(&'a ChannelMapReq),
 
     /// `0x02`/`LL_TERMINATE_IND` - Close the connection.
     ///
@@ -299,19 +304,9 @@ impl<'a> FromBytes<'a> for ControlPdu<'a> {
         let opcode = ControlOpcode::from(bytes.read_u8()?);
         Ok(match opcode {
             ControlOpcode::ConnectionUpdateReq => {
-                ControlPdu::ConnectionUpdateReq(ConnectionUpdateData {
-                    win_size: bytes.read_u8()?,
-                    win_offset: bytes.read_u16_le()?,
-                    interval: bytes.read_u16_le()?,
-                    latency: bytes.read_u16_le()?,
-                    timeout: bytes.read_u16_le()?,
-                    instant: bytes.read_u16_le()?,
-                })
+                ControlPdu::ConnectionUpdateReq(bytes.read_obj()?)
             }
-            ControlOpcode::ChannelMapReq => ControlPdu::ChannelMapReq {
-                map: ChannelMap::from_raw(bytes.read_array()?),
-                instant: bytes.read_u16_le()?,
-            },
+            ControlOpcode::ChannelMapReq => ControlPdu::ChannelMapReq(bytes.read_obj()?),
             ControlOpcode::TerminateInd => ControlPdu::TerminateInd {
                 error_code: Hex(bytes.read_u8()?),
             },
@@ -350,9 +345,9 @@ impl<'a> ToBytes for ControlPdu<'a> {
                 buffer.write_u16_le(data.instant)?;
                 Ok(())
             }
-            ControlPdu::ChannelMapReq { map, instant } => {
-                buffer.write_slice(&map.to_raw())?;
-                buffer.write_u16_le(*instant)?;
+            ControlPdu::ChannelMapReq(req) => {
+                buffer.write_slice(req.map.raw())?;
+                buffer.write_u16_le(req.instant)?;
                 Ok(())
             }
             ControlPdu::TerminateInd { error_code } => {

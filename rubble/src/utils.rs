@@ -42,6 +42,18 @@ macro_rules! enum_with_unknown {
                 }
             }
         }
+
+        impl crate::bytes::RawRepr<$ty> for $name {
+            fn from_raw(raw: $ty) -> Self {
+                Self::from(raw)
+            }
+            fn as_raw(&self) -> $ty {
+                match self {
+                    $( $name::$variant => $value, )*
+                    $name::Unknown(other) => *other
+                }
+            }
+        }
     }
 }
 

@@ -13,7 +13,7 @@ bitflags! {
         ///
         /// Note that the Security Manager Protocol also needs to be implemented for this to be
         /// useful.
-        const LE_ENCRYPTION = (1 << 0);
+        const LE_ENCRYPTION = 1 << 0;
 
         /// Connection parameters request procedure.
         ///
@@ -24,10 +24,10 @@ bitflags! {
         ///
         /// This is a superset of `EXTENDED_REJECT_INDICATION`, which may also be set when this bit
         /// is set.
-        const CONN_PARAM_REQ = (1 << 1);
+        const CONN_PARAM_REQ = 1 << 1;
 
         /// Support for the LL Control PDU `LL_REJECT_IND_EXT`.
-        const EXTENDED_REJECT_INDICATION = (1 << 2);
+        const EXTENDED_REJECT_INDICATION = 1 << 2;
 
         /// Slave-initiated feature exchange.
         ///
@@ -35,7 +35,7 @@ bitflags! {
         /// * The following types of LL Control PDUs: `LL_SLAVE_FEATURE_REQ`, `LL_FEATURE_RSP`.
         ///
         /// TODO: What's the use of this?
-        const SLAVE_FEATURE_EXCHANGE = (1 << 3);
+        const SLAVE_FEATURE_EXCHANGE = 1 << 3;
 
         /// Low-Energy Link-Layer ping exchange.
         ///
@@ -47,20 +47,20 @@ bitflags! {
         /// If a Link-Layer is in idle state, it will transmit empty PDUs, which are never
         /// authenticated with a MIC. Supporting this feature allows configuring a timeout between
         /// authenticated packets, since dummy data can then be sent via `LL_PING_REQ`.
-        const LE_PING = (1 << 4);
+        const LE_PING = 1 << 4;
 
         /// Link-Layer PDU length update (support for data channel PDUs with more than 31 Bytes).
         ///
         /// Setting this bit means that the implementation must support the following:
         /// * The following types of LL Control PDUs: `LL_LENGTH_REQ`, `LL_LENGTH_RSP`
         /// * The *Data Length Update Procedure*
-        const LE_PACKET_LENGTH_EXTENSION = (1 << 5);
+        const LE_PACKET_LENGTH_EXTENSION = 1 << 5;
 
         /// Support for untrackable randomized device addresses (LL Privacy).
-        const LL_PRIVACY = (1 << 6);
+        const LL_PRIVACY = 1 << 6;
 
         /// Extended scan filter policies.
-        const EXT_SCANNER_FILTER_POLICIES = (1 << 7);
+        const EXT_SCANNER_FILTER_POLICIES = 1 << 7;
     }
 }
 
@@ -81,5 +81,15 @@ impl<'a> FromBytes<'a> for FeatureSet {
     fn from_bytes(bytes: &mut ByteReader<'a>) -> Result<Self, Error> {
         let raw = bytes.read_u64_le()?;
         Ok(Self::from_bits_truncate(raw))
+    }
+}
+
+impl RawRepr<u64> for FeatureSet {
+    fn from_raw(raw: u64) -> Self {
+        Self::from_bits_truncate(raw)
+    }
+
+    fn as_raw(&self) -> u64 {
+        self.bits()
     }
 }

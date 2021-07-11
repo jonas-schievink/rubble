@@ -414,11 +414,14 @@ impl<C: Config> Connection<C> {
     ) -> Result<Option<ControlPdu<'static>>, LlcpError> {
         let response = match pdu {
             ControlPdu::ConnectionUpdateReq(data) => {
-                self.prepare_llcp_update(LlcpUpdate::ConnUpdate(data))?;
+                self.prepare_llcp_update(LlcpUpdate::ConnUpdate(*data))?;
                 return Ok(None);
             }
-            ControlPdu::ChannelMapReq { map, instant } => {
-                self.prepare_llcp_update(LlcpUpdate::ChannelMap { map, instant })?;
+            ControlPdu::ChannelMapReq(req) => {
+                self.prepare_llcp_update(LlcpUpdate::ChannelMap {
+                    map: req.map.value(),
+                    instant: req.instant,
+                })?;
                 return Ok(None);
             }
             ControlPdu::TerminateInd { error_code } => {

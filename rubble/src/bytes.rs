@@ -374,6 +374,11 @@ impl<'a> ByteWriter<'a> {
     pub fn write_u64_le(&mut self, value: u64) -> Result<(), Error> {
         self.write_slice(&value.to_le_bytes())
     }
+
+    /// Writes a value to the stream by transmuting it to bytes.
+    pub fn write_obj<T: zerocopy::AsBytes>(&mut self, obj: &T) -> Result<(), Error> {
+        self.write_slice(obj.as_bytes())
+    }
 }
 
 /// Allows reading values from a borrowed byte slice.
@@ -568,14 +573,14 @@ impl<'a> FromBytes<'a> for u8 {
 /// A zerocopy-compatible field of type `T`, but represented as `PRIM`.
 #[derive(zerocopy::FromBytes, zerocopy::Unaligned)]
 #[repr(transparent)]
-pub struct Field<PRIM: zerocopy::FromBytes + zerocopy::Unaligned, T> {
+pub struct Field<PRIM: zerocopy::FromBytes, T> {
     prim: PRIM,
     _p: PhantomData<T>,
 }
 
-impl<PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Copy, T> Copy for Field<PRIM, T> {}
+impl<PRIM: zerocopy::FromBytes + Copy, T> Copy for Field<PRIM, T> {}
 
-impl<PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Clone, T> Clone for Field<PRIM, T> {
+impl<PRIM: zerocopy::FromBytes + Clone, T> Clone for Field<PRIM, T> {
     fn clone(&self) -> Self {
         Self {
             prim: self.prim.clone(),
@@ -586,32 +591,52 @@ impl<PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Clone, T> Clone for Field
 
 impl<PRIM, T> Field<PRIM, T>
 where
-    PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Copy,
-    T: From<PRIM>,
+    PRIM: zerocopy::FromBytes + Copy,
+    T: RawRepr<PRIM>,
 {
+    pub fn new(raw: PRIM) -> Self {
+        Self {
+            prim: raw,
+            _p: PhantomData,
+        }
+    }
+
+    pub fn raw(&self) -> &PRIM {
+        &self.prim
+    }
+
     /// Extracts the typed representation of `self`.
-    pub fn typed(&self) -> T {
-        self.prim.into()
+    pub fn value(&self) -> T {
+        T::from_raw(self.prim)
     }
 }
 
 /// The debug representation is that of `T`.
 impl<PRIM, T> fmt::Debug for Field<PRIM, T>
 where
-    PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Copy,
-    T: From<PRIM> + fmt::Debug,
+    PRIM: zerocopy::FromBytes + Copy,
+    T: RawRepr<PRIM> + fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.typed().fmt(f)
+        self.value().fmt(f)
     }
 }
 
 impl<PRIM, T> defmt::Format for Field<PRIM, T>
 where
-    PRIM: zerocopy::FromBytes + zerocopy::Unaligned + Copy,
-    T: From<PRIM> + defmt::Format,
+    PRIM: zerocopy::FromBytes + Copy,
+    T: RawRepr<PRIM> + defmt::Format,
 {
     fn format(&self, f: defmt::Formatter<'_>) {
-        self.typed().format(f);
+        self.value().format(f);
     }
+}
+
+/// Indicates that a type can be cheaply converted from and to a raw representation of type `T`.
+///
+/// This is meant to be used with [`Field`], and allows representing types as their raw contents in
+/// memory, while allowing ergonomic conversion to their typed representation.
+pub trait RawRepr<T> {
+    fn from_raw(raw: T) -> Self;
+    fn as_raw(&self) -> T;
 }

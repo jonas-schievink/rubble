@@ -1,4 +1,4 @@
-use crate::phy::DataChannel;
+use crate::{bytes::RawRepr, phy::DataChannel};
 use core::fmt;
 
 /// A map marking data channels as used or unused.
@@ -95,6 +95,16 @@ impl fmt::Display for ChannelMap {
 impl fmt::Debug for ChannelMap {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} ({:?})", self, self.raw)
+    }
+}
+
+impl RawRepr<[u8; 5]> for ChannelMap {
+    fn from_raw(raw: [u8; 5]) -> Self {
+        ChannelMap::from_raw(raw)
+    }
+
+    fn as_raw(&self) -> [u8; 5] {
+        self.raw
     }
 }
 

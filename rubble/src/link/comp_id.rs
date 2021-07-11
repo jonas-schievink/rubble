@@ -2,9 +2,21 @@
 
 use core::fmt;
 
+use crate::bytes::RawRepr;
+
 /// Company identifier for use in link layer Control PDUs.
 #[derive(Copy, Clone)]
 pub struct CompanyId(u16);
+
+impl RawRepr<u16> for CompanyId {
+    fn from_raw(raw: u16) -> Self {
+        Self(raw)
+    }
+
+    fn as_raw(&self) -> u16 {
+        self.0
+    }
+}
 
 impl fmt::Debug for CompanyId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

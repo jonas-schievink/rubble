@@ -321,9 +321,13 @@ impl fmt::Debug for AuthReq {
     }
 }
 
-impl From<u8> for AuthReq {
-    fn from(raw: u8) -> Self {
+impl RawRepr<u8> for AuthReq {
+    fn from_raw(raw: u8) -> Self {
         Self(raw)
+    }
+
+    fn as_raw(&self) -> u8 {
+        self.0
     }
 }
 
@@ -348,15 +352,19 @@ enum_with_unknown! {
 bitflags! {
     /// Indicates which types of keys a device requests for distribution.
     struct KeyDistribution: u8 {
-        const ENC_KEY = (1 << 0);
-        const ID_KEY = (1 << 1);
-        const SIGN_KEY = (1 << 2);
-        const LINK_KEY = (1 << 3);
+        const ENC_KEY = 1 << 0;
+        const ID_KEY = 1 << 1;
+        const SIGN_KEY = 1 << 2;
+        const LINK_KEY = 1 << 3;
     }
 }
 
-impl From<u8> for KeyDistribution {
-    fn from(raw: u8) -> Self {
+impl RawRepr<u8> for KeyDistribution {
+    fn from_raw(raw: u8) -> Self {
         Self::from_bits_truncate(raw)
+    }
+
+    fn as_raw(&self) -> u8 {
+        self.bits()
     }
 }
