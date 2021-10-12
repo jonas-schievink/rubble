@@ -19,7 +19,7 @@ nrf52833-pac = { version = "0.10", optional = true, default-features = false }
 nrf52840-pac = { version = "0.10", optional = true, default-features = false }
 
 [features]
-51 = ["nrf51"]
+51 = ["nrf51-pac"]
 52810 = ["nrf52810-pac"]
 52811 = ["nrf52811-pac"]
 52832 = ["nrf52832-pac"]
