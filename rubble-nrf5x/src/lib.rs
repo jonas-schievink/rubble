@@ -4,7 +4,7 @@
 #![warn(rust_2018_idioms)]
 
 #[cfg(feature = "51")]
-use nrf51 as pac;
+use nrf51_pac as pac;
 
 #[cfg(feature = "52810")]
 use nrf52810_pac as pac;

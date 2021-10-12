@@ -83,7 +83,7 @@ impl BleRadio {
         // The nRF51 requires manually setting the trim values.
         #[cfg(feature = "51")]
         {
-            if ficr.overrideen.read().ble_1mbit().is_override_() {
+            if ficr.overrideen.read().ble_1mbit().is_override() {
                 unsafe {
                     radio
                         .override0
