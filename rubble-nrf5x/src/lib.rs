@@ -6,6 +6,9 @@
 #[cfg(feature = "51")]
 use nrf51_pac as pac;
 
+#[cfg(feature = "52805")]
+use nrf52805_pac as pac;
+
 #[cfg(feature = "52810")]
 use nrf52810_pac as pac;
 
