@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Hex","`Debug`-formats its contents in hexadecimal."],["HexSlice","`Debug`-formats its contents as a hexadecimal byte slice."]]});
+initSidebarItems({"macro":[["enum_with_unknown","Creates an enum that can be converted from and to a primitive type, with invalid values becoming a catch-all `Unknown` variant."]],"struct":[["Hex","`Debug`-formats its contents in hexadecimal."],["HexSlice","`Debug`-formats its contents as a hexadecimal byte slice."]]});

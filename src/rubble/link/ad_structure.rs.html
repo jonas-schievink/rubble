@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble&#x2F;src&#x2F;link&#x2F;ad_structure.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>ad_structure.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble&#x2F;src&#x2F;link&#x2F;ad_structure.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>ad_structure.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -369,8 +369,7 @@
 <span id="369">369</span>
 <span id="370">370</span>
 <span id="371">371</span>
-</pre><pre class="rust">
-<span class="doccomment">//! Advertising Data / Extended Inquiry Response (EIR) data.</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Advertising Data / Extended Inquiry Response (EIR) data.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Part of GAP (Generic Access Profile).</span>
 <span class="doccomment">//!</span>
@@ -378,8 +377,8 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [gap]: https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile</span>
 
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::CompanyId</span>;
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::uuid</span>::{<span class="ident">IsUuid</span>, <span class="ident">Uuid128</span>, <span class="ident">Uuid16</span>, <span class="ident">Uuid32</span>, <span class="ident">UuidKind</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::link::CompanyId</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::uuid</span>::{<span class="ident">IsUuid</span>, <span class="ident">Uuid128</span>, <span class="ident">Uuid16</span>, <span class="ident">Uuid32</span>, <span class="ident">UuidKind</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">Error</span>};
 <span class="kw">use</span> <span class="ident">bitflags::bitflags</span>;
 
@@ -639,7 +638,7 @@
     <span class="doccomment">/// The created `Flags` value specifies that this device is not BR/EDR (classic Bluetooth)</span>
     <span class="doccomment">/// capable and is in General Discoverable mode.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">discoverable</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Flags</span> {
-        <span class="self">Self</span><span class="ident">::BR_EDR_NOT_SUPPORTED</span> <span class="op">|</span> <span class="self">Self</span><span class="ident">::LE_GENERAL_DISCOVERABLE</span>
+        <span class="ident"><span class="self">Self</span>::BR_EDR_NOT_SUPPORTED</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::LE_GENERAL_DISCOVERABLE</span>
     }
 
     <span class="doccomment">/// Returns flags suitable for non-connectable devices that just broadcast advertising packets.</span>
@@ -647,7 +646,7 @@
     <span class="doccomment">/// Creates a `Flags` value that specifies that BR/EDR (classic Bluetooth) is not supported and</span>
     <span class="doccomment">/// that this device is not discoverable.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">broadcast</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Flags</span> {
-        <span class="self">Self</span><span class="ident">::BR_EDR_NOT_SUPPORTED</span>
+        <span class="ident"><span class="self">Self</span>::BR_EDR_NOT_SUPPORTED</span>
     }
 
     <span class="doccomment">/// Returns the raw representation of the flags.</span>
@@ -658,7 +657,7 @@
     <span class="doccomment">/// Returns a boolean indicating whether the device that sent this `Flags` value supports BR/EDR</span>
     <span class="doccomment">/// (aka &quot;Classic Bluetooth&quot;).</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">supports_classic_bluetooth</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">contains</span>(<span class="self">Self</span><span class="ident">::BR_EDR_NOT_SUPPORTED</span>)
+        <span class="self">self</span>.<span class="ident">contains</span>(<span class="ident"><span class="self">Self</span>::BR_EDR_NOT_SUPPORTED</span>)
     }
 
     <span class="doccomment">/// Device operating in LE Limited Discoverable mode.</span>
@@ -667,7 +666,7 @@
     <span class="doccomment">/// Note that &quot;Broadcast Mode&quot; still works with undiscoverable devices, since it doesn&#39;t need</span>
     <span class="doccomment">/// discovery or connections.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">le_limited_discoverable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">contains</span>(<span class="self">Self</span><span class="ident">::LE_LIMITED_DISCOVERABLE</span>)
+        <span class="self">self</span>.<span class="ident">contains</span>(<span class="ident"><span class="self">Self</span>::LE_LIMITED_DISCOVERABLE</span>)
     }
 
     <span class="doccomment">/// Device operating in LE General Discoverable mode.</span>
@@ -676,7 +675,7 @@
     <span class="doccomment">/// Note that &quot;Broadcast Mode&quot; still works with undiscoverable devices, since it doesn&#39;t need</span>
     <span class="doccomment">/// discovery or connections.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">le_general_discoverable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">contains</span>(<span class="self">Self</span><span class="ident">::LE_GENERAL_DISCOVERABLE</span>)
+        <span class="self">self</span>.<span class="ident">contains</span>(<span class="ident"><span class="self">Self</span>::LE_GENERAL_DISCOVERABLE</span>)
     }
 }
 
@@ -741,7 +740,7 @@
     <span class="kw">const</span> <span class="ident">_3D_INFORMATION_DATA</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x3D</span>;
     <span class="kw">const</span> <span class="ident">MANUFACTURER_SPECIFIC_DATA</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0xFF</span>;
 }
-</pre></div>
+</code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="rubble" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
     <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script>
 </body></html>

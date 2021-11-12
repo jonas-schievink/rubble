@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Appearance",""]],"struct":[["BatteryLevel",""],["Properties",""]],"trait":[["Characteristic",""]]});
+initSidebarItems({"enum":[["Appearance",""]],"macro":[["const_or","Bitwise or operation on `bitflags!` types that works in a `const` context."]],"struct":[["BatteryLevel",""],["Properties",""]],"trait":[["Characteristic",""]]});

@@ -1,1 +1,1 @@
-initSidebarItems({});
+initSidebarItems({"macro":[["debug",""],["error",""],["info",""],["trace",""],["warn",""]]});

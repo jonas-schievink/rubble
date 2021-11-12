@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble&#x2F;src&#x2F;link&#x2F;advertising.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>advertising.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `rubble&#x2F;src&#x2F;link&#x2F;advertising.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>advertising.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../rubble/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -839,8 +839,7 @@
 <span id="839">839</span>
 <span id="840">840</span>
 <span id="841">841</span>
-</pre><pre class="rust">
-<span class="doccomment">//! Advertising channel operations.</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Advertising channel operations.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This module defines PDUs, states and fields used by packets transmitted on the advertising</span>
 <span class="doccomment">//! channels. Generally, this includes everything needed to advertise as and scan for slave devices</span>
@@ -849,9 +848,9 @@
 <span class="doccomment">//! Note that while the types in here do not completely eliminate illegal values to be created, they</span>
 <span class="doccomment">//! do employ a range of sanity checks that prevent bogus packets from being sent by the stack.</span>
 
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link::ad_structure</span>::{<span class="ident">AdStructure</span>, <span class="ident">Flags</span>};
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::link</span>::{<span class="ident">channel_map::ChannelMap</span>, <span class="ident">AddressKind</span>, <span class="ident">DeviceAddress</span>};
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::utils</span>::{<span class="ident">Hex</span>, <span class="ident">HexSlice</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::link::ad_structure</span>::{<span class="ident">AdStructure</span>, <span class="ident">Flags</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::link</span>::{<span class="ident">channel_map::ChannelMap</span>, <span class="ident">AddressKind</span>, <span class="ident">DeviceAddress</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>::{<span class="ident">Hex</span>, <span class="ident">HexSlice</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">bytes</span>::<span class="kw-2">*</span>, <span class="ident">time::Duration</span>, <span class="ident">Error</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">convert::TryInto</span>, <span class="ident">fmt</span>, <span class="ident">iter</span>};
 
@@ -958,7 +957,7 @@
         <span class="ident">header</span>: <span class="ident">Header</span>,
         <span class="ident">payload</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">use</span> <span class="self">self</span><span class="ident">::Pdu</span>::<span class="kw-2">*</span>;
+        <span class="kw">use</span> <span class="ident"><span class="self">self</span>::Pdu</span>::<span class="kw-2">*</span>;
 
         <span class="kw">if</span> <span class="ident">usize::from</span>(<span class="ident">header</span>.<span class="ident">payload_length</span>()) <span class="op">!</span><span class="op">=</span> <span class="ident">payload</span>.<span class="ident">bytes_left</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::InvalidLength</span>);
@@ -1078,7 +1077,7 @@
 
     <span class="doccomment">/// Returns the device address of the sender of this PDU.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sender</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">DeviceAddress</span> {
-        <span class="kw">use</span> <span class="self">self</span><span class="ident">::Pdu</span>::<span class="kw-2">*</span>;
+        <span class="kw">use</span> <span class="ident"><span class="self">self</span>::Pdu</span>::<span class="kw-2">*</span>;
 
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">ConnectableUndirected</span> {
@@ -1107,7 +1106,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This may be `None` if the PDU doesn&#39;t have a fixed receiver.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">receiver</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">DeviceAddress</span><span class="op">&gt;</span> {
-        <span class="kw">use</span> <span class="self">self</span><span class="ident">::Pdu</span>::<span class="kw-2">*</span>;
+        <span class="kw">use</span> <span class="ident"><span class="self">self</span>::Pdu</span>::<span class="kw-2">*</span>;
 
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">ConnectableUndirected</span> { .. }
@@ -1127,7 +1126,7 @@
 
     <span class="doccomment">/// Returns the PDU type of `self`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PduType</span> {
-        <span class="kw">use</span> <span class="self">self</span><span class="ident">::Pdu</span>::<span class="kw-2">*</span>;
+        <span class="kw">use</span> <span class="ident"><span class="self">self</span>::Pdu</span>::<span class="kw-2">*</span>;
 
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">ConnectableUndirected</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PduType::AdvInd</span>,
@@ -1144,7 +1143,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// If this PDU doesn&#39;t support attaching AD structures, this will return `None`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">advertising_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">use</span> <span class="self">self</span><span class="ident">::Pdu</span>::<span class="kw-2">*</span>;
+        <span class="kw">use</span> <span class="ident"><span class="self">self</span>::Pdu</span>::<span class="kw-2">*</span>;
 
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">ConnectableUndirected</span> {
@@ -1166,7 +1165,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">FromBytes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Pdu</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ByteReader</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">header</span> <span class="op">=</span> <span class="ident">Header::from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
-        <span class="self">Self</span><span class="ident">::from_header_and_payload</span>(<span class="ident">header</span>, <span class="ident">bytes</span>)
+        <span class="ident"><span class="self">Self</span>::from_header_and_payload</span>(<span class="ident">header</span>, <span class="ident">bytes</span>)
     }
 }
 
@@ -1273,7 +1272,7 @@
                 <span class="ident">hop_and_sca</span> <span class="op">&amp;</span> <span class="number">0b11111</span>
             },
             <span class="ident">sca</span>: {
-                <span class="kw">use</span> <span class="self">self</span><span class="ident">::SleepClockAccuracy</span>::<span class="kw-2">*</span>;
+                <span class="kw">use</span> <span class="ident"><span class="self">self</span>::SleepClockAccuracy</span>::<span class="kw-2">*</span>;
                 <span class="kw">match</span> <span class="ident">sca</span> {
                     <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Ppm251To500</span>,
                     <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Ppm151To250</span>,
@@ -1355,7 +1354,7 @@
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">advertiser_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="self">Self</span><span class="ident">::adv</span>(
+        <span class="ident"><span class="self">Self</span>::adv</span>(
             <span class="ident">PduType::AdvInd</span>,
             <span class="ident">advertiser_addr</span>,
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">advertiser_data</span>.<span class="ident">iter</span>(),
@@ -1391,7 +1390,7 @@
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">advertiser_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="self">Self</span><span class="ident">::adv</span>(
+        <span class="ident"><span class="self">Self</span>::adv</span>(
             <span class="ident">PduType::AdvNonconnInd</span>,
             <span class="ident">advertiser_addr</span>,
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">advertiser_data</span>.<span class="ident">iter</span>(),
@@ -1405,7 +1404,7 @@
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">advertiser_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="self">Self</span><span class="ident">::adv</span>(
+        <span class="ident"><span class="self">Self</span>::adv</span>(
             <span class="ident">PduType::AdvScanInd</span>,
             <span class="ident">advertiser_addr</span>,
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">advertiser_data</span>.<span class="ident">iter</span>(),
@@ -1420,7 +1419,7 @@
         <span class="ident">advertiser_addr</span>: <span class="ident">DeviceAddress</span>,
         <span class="ident">advertiser_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="self">Self</span><span class="ident">::nonconnectable_undirected</span>(<span class="ident">advertiser_addr</span>, <span class="ident">advertiser_data</span>)
+        <span class="ident"><span class="self">Self</span>::nonconnectable_undirected</span>(<span class="ident">advertiser_addr</span>, <span class="ident">advertiser_data</span>)
     }
 
     <span class="doccomment">/// Creates an advertising PDU that makes this device &quot;visible&quot; for scanning</span>
@@ -1439,7 +1438,7 @@
         <span class="ident">advertiser_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">AdStructure</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>],
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="comment">// TODO what&#39;s the difference between &quot;general&quot; and &quot;limited&quot; discoverability?</span>
-        <span class="self">Self</span><span class="ident">::adv</span>(
+        <span class="ident"><span class="self">Self</span>::adv</span>(
             <span class="ident">PduType::AdvInd</span>,
             <span class="ident">advertiser_addr</span>,
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">iter::once</span>(<span class="kw-2">&amp;</span><span class="ident">AdStructure::from</span>(<span class="ident">Flags::discoverable</span>())).<span class="ident">chain</span>(<span class="ident">advertiser_data</span>),
@@ -1681,7 +1680,7 @@
         }
     }
 }
-</pre></div>
+</code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="rubble" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
     <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script>
 </body></html>
