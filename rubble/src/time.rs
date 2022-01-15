@@ -130,7 +130,7 @@ impl fmt::Debug for Duration {
 
 impl defmt::Format for Duration {
     fn format(&self, fmt: defmt::Formatter<'_>) {
-        defmt::write!(fmt, "{=u32:µs}s", self.0);
+        defmt::write!(fmt, "{=u32:us}s", self.0);
     }
 }
 
