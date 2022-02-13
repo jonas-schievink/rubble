@@ -17,7 +17,7 @@ demo-utils = { path = "../demo-utils" }
 cortex-m = "0.7.2"
 cortex-m-rtic = { version = "0.5.8", default-features = false, features = ["cortex-m-7"] }
 cortex-m-rt = "0.7.0"
-bbqueue = "0.4"
+bbqueue = "0.5.1"
 rtt-target = { version = "0.3.0", features = ["cortex-m"] }
 panic-rtt-target = { version = "0.1.1", features = ["cortex-m"] }
 

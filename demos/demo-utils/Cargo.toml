@@ -14,4 +14,4 @@ publish = false
 rubble = { path = "../../rubble", default-features = false }
 cortex-m = "0.7.2"
 log = "0.4.8"
-bbqueue = "0.4.1"
+bbqueue = "0.5.1"

@@ -1,20 +1,20 @@
 #![cfg_attr(not(feature = "log"), allow(unused))]
 
-use bbqueue::{BBBuffer, ConstBBBuffer, Consumer};
+use bbqueue::{BBBuffer, Consumer};
 use cortex_m::interrupt;
 use demo_utils::logging::{BbqLogger, StampedLogger, WriteLogger};
 use rubble_nrf5x::timer::StampSource;
 
 #[cfg(feature = "log")]
-pub(crate) use bbqueue::consts::U10000 as BufferSize;
+pub(crate) const BUFFER_SIZE: usize = 10000;
 
 #[cfg(not(feature = "log"))]
-pub(crate) use bbqueue::consts::U1 as BufferSize;
+pub(crate) const BUFFER_SIZE: usize = 1;
 
 #[cfg(feature = "log")]
 use log::LevelFilter;
 
-type Logger = StampedLogger<StampSource<LogTimer>, BbqLogger<'static, BufferSize>>;
+type Logger = StampedLogger<StampSource<LogTimer>, BbqLogger<'static, BUFFER_SIZE>>;
 
 type LogTimer = crate::hal::pac::TIMER0;
 
@@ -22,10 +22,10 @@ type LogTimer = crate::hal::pac::TIMER0;
 static mut LOGGER: Option<WriteLogger<Logger>> = None;
 
 /// Stores the global BBBuffer for the log queue.
-static BUFFER: BBBuffer<BufferSize> = BBBuffer(ConstBBBuffer::new());
+static BUFFER: BBBuffer<BUFFER_SIZE> = BBBuffer::<BUFFER_SIZE>::new();
 
 #[cfg(feature = "log")]
-pub fn init(timer: StampSource<LogTimer>) -> Consumer<'static, BufferSize> {
+pub fn init(timer: StampSource<LogTimer>) -> Consumer<'static, { BUFFER_SIZE }> {
     let (tx, log_sink) = BUFFER.try_split().unwrap();
     let logger = StampedLogger::new(BbqLogger::new(tx), timer);
 
@@ -43,6 +43,6 @@ pub fn init(timer: StampSource<LogTimer>) -> Consumer<'static, BufferSize> {
 }
 
 #[cfg(not(feature = "log"))]
-pub fn init(timer: StampSource<LogTimer>) -> Consumer<'static, BufferSize> {
+pub fn init(timer: StampSource<LogTimer>) -> Consumer<'static, { BUFFER_SIZE }> {
     BUFFER.try_split().unwrap().1
 }
