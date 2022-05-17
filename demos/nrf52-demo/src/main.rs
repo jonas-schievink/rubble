@@ -65,7 +65,7 @@ const APP: () = {
         ble_r: Responder<AppConfig>,
         radio: BleRadio,
         log_channel: UpChannel,
-        log_sink: Consumer<'static, logger::BufferSize>,
+        log_sink: Consumer<'static, { logger::BUFFER_SIZE }>,
     }
 
     #[init(resources = [ble_tx_buf, ble_rx_buf, tx_queue, rx_queue])]

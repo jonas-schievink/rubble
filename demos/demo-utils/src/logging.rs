@@ -1,6 +1,6 @@
 //! Logging-related utilities and adapters.
 
-use bbqueue::{ArrayLength, GrantW, Producer};
+use bbqueue::{GrantW, Producer};
 use core::{cell::RefCell, fmt};
 use cortex_m::interrupt::{self, Mutex};
 use log::{Log, Metadata, Record};
@@ -40,12 +40,12 @@ impl<T: Timer, L: fmt::Write> fmt::Write for StampedLogger<T, L> {
 ///
 /// The sink will panic when the `BBBuffer` doesn't have enough space to the data. This is to ensure
 /// that we never block or drop data.
-pub struct BbqLogger<'a, N: ArrayLength<u8>> {
+pub struct BbqLogger<'a, const N: usize> {
     p: Producer<'a, N>,
     data_lost: bool,
 }
 
-impl<'a, N: ArrayLength<u8>> BbqLogger<'a, N> {
+impl<'a, const N: usize> BbqLogger<'a, N> {
     pub fn new(p: Producer<'a, N>) -> Self {
         Self {
             p,
@@ -54,7 +54,7 @@ impl<'a, N: ArrayLength<u8>> BbqLogger<'a, N> {
     }
 }
 
-impl<N: ArrayLength<u8>> fmt::Write for BbqLogger<'_, N> {
+impl<const N: usize> fmt::Write for BbqLogger<'_, N> {
     fn write_str(&mut self, msg: &str) -> fmt::Result {
         let mut msg_bytes = msg.as_bytes();
         while !msg_bytes.is_empty() {
@@ -88,12 +88,12 @@ impl<N: ArrayLength<u8>> fmt::Write for BbqLogger<'_, N> {
 }
 
 /// Wraps a granted buffer and provides convenience methods to append data and commit
-struct GrantedBuffer<'a, N: ArrayLength<u8>> {
+struct GrantedBuffer<'a, const N: usize> {
     grant: GrantW<'a, N>,
     written: usize,
 }
 
-impl<'a, N: ArrayLength<u8>> GrantedBuffer<'a, N> {
+impl<'a, const N: usize> GrantedBuffer<'a, N> {
     pub fn new(grant: GrantW<'a, N>) -> Self {
         GrantedBuffer { grant, written: 0 }
     }
