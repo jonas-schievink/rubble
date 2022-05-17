@@ -1,3 +1,5 @@
+**Note**: this project is not currently maintained.
+
 # Rubble
 
 [![crates.io](https://img.shields.io/crates/v/rubble.svg)](https://crates.io/crates/rubble)
